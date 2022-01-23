@@ -1,0 +1,10 @@
+let g:netrw_dirhistmax  =10
+let g:netrw_dirhist_cnt =8
+let g:netrw_dirhist_1='/usr/share/vim'
+let g:netrw_dirhist_2='/Users/isty2e'
+let g:netrw_dirhist_3='/usr/local/Cellar/tmux'
+let g:netrw_dirhist_4='/Applications/MacVim'
+let g:netrw_dirhist_5='/Users/isty2e/Desktop/rubinius-rubinius-30c0c56/lib/rubinius/debugger'
+let g:netrw_dirhist_6='/Users/isty2e/.vim'
+let g:netrw_dirhist_7='/Users/isty2e/.gem'
+let g:netrw_dirhist_8='/Users/isty2e/Desktop'

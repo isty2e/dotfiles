@@ -25,7 +25,6 @@ Plug 'rhysd/vim-crystal'
 
 " Cosmetics
 Plug 'bling/vim-airline'
-Plug 'oblitum/rainbow'
 Plug 'junegunn/seoul256.vim'
 Plug 'yggdroot/indentline'
 

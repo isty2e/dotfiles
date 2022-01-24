@@ -53,8 +53,7 @@ if ! zgen saved; then
     zgen oh-my-zsh plugins/git
     zgen oh-my-zsh plugins/dirhistory
     zgen oh-my-zsh plugins/brew
-    zgen oh-my-zsh plugins/brew-cask
-    zgen oh-my-zsh plugins/osx
+    zgen oh-my-zsh plugins/macos
     zgen oh-my-zsh plugins/textmate
     zgen oh-my-zsh plugins/marked2
 
@@ -113,10 +112,6 @@ alias .....='cd ../../../../'
 alias vim='nvim'
 alias vi='nvim'
 alias v='nvim -p'
-
-# pplatex
-alias ppl='ppdflatex'
-alias ppll='pplatex -c /Library/TeX/texbin/lualatex --'
 
 # cpath
 export CPATH=`xcrun --show-sdk-path`/usr/include

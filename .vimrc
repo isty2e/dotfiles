@@ -21,6 +21,7 @@ Plug 'jngeist/vim-multimarkdown'
 Plug 'vim-latex/vim-latex'
 Plug 'julialang/julia-vim'
 Plug 'rhysd/vim-crystal'
+Plug 'biosyntax/biosyntax-vim'
 "Plug 'scrooloose/syntastic'
 
 " Cosmetics
@@ -54,6 +55,7 @@ Plug 'majutsushi/tagbar'
 Plug 'MarcWeber/vim-addon-mw-utils'
 Plug 'vim-scripts/YankRing.vim'
 "Plug 'tomtom/tlib_vim'
+
 
 call plug#end()
 
@@ -182,9 +184,6 @@ nnoremap <leader>s :%Subvert/
 let g:airline#extensions#tabline#enabled = 1
 let g:airline#extensions#whitespace#enabled = 1
 "let g:airline_theme = "wombat"
-
-" rainbow
-"let g:rainbow_active = 1 "0 if you want to enable it later via :RainbowToggle
 
 " indentline
 let g:indentLine_color_term = 237

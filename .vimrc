@@ -27,6 +27,7 @@ Plug 'biosyntax/biosyntax-vim'
 " Cosmetics
 Plug 'bling/vim-airline'
 Plug 'junegunn/seoul256.vim'
+Plug 'luochen1990/rainbow'
 Plug 'yggdroot/indentline'
 
 " Quick search and stuff

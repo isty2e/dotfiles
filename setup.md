@@ -22,7 +22,7 @@ brew install zsh vim neovim cmake git bazel fzf julia go crystal openssh pandoc 
 
 ```bash
 # general
-mamba install altair plotnine black cython flake8 isort mkl parmap
+mamba install altair plotnine modin-all black cython flake8 isort mkl parmap
 # science
 mamba install ambertools openmm mdtraj parmed oddt rdkit deepchem 
 mamba install -c omnia openforcefield openforcefields

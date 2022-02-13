@@ -57,11 +57,16 @@ if ! zgen saved; then
     zgen oh-my-zsh plugins/textmate
     zgen oh-my-zsh plugins/marked2
 
+    # fish-like
+    zgen load zsh-users/zsh-autosuggestions
     zgen load zsh-users/zsh-syntax-highlighting
     zgen load zsh-users/zsh-history-substring-search
+
+    # some comfy stuff
     zgen load Tarrasch/zsh-bd
     zgen load Tarrasch/zsh-mcd
     zgen load Tarrasch/zsh-command-not-found
+    zgen load chrissicool/zsh-256color
 
     # completions
     zgen load zsh-users/zsh-completions src
@@ -69,6 +74,8 @@ if ! zgen saved; then
     # save all to init script
     zgen save
 fi
+
+ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=#808080"
 
 # substring search
 # bind UP and DOWN arrow keys
@@ -119,18 +126,14 @@ export CPATH=`xcrun --show-sdk-path`/usr/include
 # homebrew
 export PATH=/usr/local/sbin:$PATH
 
-# homebrew cask
-#export HOMEBREW_CASK_OPTS="--appdir=/Applications --caskroom=/etc/Caskroom"
-
-# pip update all packages
-alias pipup="pip freeze --local | grep -v '^\-e' | cut -d = -f 1  | xargs -n1 pip install -U"
-
 # pyscf
 # export PYTHONPATH=/Users/isty2e/Desktop/pyscf-1.3:$PYTHONPATH
 
 test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
 
+# fzf
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+export FZF_DEFAULT_COMMAND='fd --type f'
 
 # >>> conda initialize >>>
 # !! Contents within this block are managed by 'conda init' !!

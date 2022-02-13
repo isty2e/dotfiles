@@ -13,7 +13,7 @@ ln -s dotfiles/.vim ~/.vim
 ## brew
 
 ```bash
-brew install zsh vim neovim cmake git bazel fzf julia go crystal openssh pandoc nodejs ack the_silver_searcher r rstudio rbenv brave-browser visual-studio-code textmate xquartz brewsci/bio/pymol 
+brew install zsh vim neovim cmake git bazel fzf fd julia go crystal openssh pandoc nodejs ack the_silver_searcher r rstudio rbenv brave-browser visual-studio-code textmate xquartz brewsci/bio/pymol 
 ```
 
 ## conda

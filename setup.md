@@ -24,10 +24,11 @@ brew install zsh vim neovim cmake git bazel fzf fd julia go crystal openssh pand
 # general
 mamba install altair plotnine modin-all black cython flake8 isort mkl parmap
 # science
-mamba install ambertools openmm mdtraj parmed oddt rdkit deepchem 
+mamba install ambertools openmm mdtraj parmed oddt rdkit deepchem cmcrameri colorcet
 mamba install -c omnia openforcefield openforcefields
 # ML, cuda dependent
-mamba install -c pytorch pytorch torchvision
+mamba install -c pytorch pytorch torchvision 
+mamba install -c pyg pytorch-scatter pytorch-sparse pytorch-cluster pytorch-spline-conv pyg
 mamba install -c rapidsai cudf cuml 
 mamba install einops opt_einsum scikit-learn pytorch-lightning nvidia-apex
 ```

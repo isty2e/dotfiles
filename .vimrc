@@ -17,16 +17,17 @@ Plug 'godlygeek/tabular'
 Plug 'junegunn/vim-easy-align'
 
 " Filetype supports and linting
+Plug 'dense-analysis/ale'
+Plug 'sheerun/vim-polyglot'
 Plug 'jngeist/vim-multimarkdown'
 Plug 'vim-latex/vim-latex'
 Plug 'julialang/julia-vim'
 Plug 'rhysd/vim-crystal'
-Plug 'biosyntax/biosyntax-vim'
 "Plug 'scrooloose/syntastic'
 
 " Cosmetics
 Plug 'bling/vim-airline'
-Plug 'junegunn/seoul256.vim'
+Plug 'tomasiser/vim-code-dark'
 Plug 'luochen1990/rainbow'
 Plug 'yggdroot/indentline'
 
@@ -170,9 +171,10 @@ vnoremap <down> <nop>
 vnoremap <right> <nop>
 vnoremap <left> <nop>
 
-set t_Co=256
+" set t_Co=256
+colo codedark
+" colo wombat256mod
 " colo evening
-colo wombat256mod
 "let g:seoul256_background = 234
 "colo seoul256
 
@@ -240,3 +242,10 @@ nnoremap <leader>r :MRU<CR>
 
 " snipmate
 let g:snipMate = { 'snippet_version' : 1 }
+
+" ale
+let g:ale_linters = { "ruby": ['standardrb'] }
+let g:ale_fixers = { "python": ['black', 'isort'], "ruby": ['standardrb'] }
+let g:ale_python_flake8_options = '--max-line-length=88 --ignore=E203,E266,E501,E741,W391,W503'
+let g:ale_python_isort_options = '--profile=black'
+let g:ale_completion_enabled = 1

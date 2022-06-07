@@ -13,7 +13,7 @@ ln -s dotfiles/.vim ~/.vim
 ## brew
 
 ```bash
-brew install zsh vim neovim cmake git bazel fzf fd julia go crystal openssh pandoc nodejs ack the_silver_searcher r rstudio rbenv brave-browser visual-studio-code textmate xquartz brewsci/bio/pymol 
+brew install zsh vim neovim cmake git bazel fzf fd julia go crystal openssh pandoc nodejs ack the_silver_searcher r rstudio rbenv brave-browser visual-studio-code textmate xquartz brewsci/bio/pymol
 ```
 
 ## conda
@@ -22,13 +22,13 @@ brew install zsh vim neovim cmake git bazel fzf fd julia go crystal openssh pand
 
 ```bash
 # general
-mamba install altair plotnine modin-all black cython flake8 isort mkl parmap
+mamba install altair plotnine black cython flake8 isort parmap pynvim pyarrow
 # science
-mamba install ambertools openmm mdtraj parmed oddt rdkit deepchem cmcrameri colorcet
+mamba install openmm mdtraj parmed oddt rdkit deepchem cmcrameri colorcet ambertools
 mamba install -c omnia openforcefield openforcefields
 # ML, cuda dependent
-mamba install -c pytorch pytorch torchvision 
+mamba install -c pytorch pytorch torchvision
 mamba install -c pyg pytorch-scatter pytorch-sparse pytorch-cluster pytorch-spline-conv pyg
-mamba install -c rapidsai cudf cuml 
-mamba install einops opt_einsum scikit-learn pytorch-lightning nvidia-apex
+mamba install -c rapidsai cudf cuml
+mamba install einops opt_einsum scikit-learn pytorch-lightning optuna
 ```

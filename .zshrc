@@ -123,18 +123,6 @@ alias v='nvim -p'
 # cpath
 export CPATH=`xcrun --show-sdk-path`/usr/include
 
-# homebrew
-export PATH=/usr/local/sbin:$PATH
-
-# pyscf
-# export PYTHONPATH=/Users/isty2e/Desktop/pyscf-1.3:$PYTHONPATH
-
-test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
-
-# fzf
-[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
-export FZF_DEFAULT_COMMAND='fd --type f'
-
 # >>> conda initialize >>>
 # !! Contents within this block are managed by 'conda init' !!
 __conda_setup="$('/Users/isty2e/anaconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
@@ -149,3 +137,16 @@ else
 fi
 unset __conda_setup
 # <<< conda initialize <<<
+
+# homebrew
+export PATH=/usr/local/sbin:$PATH
+
+# pyscf
+# export PYTHONPATH=/Users/isty2e/Desktop/pyscf-1.3:$PYTHONPATH
+
+test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
+
+# fzf
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+export FZF_DEFAULT_COMMAND='fd --type f'
+

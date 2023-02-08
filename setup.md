@@ -24,7 +24,7 @@ brew install zsh vim neovim cmake git bazel fzf fd julia go crystal openssh pand
 # general
 mamba install altair plotnine black cython flake8 isort parmap pynvim pyarrow
 # science
-mamba install openmm mdtraj parmed oddt rdkit deepchem cmcrameri colorcet ambertools
+mamba install openmm mdtraj parmed oddt rdkit molvs mordred deepchem cmcrameri colorcet ambertools
 mamba install -c omnia openforcefield openforcefields
 # ML, cuda dependent
 mamba install -c pytorch pytorch torchvision

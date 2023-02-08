@@ -1,3 +1,10 @@
+# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
+# Initialization code that may require console input (password prompts, [y/n]
+# confirmations, etc.) must go above this block; everything else may go below.
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
+
 autoload -U compinit && compinit
 autoload -U promptinit && promptinit
 prompt walters
@@ -40,22 +47,17 @@ source "$HOME/zgen/zgen.zsh"
 if ! zgen saved; then
     echo "Creating a zgen save"
 
+    # powerlevel10k
+    zgen load romkatv/powerlevel10k powerlevel10k
+
     #zgen oh-my-zsh
 
     # plugins
-    zgen oh-my-zsh plugins/python
-    zgen oh-my-zsh plugins/pip
-    zgen oh-my-zsh plugins/ruby
-    zgen oh-my-zsh plugins/gem
-    zgen oh-my-zsh plugins/asdf
     zgen oh-my-zsh plugins/extract
     zgen oh-my-zsh plugins/rsync
-    zgen oh-my-zsh plugins/git
     zgen oh-my-zsh plugins/dirhistory
     zgen oh-my-zsh plugins/brew
     zgen oh-my-zsh plugins/macos
-    zgen oh-my-zsh plugins/textmate
-    zgen oh-my-zsh plugins/marked2
 
     # fish-like
     zgen load zsh-users/zsh-autosuggestions
@@ -93,18 +95,12 @@ alias l='ls -Glh'
 alias ll='ls -Glh'
 alias lla='ls -Glah'
 
-# basic commands
-#alias rm="rm -i"
-#alias cp="cp -i"
-#alias mv="mv -i"
-
 # rsync
-#alias cpv="rsync -poghb --backup-dir=/home/$USER/rsync -e /dev/null --progress --"
-alias cpv="rsync -poghb --backup-dir=/home/$USER/rsync --progress --"
-alias rscp="rsync -avz --progress -h"
-alias rsmv="rsync -avz --progress -h --remove-source-files"
-alias rsup="rsync -avzu --progress -h"
-alias rssync="rsync -avzu --delete --progress -h"
+alias cpv="rsync -poghb --backup-dir=/home/$USER/rsync --info=progress2 --"
+alias rscp="rsync -avz --info=progress2 -h"
+alias rsmv="rsync -avz --info=progress2 -h --remove-source-files"
+alias rsup="rsync -avzu --info=progress2 -h"
+alias rssync="rsync -avzu --delete --info=progress2 -h"
 
 alias grep='grep --color'
 alias sgrep='grep -R -n -H -C 5 --exclude-dir={.git,.svn,CVS} '
@@ -123,27 +119,9 @@ alias v='nvim -p'
 # cpath
 export CPATH=`xcrun --show-sdk-path`/usr/include
 
-# >>> conda initialize >>>
-# !! Contents within this block are managed by 'conda init' !!
-__conda_setup="$('/Users/isty2e/anaconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
-if [ $? -eq 0 ]; then
-    eval "$__conda_setup"
-else
-    if [ -f "/Users/isty2e/anaconda3/etc/profile.d/conda.sh" ]; then
-        . "/Users/isty2e/anaconda3/etc/profile.d/conda.sh"
-    else
-        export PATH="/Users/isty2e/anaconda3/bin:$PATH"
-    fi
-fi
-unset __conda_setup
 # <<< conda initialize <<<
 
-# homebrew
-export PATH=/usr/local/sbin:$PATH
-
-# pyscf
-# export PYTHONPATH=/Users/isty2e/Desktop/pyscf-1.3:$PYTHONPATH
-
+# iterm
 test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
 
 # fzf

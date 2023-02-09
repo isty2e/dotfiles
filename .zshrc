@@ -113,7 +113,10 @@ alias ....='cd ../../../'
 alias .....='cd ../../../../'
 
 # vim
-alias vim='nvim'
+if command -v nvim &> /dev/null
+then
+    alias vim='nvim'
+fi
 alias vi='nvim'
 alias v='nvim -p'
 

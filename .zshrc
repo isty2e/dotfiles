@@ -72,6 +72,7 @@ if ! zgen saved; then
 
     # completions
     zgen load zsh-users/zsh-completions src
+    zgen load Aloxaf/fzf-tab
 
     # save all to init script
     zgen save

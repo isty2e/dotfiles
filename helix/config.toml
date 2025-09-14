@@ -1,0 +1,98 @@
+theme = "papercolor-light"
+
+# === Helix Colemak 전용 리바인딩 ===
+
+# ---------- NORMAL ----------
+[keys.normal]
+h = "move_char_left"        # ←
+i = "move_char_right"       # →
+e = "move_visual_line_up"   # ↑
+n = "move_visual_line_down" # ↓
+
+N = "join_selections"
+
+u = "insert_mode" # insert
+l = "undo"        # undo
+L = "redo"        # redo
+
+k = "search_next" # 다음 검색 결과
+K = "search_prev" # 이전 검색 결과
+
+j = "move_next_word_end"      # 단어 끝(e)로
+J = "move_next_long_word_end" # 긴 단어 끝(E)로
+
+I = "no_op"                # 오타 방지
+U = "insert_at_line_start"
+
+# ---------- SELECT (VISUAL) ----------
+[keys.select]
+h = "extend_char_left"
+i = "extend_char_right"
+e = "extend_visual_line_up"
+n = "extend_visual_line_down"
+
+N = "join_selections"
+
+u = "insert_mode"
+l = "undo"
+L = "redo"
+
+k = "extend_search_next"
+K = "extend_search_prev"
+
+j = "extend_next_word_end"
+J = "extend_next_long_word_end"
+
+I = "no_op"
+U = "no_op"
+
+# ---------- INSERT ----------
+[keys.insert]
+# 원하면 화살표키 무력화/노말 복귀 등을 여기 추가
+# 예시) 'jk'로 노말 복귀:
+# j = { k = "normal_mode" }
+
+# ---------- 'g' 마이너 모드 ----------
+# QWERTY h/j/k/l 가정으로 배치된 기본 g-명령을
+# Colemak 홈로우에서 덜 헷갈리게 재배열.
+[keys.normal.g]
+n = "move_line_down"
+e = "move_line_up"
+i = "goto_line_end"
+l = "goto_implementation"
+k = "goto_next_buffer"
+j = "goto_last_line"
+
+[keys.select.g]
+n = "extend_line_down"
+e = "extend_line_up"
+i = "goto_line_end"
+l = "goto_implementation"
+k = "goto_next_buffer"
+j = "extend_to_last_line"
+
+[keys.normal."C-w"]
+# 이동 (HNEI)
+h = "jump_view_left"
+n = "jump_view_down"
+e = "jump_view_up"
+i = "jump_view_right"
+
+# 스왑 (대문자 HNEI)
+H = "swap_view_left"
+N = "swap_view_down"
+E = "swap_view_up"
+I = "swap_view_right"
+
+[keys.select."C-w"]
+# 이동 (HNEI)
+h = "jump_view_left"
+n = "jump_view_down"
+e = "jump_view_up"
+i = "jump_view_right"
+
+# 스왑 (대문자 HNEI)
+H = "swap_view_left"
+N = "swap_view_down"
+E = "swap_view_up"
+I = "swap_view_right"

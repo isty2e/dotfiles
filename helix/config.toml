@@ -1,5 +1,8 @@
 theme = "papercolor-light"
 
+[editor]
+true-color = true
+
 # === Helix Colemak 전용 리바인딩 ===
 
 # ---------- NORMAL ----------

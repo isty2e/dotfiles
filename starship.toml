@@ -1,8 +1,27 @@
 palette = "catppuccin_latte"
 add_newline = true
-format = """
-$character"""
-right_format = "$all"
+format = """$all $character"""
+# right_format = "$directory"
+right_format = "${custom.rpwd_nfc}"
+
+[custom.rpwd_nfc]
+when = true
+shell = ["sh"]
+command = '''
+p="$PWD"
+case "$p" in
+  "$HOME") p="~" ;;
+  "$HOME"/*) p="~${p#"$HOME"}" ;;
+esac
+
+if [ "$(uname -s)" = "Darwin" ]; then
+  printf '%s' "$p" | iconv -f UTF-8-MAC -t UTF-8
+else
+  printf '%s' "$p"
+fi
+'''
+format = "[$output]($style)"
+style = "bold cyan"
 
 [aws]
 symbol = "  "
@@ -53,6 +72,7 @@ symbol = " "
 format = '\[[$symbol($version)]($style)\]'
 
 [directory]
+disabled = true
 read_only = " 󰌾"
 truncation_length = 10
 truncate_to_repo = false

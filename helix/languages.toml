@@ -9,3 +9,7 @@ args = ["server"]
 
 [language-server.basedpyright.config]
 basedpyright.analysis.typeCheckingMode = "standard"
+
+[language.formatter]
+command = "ruff"
+args = ["format", "-"]

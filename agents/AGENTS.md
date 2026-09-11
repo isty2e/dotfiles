@@ -230,6 +230,8 @@ For non-trivial implementation and root-cause remediation:
 - Do not test documentation by asserting that it contains specific prose, or API surfaces by asserting symbol
   presence/absence. Test behavior and contracts through executable examples, imports/calls, type/interface checks, or
   generated artifacts. If literal output is itself a contract, test its producer, not its documentation.
+- Treat code as readable paragraphs: separate coherent phases and logical groups with blank lines, including within
+  functions; do not pack unrelated steps into one uninterrupted block.
 - While subagents run, remain responsive to the user and continue independent work; do not block solely to wait for
   them.
 

@@ -42,6 +42,7 @@ source = { git = "https://github.com/Standigm/agent-commons.git", path = "skills
 names = [
   "adaptive-delegation",
   "durable-knowledge",
+  "github-math-comment",
   "kata-task-management",
   "typst-author",
 ]

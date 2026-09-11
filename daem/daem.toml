@@ -1,0 +1,77 @@
+version = 1
+targets = ["codex", "claude-code", "antigravity-cli"]
+
+[defaults]
+scope = "global"
+install_mode = "copy"
+
+[instructions.global]
+source = { git = "https://github.com/isty2e/dotfiles.git", path = "agents/AGENTS.md", ref = "main" }
+targets = ["codex", "claude-code", "opencode", "pi", "antigravity-cli"]
+
+[[skill_group]]
+names = [
+  "agent-guidance-compressor",
+  "audit-code-doc-style",
+  "code-review-vector",
+  "compatibility-audit",
+  "contract-representation-audit",
+  "decision-alignment",
+  "degradation-contract-audit",
+  "edge-hunt-campaign",
+  "engineering-style-contract",
+  "humanizer",
+  "invariant-driven-design",
+  "jaxtyping-guardrails",
+  "lean-ontology",
+  "lean-prune-review",
+  "lean-prune-scan",
+  "model-responsibility-audit",
+  "ontology-hardening",
+  "operational-invariant-audit",
+  "optional-backend-test-strategy",
+  "package-taxonomy",
+  "python-style-contract",
+  "scholarly-reference-integrity",
+  "stack-hygiene-autosquash",
+  "verification-before-completion",
+]
+source = { git = "https://github.com/Standigm/agent-commons.git", path = "skills", ref = "main" }
+
+[[skill_group]]
+names = [
+  "adaptive-delegation",
+  "durable-knowledge",
+  "kata-task-management",
+  "typst-author",
+]
+source = { git = "https://github.com/isty2e/agent-skills.git", path = ".", ref = "main" }
+
+[[skill]]
+name = "ast-grep"
+source = { git = "https://github.com/ast-grep/agent-skill.git", path = "ast-grep/skills/ast-grep", ref = "main" }
+
+[[skill]]
+name = "identedit"
+source = { git = "https://github.com/isty2e/identedit.git", path = "skills/identedit", ref = "main" }
+
+[[skill]]
+name = "oracle"
+source = { git = "https://github.com/steipete/oracle.git", path = "skills/oracle", ref = "main" }
+
+[[skill]]
+name = "repren"
+source = { git = "https://github.com/jlevy/repren.git", path = "repren/skills", ref = "master" }
+
+[[skill]]
+name = "daem"
+source = { git = "https://github.com/isty2e/daem.git", path = "skills/daem", ref = "v0.2.1" }
+targets = ["codex", "claude-code", "pi", "antigravity-cli"]
+
+[skill.target.pi]
+install_to = "~/.agents/skills"
+
+[[skill]]
+name = "pi-subagent-review-process"
+source = { git = "https://github.com/isty2e/agent-skills.git", path = "pi-subagent-review-process", ref = "main" }
+targets = ["pi"]

@@ -66,7 +66,7 @@ source = { git = "https://github.com/jlevy/repren.git", path = "repren/skills", 
 
 [[skill]]
 name = "daem"
-source = { git = "https://github.com/isty2e/daem.git", path = "skills/daem", ref = "v0.2.1" }
+source = { git = "https://github.com/isty2e/daem.git", path = "skills/daem", ref = "main" }
 targets = ["codex", "claude-code", "pi", "antigravity-cli"]
 
 [skill.target.pi]
@@ -76,3 +76,12 @@ install_to = "~/.agents/skills"
 name = "pi-subagent-review-process"
 source = { git = "https://github.com/isty2e/agent-skills.git", path = "pi-subagent-review-process", ref = "main" }
 targets = ["pi"]
+
+
+
+[[extension]]
+id = "memlet"
+carrier = "pi-package"
+targets = ["pi"]
+scope = "global"
+source = { host_source = "git:github.com/isty2e/pi-memlet@d094d0eb1144e013c55b1fda01acb04f10ed1ada" }

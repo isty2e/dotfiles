@@ -84,4 +84,4 @@ id = "memlet"
 carrier = "pi-package"
 targets = ["pi"]
 scope = "global"
-source = { host_source = "git:github.com/isty2e/pi-memlet@d094d0eb1144e013c55b1fda01acb04f10ed1ada" }
+source = { host_source = "git:github.com/isty2e/pi-memlet@1ce6419b7930181331950433ae039b2715a71d18" }

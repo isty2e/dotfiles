@@ -247,7 +247,7 @@ For non-trivial implementation and root-cause remediation:
 ### Pi Coding Agent
 
 - In the Pi coding agent, `fetch_content(mode: "answer")` must use
-  `answerModel: "openai-codex/gpt-5.6-luna"` without a thinking suffix.
+  `answerModel: "openai-codex/gpt-6-luna"` without a thinking suffix.
 - When running `code-review-vector` with Pi subagents, load and apply `pi-subagent-review-process`; follow its full
   Procedure exactly rather than substituting an ad hoc fanout.
 

@@ -10,6 +10,10 @@ ln -s dotfiles/.vimrc ~/.vimrc
 ln -s dotfiles/.vim ~/.vim
 ```
 
+## Pi themes
+
+See [Pi PaperColor themes](pi/README.md) for installation and palette details.
+
 ## brew
 
 ```bash

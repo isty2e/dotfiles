@@ -196,10 +196,3 @@ carrier = "pi-package"
 targets = ["pi"]
 scope = "global"
 source = { host_source = "npm:@benvargas/pi-openai-fast" }
-
-[[extension]]
-id = "pi-whiteboard"
-carrier = "pi-package"
-targets = ["pi"]
-scope = "global"
-source = { host_source = "npm:@dev.fast/pi-whiteboard" }

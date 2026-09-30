@@ -77,11 +77,122 @@ name = "pi-subagent-review-process"
 source = { git = "https://github.com/isty2e/agent-skills.git", path = "pi-subagent-review-process", ref = "main" }
 targets = ["pi"]
 
+# Pi package declaration order defines runtime precedence. Preserve this sequence.
+[[extension]]
+id = "pi-mcp-adapter"
+carrier = "pi-package"
+targets = ["pi"]
+scope = "global"
+source = { host_source = "npm:pi-mcp-adapter" }
 
+[[extension]]
+id = "pi-subagents"
+carrier = "pi-package"
+targets = ["pi"]
+scope = "global"
+source = { host_source = "npm:pi-subagents" }
+
+[[extension]]
+id = "pi-web-access"
+carrier = "pi-package"
+targets = ["pi"]
+scope = "global"
+source = { host_source = "npm:pi-web-access" }
+
+[[extension]]
+id = "pi-curated-themes"
+carrier = "pi-package"
+targets = ["pi"]
+scope = "global"
+source = { host_source = "npm:@victor-software-house/pi-curated-themes" }
+
+[[extension]]
+id = "pi-codex-conversion"
+carrier = "pi-package"
+targets = ["pi"]
+scope = "global"
+source = { host_source = "npm:@howaboua/pi-codex-conversion" }
+
+[[extension]]
+id = "pi-codex-web-run"
+carrier = "pi-package"
+targets = ["pi"]
+scope = "global"
+source = { host_source = "npm:@howaboua/pi-codex-web-run" }
+
+[[extension]]
+id = "pi-codex-imagegen"
+carrier = "pi-package"
+targets = ["pi"]
+scope = "global"
+source = { host_source = "npm:@howaboua/pi-codex-imagegen" }
+
+[[extension]]
+id = "pi-codex-goal"
+carrier = "pi-package"
+targets = ["pi"]
+scope = "global"
+source = { host_source = "npm:pi-codex-goal" }
+
+[[extension]]
+id = "pi-effort"
+carrier = "pi-package"
+targets = ["pi"]
+scope = "global"
+source = { host_source = "npm:pi-effort" }
+
+[[extension]]
+id = "pi-cursor"
+carrier = "pi-package"
+targets = ["pi"]
+scope = "global"
+source = { host_source = "npm:@rahularya01/pi-cursor" }
+
+[[extension]]
+id = "pi-alternative-compositor"
+carrier = "pi-package"
+targets = ["pi"]
+scope = "global"
+source = { host_source = "git:github.com/ejx537/pi-alternative-compositor" }
+
+[[extension]]
+id = "pi-open-tui"
+carrier = "pi-package"
+targets = ["pi"]
+scope = "global"
+source = { host_source = "npm:pi-open-tui" }
+
+[[extension]]
+id = "pi-transcript-ui"
+carrier = "pi-package"
+targets = ["pi"]
+scope = "global"
+source = { host_source = "npm:pi-transcript-ui" }
+
+[[extension]]
+id = "sol-pi"
+carrier = "pi-package"
+targets = ["pi"]
+scope = "global"
+source = { host_source = "git:github.com/NVlabs/SoL-Pi" }
+
+[[extension]]
+id = "pi-code-previews"
+carrier = "pi-package"
+targets = ["pi"]
+scope = "global"
+source = { host_source = "npm:pi-code-previews" }
 
 [[extension]]
 id = "memlet"
 carrier = "pi-package"
 targets = ["pi"]
 scope = "global"
-source = { host_source = "git:github.com/isty2e/pi-memlet@1ce6419b7930181331950433ae039b2715a71d18" }
+source = { host_source = "git:github.com/isty2e/pi-memlet@main" }
+
+[[extension]]
+id = "pi-openai-fast"
+carrier = "pi-package"
+targets = ["pi"]
+scope = "global"
+source = { host_source = "npm:@benvargas/pi-openai-fast" }

@@ -1,3 +1,7 @@
+# Managed in https://github.com/isty2e/dotfiles (daem/daem.toml).
+# Keep the tracked copy and ~/.config/daem/daem.toml in sync after edits.
+# Run daem lock/apply from the user manifest; keep lockfile and state local.
+
 version = 1
 targets = ["codex", "claude-code", "antigravity-cli"]
 
@@ -44,6 +48,7 @@ names = [
   "durable-knowledge",
   "github-math-comment",
   "kata-task-management",
+  "public-repo-docs",
   "typst-author",
 ]
 source = { git = "https://github.com/isty2e/agent-skills.git", path = ".", ref = "main" }
@@ -128,13 +133,6 @@ scope = "global"
 source = { host_source = "npm:@howaboua/pi-codex-imagegen" }
 
 [[extension]]
-id = "pi-codex-goal"
-carrier = "pi-package"
-targets = ["pi"]
-scope = "global"
-source = { host_source = "npm:pi-codex-goal" }
-
-[[extension]]
 id = "pi-effort"
 carrier = "pi-package"
 targets = ["pi"]
@@ -147,13 +145,6 @@ carrier = "pi-package"
 targets = ["pi"]
 scope = "global"
 source = { host_source = "npm:@rahularya01/pi-cursor" }
-
-[[extension]]
-id = "pi-alternative-compositor"
-carrier = "pi-package"
-targets = ["pi"]
-scope = "global"
-source = { host_source = "git:github.com/ejx537/pi-alternative-compositor" }
 
 [[extension]]
 id = "pi-open-tui"
@@ -196,3 +187,10 @@ carrier = "pi-package"
 targets = ["pi"]
 scope = "global"
 source = { host_source = "npm:@benvargas/pi-openai-fast" }
+
+[[extension]]
+id = "pi-goal-next"
+carrier = "pi-package"
+targets = ["pi"]
+scope = "global"
+source = { host_source = "npm:@astrosheep/pi-goal-next" }

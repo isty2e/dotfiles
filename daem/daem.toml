@@ -48,6 +48,7 @@ names = [
   "durable-knowledge",
   "github-math-comment",
   "kata-task-management",
+  "public-repo-docs",
   "typst-author",
 ]
 source = { git = "https://github.com/isty2e/agent-skills.git", path = ".", ref = "main" }
@@ -193,7 +194,3 @@ carrier = "pi-package"
 targets = ["pi"]
 scope = "global"
 source = { host_source = "npm:@astrosheep/pi-goal-next" }
-
-[[skill]]
-name = "public-repo-docs"
-source = { git = "https://github.com/isty2e/agent-skills.git", path = "public-repo-docs", ref = "main" }

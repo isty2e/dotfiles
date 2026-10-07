@@ -194,3 +194,10 @@ carrier = "pi-package"
 targets = ["pi"]
 scope = "global"
 source = { host_source = "npm:@astrosheep/pi-goal-next" }
+
+[[extension]]
+id = "pi-codex-ultra"
+carrier = "pi-package"
+targets = ["pi"]
+scope = "global"
+source = { host_source = "git:github.com/isty2e/pi-codex-ultra@main" }

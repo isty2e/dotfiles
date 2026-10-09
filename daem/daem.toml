@@ -182,11 +182,11 @@ scope = "global"
 source = { host_source = "git:github.com/isty2e/pi-memlet@main" }
 
 [[extension]]
-id = "pi-openai-fast"
+id = "pi-fast-mode"
 carrier = "pi-package"
 targets = ["pi"]
 scope = "global"
-source = { host_source = "npm:@benvargas/pi-openai-fast" }
+source = { host_source = "npm:@pi-plugins/fast-mode" }
 
 [[extension]]
 id = "pi-goal-next"

@@ -238,13 +238,12 @@ For non-trivial implementation and root-cause remediation:
 ### Records And Memory
 
 - Single source of truth: elsewhere, link the source with at most a headline instead of copying it.
-- Harness-native memory is visible to one harness only, best-effort, and may be stale. Never make it the only record of
+- Harness memory is visible to one harness only, best-effort, and may be stale. Never make it the only record of
   anything another agent or a later session needs; keep shared facts with their canonical owners. Treat recalled
   memory as a lookup hint and verify facts at the owner before acting. A memory failure never blocks work.
-- Canonical owners: Kata, repository documents, `durable-knowledge`, and this file for standing preferences. Use native
-  memory (Claude Code memory files, Pi memlet) only for harness- or machine-specific operating notes and pointers to
-  those owners. A user-stated preference may wait there until the user approves adding it here; then delete the memory
-  copy.
+- Canonical owners: Kata, repository documents, `durable-knowledge`, and this file for standing preferences. Use
+  harness memory only for harness- or machine-specific operating notes and pointers to those owners. A user-stated
+  preference may wait there until the user approves adding it here; then delete the memory copy.
 
 ### Public GitHub
 

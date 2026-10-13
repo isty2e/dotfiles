@@ -1,6 +1,6 @@
 # AGENTS.md
 
-<!-- BASE: Standigm/agent-commons@54e9fb9 -->
+<!-- BASE: Standigm/agent-commons@f95b544 -->
 
 Repository-agnostic working rules for coding agents.
 
@@ -106,12 +106,17 @@ For non-trivial implementation and root-cause remediation:
        constraint, enforcement, or verification requirement
    - NON-GOALS do not block by themselves; review novelty does not expand the correctness boundary
    - unresolved questions block only when plausible answers materially change the accepted boundary or design
-   - proceed only with no accepted Guarantee violation, blocking Unknown, or unresolved boundary-changing decision.
+   - proceed to implementation when, and only when, implementation is authorized and no accepted Guarantee violation,
+     blocking Unknown, or unresolved boundary-changing decision remains.
+   - for design-only work, complete the applicable design review and report the design without implementing.
 5. Implement and re-review: implement the accepted plan, then run a diff-anchored `code-review-vector`. Treat review
    output as candidate evidence; repeat the applicable cycle only after its disposition warrants a boundary or design
    change.
 6. Follow sibling paths: return to evidence and design only when another supported path can materially establish,
    violate, bypass, or restore an accepted Guarantee; never handle that path in isolation.
+
+Once required review and verification are satisfied and no repeat or supported-sibling return is required, proceed to
+reporting or the next authorized delivery step.
 
 ## Engineering Baseline
 
@@ -173,8 +178,12 @@ For non-trivial implementation and root-cause remediation:
 - Result reuse:
   - a route names a decision owner, not an unconditional workflow restart
   - inspect the result and evidence; reuse only while its decision, scope, governing rules, inputs, and supporting
-    evidence remain applicable; uncertainty requires revalidation
-  - changes reopen affected decisions and dependent results, not unrelated valid work
+    evidence remain applicable
+  - before reopening a settled decision or repeating a completed review, identify the specific decision, scope,
+    governing rule, input, or supporting evidence that changed or whose applicability is uncertain; without such a
+    basis, reuse the applicable result
+  - a changed or uncertain item reopens only the decisions and dependent results it can materially affect, not unrelated
+    valid work
   - preserve mandatory phases and distinct checks: never skip a required first pass, substitute plan review for diff
     review, or weaken a stronger gate
   - use `verification-before-completion` for command-evidence validity and delegated-work completion.

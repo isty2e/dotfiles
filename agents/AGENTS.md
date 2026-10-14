@@ -1,6 +1,7 @@
 # AGENTS.md
 
 <!-- BASE: Standigm/agent-commons@f95b544 -->
+<!-- EARLY_ADOPTION: Standigm/agent-commons#56@a0f3fea -->
 
 Repository-agnostic working rules for coding agents.
 
@@ -117,6 +118,24 @@ For non-trivial implementation and root-cause remediation:
 
 Once required review and verification are satisfied and no repeat or supported-sibling return is required, proceed to
 reporting or the next authorized delivery step.
+
+### Execution Unit
+
+- Apply the design and plan-attack cycle per accepted design unit, not per implementation instance. Survey known members
+  and their interactions before defining membership or admission, shared contracts, and supported variants; identify
+  distinct-contract members and shared-state or lifecycle obligations during design.
+- For each instance, confirm that it and its interactions fit that rule. Reuse applicable design and plan-attack
+  results; perform targeted checks on the new implementation. Admission does not reuse implementation-review results.
+- Before delivering changes, closing the unit, or relying on the changes in dependent implementation, review the
+  accumulated unreviewed diff and affected shared boundaries and interactions. Reuse applicable prior reviews. Joint
+  design work may proceed; use coherent review increments when one review cannot meaningfully cover the changes.
+- When an instance falls outside admission or materially changes a shared contract, owner, representation, lifecycle,
+  persistence, or dependency, reopen affected decisions and reviews and re-check affected members and dependent units.
+  Do not restart unrelated valid work.
+- Before committing shared-state or lifecycle decisions, account for obligations from supported siblings and accepted
+  planned work when later accommodation would invalidate accepted members. Do not generalize for imagined siblings.
+- Batch system-level verification where it covers the required members and interactions; retain targeted checks per
+  change and reuse results only while their inputs and supporting evidence remain applicable.
 
 ## Engineering Baseline
 

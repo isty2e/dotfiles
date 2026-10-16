@@ -60,7 +60,7 @@ source = { git = "https://github.com/ast-grep/agent-skill.git", path = "ast-grep
 
 [[skill]]
 name = "identedit"
-source = { git = "https://github.com/isty2e/identedit.git", path = "skills/identedit", ref = "v0.5.1" }
+source = { git = "https://github.com/isty2e/identedit.git", path = "skills/identedit", ref = "main" }
 
 [[skill]]
 name = "oracle"

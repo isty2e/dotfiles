@@ -49,6 +49,7 @@ names = [
   "github-math-comment",
   "kata-task-management",
   "public-repo-docs",
+  "research-steering",
   "typst-author",
 ]
 source = { git = "https://github.com/isty2e/agent-skills.git", path = ".", ref = "main" }
@@ -59,7 +60,7 @@ source = { git = "https://github.com/ast-grep/agent-skill.git", path = "ast-grep
 
 [[skill]]
 name = "identedit"
-source = { git = "https://github.com/isty2e/identedit.git", path = "skills/identedit", ref = "main" }
+source = { git = "https://github.com/isty2e/identedit.git", path = "skills/identedit", ref = "v0.5.1" }
 
 [[skill]]
 name = "oracle"

@@ -134,13 +134,6 @@ scope = "global"
 source = { host_source = "npm:@howaboua/pi-codex-imagegen" }
 
 [[extension]]
-id = "pi-cursor"
-carrier = "pi-package"
-targets = ["pi"]
-scope = "global"
-source = { host_source = "npm:@rahularya01/pi-cursor" }
-
-[[extension]]
 id = "pi-open-tui"
 carrier = "pi-package"
 targets = ["pi"]

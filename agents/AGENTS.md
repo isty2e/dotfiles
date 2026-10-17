@@ -1,7 +1,6 @@
 # AGENTS.md
 
-<!-- BASE: Standigm/agent-commons@f95b544 -->
-<!-- EARLY_ADOPTION: Standigm/agent-commons#56@a0f3fea -->
+<!-- BASE: Standigm/agent-commons@ac75304363ef71ddf5604bb07d87cdcce1fdf019 -->
 
 Repository-agnostic working rules for coding agents.
 
@@ -88,7 +87,33 @@ Repository-agnostic working rules for coding agents.
 
 ## Implementation and Remediation
 
-For non-trivial implementation and root-cause remediation:
+### Applicability and Depth
+
+Choose work by the material decisions and evidence it needs, not diff size or a preference for more process.
+
+- For a local restoration of an accepted contract that needs no new material design decision, check the symptom, root
+  cause, and affected caller/sibling paths; run a diff-anchored `code-review-vector` starting from those contracts and paths,
+  and relevant regression and repository checks. Do not start a new design ledger or full design cycle solely because
+  this is a bug fix.
+- For an implementation admitted by an accepted design unit, confirm admission and reuse applicable design and
+  plan-attack results under `Execution Unit`. New code still needs a diff-anchored `code-review-vector` and verification.
+- Use the design cycle below for new or materially revised Guarantees, assumptions, ownership, representation,
+  enforcement, lifecycle, dependencies, or verification decisions. An unchanged API or contract does not establish that
+  those decisions are unchanged; a one-line retry around a durable write can require fresh design.
+
+For other maintained implementation, identify the design decisions it introduces. If brief discovery establishes none
+is material, state that basis and use the diff review and checks above. Otherwise, use the cycle for the new/revised
+decisions or to resolve material uncertainty before implementation. Current behavior or resemblance to existing code is
+not an acceptance/admission basis by itself.
+
+State the local, non-material, or reuse basis briefly in the existing task context. Explicitly required
+fresh/deeper review and other applicable gates still apply. Applying a skill means doing its required judgments and
+checks, not merely loading it or writing a receipt; existing notes and evidence suffice without a separate file, table,
+or report per gate.
+
+### Design Cycle
+
+For work requiring new or materially revised design decisions:
 
 1. Establish evidence and boundary: collect requirements, current behavior, relevant callers and consumers,
    state/lifecycle, and failure/recovery semantics; include a finding's symptom. Cited lines and failing probes trigger
@@ -98,18 +123,10 @@ For non-trivial implementation and root-cause remediation:
 3. Attack: first run `code-review-vector` directly, without subagents, in plan-attack mode against accepted Guarantees
    and supported paths. This mandatory first pass does not prohibit separate read-only subagent review; the parent
    validates its evidence and dispositions the resulting candidates.
-4. Gate:
-   - validate and disposition every finding before it changes scope
-   - reset the applicable pass only for:
-     - a validated accepted-Guarantee violation
-     - a candidate accepted by authorized disposition
-     - evidence materially changing an accepted Guarantee, assumption, authority, boundary, architecture, derived
-       constraint, enforcement, or verification requirement
-   - NON-GOALS do not block by themselves; review novelty does not expand the correctness boundary
-   - unresolved questions block only when plausible answers materially change the accepted boundary or design
-   - proceed to implementation when, and only when, implementation is authorized and no accepted Guarantee violation,
-     blocking Unknown, or unresolved boundary-changing decision remains.
-   - for design-only work, complete the applicable design review and report the design without implementing.
+4. Gate: validate and disposition every finding before it changes scope. Apply `invariant-driven-design`'s plan
+   acceptance and reset conditions. Implement only when authorized and no accepted Guarantee violation, blocking
+   Unknown, or unresolved boundary-changing decision remains. For design-only work, complete the applicable review and
+   report without implementing.
 5. Implement and re-review: implement the accepted plan, then run a diff-anchored `code-review-vector`. Treat review
    output as candidate evidence; repeat the applicable cycle only after its disposition warrants a boundary or design
    change.
@@ -150,8 +167,9 @@ reporting or the next authorized delivery step.
 
 ## Python Guidelines
 
-- For every Python creation, edit, refactor, or review, apply `python-style-contract`; complete its mechanical gate,
-  structural dispositions, and repository checks before claiming completion.
+- For Python creation, edit, refactor, or review within `python-style-contract`'s maintained-code scope, apply that skill
+  and complete its mechanical gate, structural dispositions, and repository checks before claiming completion. Its
+  task-only helper exemption does not waive other applicable verification or approval requirements.
 - Apply `audit-code-doc-style` when its current trigger matches; it owns documentation scope, format, and audit
   procedure.
 - Prefer `pathlib.Path` over raw string paths.
@@ -210,9 +228,10 @@ reporting or the next authorized delivery step.
   public/API contracts, domain models or ontologies, lifecycle or persistence, operational risk, cross-component
   ownership, or material compatibility. It does not default on for exploratory research unless the work selects an
   implementation, operationalizes a method, makes a public claim, or sets an adoption or deployment boundary.
-- Opt out only for a simple or throwaway script, non-production tooling, mechanical or documentation-only work, or an
-  isolated routine fix without a material correctness boundary. State the assumption briefly; keep the skill active when
-  the boundary is ambiguous. Apply it proportionally without needless ledger or design ceremony.
+- Opt out only when no new material design decision is needed under `Applicability and Depth`, as with task-only
+  helpers, mechanical/documentation work, or local restoration of an accepted contract. State the assumption briefly;
+  keep the skill active when material design questions remain unresolved. This default selects the decision owner, not
+  a fresh full cycle when `Implementation and Remediation` permits local restoration or valid reuse.
 - When relevant, use this confinement pipeline; each phase constrains the next:
   1. Semantics: active `invariant-driven-design` and `ontology-hardening` establish candidate properties, typed
      partitions, canonical boundaries, and accepted Guarantee semantics.

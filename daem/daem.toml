@@ -40,7 +40,7 @@ names = [
   "stack-hygiene-autosquash",
   "verification-before-completion",
 ]
-source = { git = "https://github.com/Standigm/agent-commons.git", path = "skills", ref = "main" }
+source = { git = "https://github.com/Standigm/agent-commons.git", path = "skills", ref = "ac75304363ef71ddf5604bb07d87cdcce1fdf019" }
 
 [[skill_group]]
 names = [
@@ -132,13 +132,6 @@ carrier = "pi-package"
 targets = ["pi"]
 scope = "global"
 source = { host_source = "npm:@howaboua/pi-codex-imagegen" }
-
-[[extension]]
-id = "pi-effort"
-carrier = "pi-package"
-targets = ["pi"]
-scope = "global"
-source = { host_source = "npm:pi-effort" }
 
 [[extension]]
 id = "pi-cursor"

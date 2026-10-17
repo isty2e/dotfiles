@@ -10,7 +10,7 @@ scope = "global"
 install_mode = "copy"
 
 [instructions.global]
-source = { git = "https://github.com/isty2e/dotfiles.git", path = "agents/AGENTS.md", ref = "8bdb3d39545ca33c30cf1c3512cdf45715d12187" }
+source = { git = "https://github.com/isty2e/dotfiles.git", path = "agents/AGENTS.md", ref = "main" }
 targets = ["codex", "claude-code", "opencode", "pi", "antigravity-cli"]
 
 [[skill_group]]
@@ -52,7 +52,7 @@ names = [
   "research-steering",
   "typst-author",
 ]
-source = { git = "https://github.com/isty2e/agent-skills.git", path = ".", ref = "5d7882aada61b955b441d0708196c63d6fad5b56" }
+source = { git = "https://github.com/isty2e/agent-skills.git", path = ".", ref = "main" }
 
 [[skill]]
 name = "ast-grep"
@@ -80,7 +80,7 @@ install_to = "~/.agents/skills"
 
 [[skill]]
 name = "pi-subagent-review-process"
-source = { git = "https://github.com/isty2e/agent-skills.git", path = "pi-subagent-review-process", ref = "5d7882aada61b955b441d0708196c63d6fad5b56" }
+source = { git = "https://github.com/isty2e/agent-skills.git", path = "pi-subagent-review-process", ref = "main" }
 targets = ["pi"]
 
 # Pi package declaration order defines runtime precedence. Preserve this sequence.

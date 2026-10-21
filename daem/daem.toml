@@ -40,7 +40,7 @@ names = [
   "stack-hygiene-autosquash",
   "verification-before-completion",
 ]
-source = { git = "https://github.com/Standigm/agent-commons.git", path = "skills", ref = "ac75304363ef71ddf5604bb07d87cdcce1fdf019" }
+source = { git = "https://github.com/Standigm/agent-commons.git", path = "skills", ref = "main" }
 
 [[skill_group]]
 names = [

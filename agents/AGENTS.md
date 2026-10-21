@@ -1,12 +1,17 @@
 # AGENTS.md
 
-<!-- BASE: Standigm/agent-commons@ac75304363ef71ddf5604bb07d87cdcce1fdf019 -->
+<!-- BASE: Standigm/agent-commons@24a70f608aa37132c447c73aa1d6df8cd0ab7825 -->
+<!-- EARLY_ADOPTION: Standigm/agent-commons#58@170e62a028dfce349d52c715a9277fb0eaaa493c -->
 
 Repository-agnostic working rules for coding agents.
 
 ## General
 
 - Use Conventional Commits for commit subjects and PR titles: `type(scope): summary`, with scope optional.
+- In user-facing conversation, use terminology a domain-knowledgeable reader can understand without the session history.
+  Prefer established terms over project- or session-local shorthand; repeated use alone does not justify abbreviation.
+  When an exact label, code identifier, or mathematical symbol is needed for reference, make its meaning clear in the
+  current explanation; do not use it as a substitute for the concept's name in ordinary discussion.
 - Verify uncertain external facts against web or primary documentation.
 - Avoid recursive search or enumeration from broad roots such as `$HOME` or `/`: cost may be unbounded. Search known
   workspaces, repositories, or paths with `rg`/`rg --files`; if the target is unclear, ask. A necessary broad-root

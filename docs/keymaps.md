@@ -17,6 +17,8 @@ Native editor files own bindings; chezmoi handles placement, not semantic repair
 
 Retain a separate logical-line route. Helix's `g n / g e` is not a universal prefix requirement.
 
+Zed targets native `h/j/k/l` directional bindings by input role, regardless of their source file or whether they require Vim mode. Preserve specialized navigation operations rather than replacing them with generic cursor movement. Cycle tables describe configured overrides; editing, history, search, and literal-input rules remain scoped to their native input roles.
+
 ## Select bindings by intent
 
 1. Select by effective input role, action **and arguments**, operator/UI state, and native precedence—not by a key glyph or mode label alone.
@@ -51,6 +53,18 @@ Consequences of these cycles:
 
 Baseline: [25.07.1 defaults](https://github.com/helix-editor/helix/blob/25.07.1/helix-term/src/keymap/default.rs). Select inherits Normal except for its declared overrides. [Native trie merge](https://github.com/helix-editor/helix/blob/25.07.1/helix-term/src/keymap.rs) recursively merges branches but replaces a branch when overridden by a leaf.
 
+### Zed panels: source baseline 1.25.3
+
+| Native scope | Cycles |
+| --- | --- |
+| ProjectPanel and OutlinePanel, when not editing | `j → n → k → e → j`; `l ↔ i` |
+| Git Changes/History lists, excluding branch/repository selectors | `j → n → k → e → j` |
+| Git Changes tree under the same selector exclusions | `i → u → l → i` |
+
+Keep native left/collapse bindings. Project/Outline retain native Vim menu actions; Git retains its native menu actions. Vacated bindings are disabled with `null`. Rename/search/picker input is not translated.
+
+The Zed fixture checks these panel definitions and candidate-rule collection, not the remaining editor-mode overrides or actual runtime dispatch. Copied edit-prediction defaults are inherited from Zed rather than maintained here.
+
 ### Vim / Neovim / Zed Vim-normal references
 
 These are reference cycles, not a completed inventory for every mode or context.
@@ -77,5 +91,6 @@ Use `u` for Zed inner-object selection (`duw`) and retain Helix `m i`. The Helix
 | Universal transformer / key-generating template layer | Deferred; maintainer | Repeated native maintenance shows a stable useful abstraction |
 | Uniform command-alphabet translation | Not adopted; user | Explicitly accept its command-spelling changes |
 | chezmoi source-tree migration | Separate work; maintainer/user | Authorize filesystem handoff after independent keymap repair |
+| Zed version-mismatch test / update watcher | Not adopted; user | An automatic update-notification workflow is requested |
 | Scheduled repair / unattended apply / GUI automation | Not authorized; user | Approve the operating and verification model |
 | Neovim repository move / plugin overhaul | Separate work; user | An independent ownership or tooling decision |

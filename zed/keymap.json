@@ -210,28 +210,44 @@
     }
   },
   {
-    // netrw compatibility
     "context": "ProjectPanel && not_editing",
     "bindings": {
-      "n": "menu::SelectNext",
-      "e": "menu::SelectPrevious",
-      "i": "project_panel::ExpandSelectedEntry"
+      "n": "vim::MenuSelectNext",
+      "e": "vim::MenuSelectPrevious",
+      "i": "project_panel::ExpandSelectedEntry",
+      "j": null,
+      "k": null,
+      "l": null
     }
   },
   {
     "context": "OutlinePanel && not_editing",
     "bindings": {
-      "n": "menu::SelectNext",
-      "e": "menu::SelectPrevious"
+      "n": "vim::MenuSelectNext",
+      "e": "vim::MenuSelectPrevious",
+      "i": "outline_panel::ExpandSelectedEntry",
+      "j": null,
+      "k": null,
+      "l": null
     }
   },
   {
-    "context": "GitPanel && ChangesList",
+    "context": "GitPanel && (ChangesList || HistoryList) && !GitBranchSelector && !GitRepositorySelector",
     "use_key_equivalents": true,
     "bindings": {
-      "e": "menu::SelectPrevious",
       "n": "menu::SelectNext",
-      "u": "git_panel::FocusEditor"
+      "e": "menu::SelectPrevious",
+      "j": null,
+      "k": null
+    }
+  },
+  {
+    "context": "GitPanel && ChangesList && !GitBranchSelector && !GitRepositorySelector",
+    "use_key_equivalents": true,
+    "bindings": {
+      "i": "git_panel::ExpandSelectedEntry",
+      "u": "git_panel::FocusEditor",
+      "l": null
     }
   },
   {
@@ -246,15 +262,6 @@
     "context": "Picker > Editor",
     "bindings": {
       "ctrl-l": "editor::DeleteToBeginningOfLine"
-    }
-  },
-  {
-    "context": "os != macos && Editor && edit_prediction_conflict",
-    "bindings": {
-      // alt-l is provided as an alternative to tab/alt-tab. and will be displayed in the UI. This
-      // is because alt-tab may not be available, as it is often used for window switching on Linux
-      // and Windows.
-      "alt-l": "editor::AcceptEditPrediction"
     }
   }
 ]

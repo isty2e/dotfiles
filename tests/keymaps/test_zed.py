@@ -13,40 +13,32 @@ from typing import NotRequired, TypedDict, cast
 
 import json5
 
-from zed.compare_keymap import (
-    Binding as _Binding,
-)
-from zed.compare_keymap import (
-    JsonValue as _JsonValue,
-)
-from zed.compare_keymap import (
-    Keymap as _Keymap,
-)
-from zed.compare_keymap import (
-    collect_bindings as _collect_bindings,
-)
+if __package__:
+    from . import compare_zed as _comparison
+else:
+    import compare_zed as _comparison
 
 
 class _RuleData(TypedDict):
     source: str
-    metadata: dict[str, _JsonValue]
+    metadata: dict[str, _comparison.JsonValue]
     keystrokes: list[str]
-    action: _JsonValue
+    action: _comparison.JsonValue
     block: int
     binding: int
 
 
 class _ProfileData(TypedDict):
-    native_metadata: NotRequired[dict[str, _JsonValue]]
-    base_metadata: NotRequired[list[dict[str, _JsonValue]]]
-    overlap_variants: NotRequired[list[list[dict[str, _JsonValue]]]]
-    metadata: dict[str, _JsonValue]
+    native_metadata: NotRequired[dict[str, _comparison.JsonValue]]
+    base_metadata: NotRequired[list[dict[str, _comparison.JsonValue]]]
+    overlap_variants: NotRequired[list[list[dict[str, _comparison.JsonValue]]]]
+    metadata: dict[str, _comparison.JsonValue]
     cycles: list[list[str]]
     vacancies: list[str]
 
 
 class _SlotData(TypedDict):
-    metadata: dict[str, _JsonValue]
+    metadata: dict[str, _comparison.JsonValue]
     keystrokes: list[str]
 
 
@@ -70,7 +62,7 @@ class ZedNavigationTest(unittest.TestCase):
         fixture_path = test_dir / "fixtures" / "zed-1.25.3.json"
         self.fixture = cast(_Fixture, json.loads(fixture_path.read_text()))
         self.native = [
-            _Binding(
+            _comparison.Binding(
                 rule["source"],
                 rule["metadata"],
                 tuple(rule["keystrokes"]),
@@ -81,13 +73,13 @@ class ZedNavigationTest(unittest.TestCase):
             for rule in self.fixture["native_rules"]
         ]
         keymap_path = test_dir.parents[1] / "zed" / "keymap.json"
-        keymap = cast(_Keymap, json5.loads(keymap_path.read_text()))
-        self.user = _collect_bindings([("user", keymap)])
+        keymap = cast(_comparison.Keymap, json5.loads(keymap_path.read_text()))
+        self.user = _comparison.collect_bindings([("user", keymap)])
 
     def test_navigation_cycles_preserve_native_rules_and_vacancies(self) -> None:
         for profile in self.fixture["profiles"]:
             metadata = profile["metadata"]
-            variants: list[list[dict[str, _JsonValue]]] = [
+            variants: list[list[dict[str, _comparison.JsonValue]]] = [
                 [],
                 *profile.get("overlap_variants", []),
             ]
@@ -168,18 +160,22 @@ class ZedNavigationTest(unittest.TestCase):
 class ZedCandidateTest(unittest.TestCase):
     def test_argument_and_metadata_scalar_types_are_distinct(self) -> None:
         for field in ("action", "metadata"):
-            before = _Binding("base", {}, ("x",), ["move", {"flag": True}], 0, 0)
-            after = _Binding("base", {}, ("x",), ["move", {"flag": 1}], 0, 0)
+            before = _comparison.Binding(
+                "base", {}, ("x",), ["move", {"flag": True}], 0, 0
+            )
+            after = _comparison.Binding("base", {}, ("x",), ["move", {"flag": 1}], 0, 0)
             if field == "metadata":
-                before = _Binding(
+                before = _comparison.Binding(
                     "base", {"use_key_equivalents": True}, ("x",), None, 0, 0
                 )
-                after = _Binding("base", {"use_key_equivalents": 1}, ("x",), None, 0, 0)
+                after = _comparison.Binding(
+                    "base", {"use_key_equivalents": 1}, ("x",), None, 0, 0
+                )
             with self.subTest(field=field):
                 self.assertNotEqual(before, after)
 
     def test_prefix_family_order_metadata_and_arguments_are_preserved(self) -> None:
-        blocks: _Keymap = [
+        blocks: _comparison.Keymap = [
             {
                 "context": "Editor",
                 "bindings": {
@@ -196,7 +192,7 @@ class ZedCandidateTest(unittest.TestCase):
             },
         ]
         watched = (("g", "n"),)
-        rules = _collect_bindings([("base", blocks)], watched)
+        rules = _comparison.collect_bindings([("base", blocks)], watched)
         self.assertEqual(
             [rule.keystrokes for rule in rules],
             [("g",), ("g", "n"), ("g", "n", "x"), ("g", "n")],
@@ -205,31 +201,37 @@ class ZedCandidateTest(unittest.TestCase):
         self.assertIsNone(rules[-1].action)
         self.assertNotEqual(rules, list(reversed(rules)))
 
-        later: _Keymap = [{"context": "Editor", "bindings": {"g n": "later"}}]
-        combined = _collect_bindings([("z-base", blocks), ("a-user", later)], watched)
+        later: _comparison.Keymap = [
+            {"context": "Editor", "bindings": {"g n": "later"}}
+        ]
+        combined = _comparison.collect_bindings(
+            [("z-base", blocks), ("a-user", later)], watched
+        )
         self.assertEqual(
             [rule.source for rule in combined], ["z-base"] * 4 + ["a-user"]
         )
 
-        bindings = cast(dict[str, _JsonValue], blocks[0]["bindings"])
+        bindings = cast(dict[str, _comparison.JsonValue], blocks[0]["bindings"])
         bindings["g n x"] = ["motion", {"display_lines": False}]
-        self.assertNotEqual(rules, _collect_bindings([("base", blocks)], watched))
+        self.assertNotEqual(
+            rules, _comparison.collect_bindings([("base", blocks)], watched)
+        )
 
     def test_unrelated_insertions_change_locations_not_rule_identity(self) -> None:
-        blocks: _Keymap = [{"context": "Editor", "bindings": {"n": "next"}}]
-        before = _collect_bindings([("base", blocks)], (("n",),))
-        shifted: _Keymap = [
+        blocks: _comparison.Keymap = [{"context": "Editor", "bindings": {"n": "next"}}]
+        before = _comparison.collect_bindings([("base", blocks)], (("n",),))
+        shifted: _comparison.Keymap = [
             {"context": "Other", "bindings": {"x": "unrelated"}},
             *blocks,
         ]
-        after = _collect_bindings([("base", shifted)], (("n",),))
+        after = _comparison.collect_bindings([("base", shifted)], (("n",),))
         self.assertEqual(before, after)
         self.assertNotEqual(before[0].block, after[0].block)
 
-        reordered: _Keymap = [
+        reordered: _comparison.Keymap = [
             {"context": "Editor", "bindings": {"x": "unrelated", "n": "next"}}
         ]
-        after = _collect_bindings([("base", reordered)], (("n",),))
+        after = _comparison.collect_bindings([("base", reordered)], (("n",),))
         self.assertEqual(before, after)
         self.assertNotEqual(before[0].binding, after[0].binding)
 
@@ -269,7 +271,7 @@ class ZedComparisonCommandTest(unittest.TestCase):
         self.baseline.write_text(json.dumps(self.data))
         self.command = [
             sys.executable,
-            str(Path(__file__).resolve().parents[2] / "zed/compare_keymap.py"),
+            str(Path(__file__).resolve().with_name("compare_zed.py")),
             str(self.root),
             "--baseline",
             str(self.baseline),

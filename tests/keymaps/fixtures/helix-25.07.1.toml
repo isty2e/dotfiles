@@ -1,0 +1,66 @@
+# Selected bindings from Helix 25.07.1:
+# https://github.com/helix-editor/helix/blob/25.07.1/helix-term/src/keymap/default.rs
+# no_op represents a verified unbound slot, not an unknown default.
+# Selected window bindings are identical under Ctrl-w and Space w.
+# Select inherits Normal before its own native overrides are merged.
+
+[keys.normal]
+h = "move_char_left"
+j = "move_visual_line_down"
+n = "search_next"
+k = "move_visual_line_up"
+e = "move_next_word_end"
+i = "insert_mode"
+u = "undo"
+l = "move_char_right"
+J = "join_selections"
+N = "search_prev"
+K = "keep_selections"
+E = "move_next_long_word_end"
+I = "insert_at_line_start"
+U = "redo"
+L = "no_op"
+
+[keys.normal.g]
+j = "move_line_down"
+n = "goto_next_buffer"
+k = "move_line_up"
+e = "goto_last_line"
+i = "goto_implementation"
+l = "goto_line_end"
+
+[keys.normal."C-w"]
+h = "jump_view_left"
+H = "swap_view_left"
+j = "jump_view_down"
+k = "jump_view_up"
+l = "jump_view_right"
+J = "swap_view_down"
+K = "swap_view_up"
+L = "swap_view_right"
+e = "no_op"
+i = "no_op"
+N = "no_op"
+E = "no_op"
+I = "no_op"
+
+[keys.normal."C-w".n]
+s = "hsplit_new"
+v = "vsplit_new"
+C-s = "hsplit_new"
+C-v = "vsplit_new"
+
+[keys.select]
+h = "extend_char_left"
+j = "extend_visual_line_down"
+n = "extend_search_next"
+k = "extend_visual_line_up"
+e = "extend_next_word_end"
+l = "extend_char_right"
+N = "extend_search_prev"
+E = "extend_next_long_word_end"
+
+[keys.select.g]
+j = "extend_line_down"
+k = "extend_line_up"
+e = "extend_to_last_line"

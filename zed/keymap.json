@@ -263,5 +263,87 @@
     "bindings": {
       "ctrl-l": "editor::DeleteToBeginningOfLine"
     }
+  },
+  {
+    "context": "GitGraph && !GitGraphSearchBar",
+    "bindings": {
+      "n": "vim::MenuSelectNext",
+      "e": "vim::MenuSelectPrevious",
+      "j": null,
+      "k": null
+    }
+  },
+  {
+    "context": "SettingsWindow > NavigationMenu && !search",
+    "bindings": {
+      "n": "settings_editor::FocusNextNavEntry",
+      "e": "settings_editor::FocusPreviousNavEntry",
+      "i": "settings_editor::ExpandNavEntry",
+      "j": null,
+      "k": null,
+      "l": null
+    }
+  },
+  {
+    "context": "FileHistoryView",
+    "bindings": {
+      "n": "menu::SelectNext",
+      "e": "menu::SelectPrevious",
+      "j": null,
+      "k": null
+    }
+  },
+  {
+    "context": "NotebookEditor && notebook_mode == command",
+    "bindings": {
+      "n": "menu::SelectNext",
+      "e": "menu::SelectPrevious",
+      "u": "notebook::EnterEditMode",
+      "j": null,
+      "k": null,
+      "i": null
+    }
+  },
+  {
+    "context": "ThreadsSidebar && !Editor",
+    "bindings": {
+      "n": "menu::SelectNext",
+      "e": "menu::SelectPrevious",
+      "i": "menu::SelectChild",
+      "j": null,
+      "k": null,
+      "l": null
+    }
+  },
+  {
+    "context": "os == macos && Prompt",
+    "use_key_equivalents": true,
+    "bindings": {
+      "i": "menu::SelectNext",
+      "l": null
+    }
+  },
+  {
+    "context": "os != macos && Prompt",
+    "bindings": {
+      "i": "menu::SelectNext",
+      "l": null
+    }
+  },
+  // Keep specialized Editor rules after broad VimControl rules: later definitions win on the same node.
+  // Match the broad !menu input role; leave active-menu defaults alone.
+  {
+    "context": "NotebookEditor > Editor && VimControl && vim_mode == normal && !menu",
+    "bindings": {
+      "n": "notebook::NotebookMoveDown",
+      "e": "notebook::NotebookMoveUp"
+    }
+  },
+  {
+    "context": "ThreadsSidebar > Editor && VimControl && vim_mode == normal && !menu",
+    "bindings": {
+      "n": "editor::MoveDown",
+      "e": "editor::MoveUp"
+    }
   }
 ]

@@ -53,17 +53,22 @@ Consequences of these cycles:
 
 Baseline: [25.07.1 defaults](https://github.com/helix-editor/helix/blob/25.07.1/helix-term/src/keymap/default.rs). Select inherits Normal except for its declared overrides. [Native trie merge](https://github.com/helix-editor/helix/blob/25.07.1/helix-term/src/keymap.rs) recursively merges branches but replaces a branch when overridden by a leaf.
 
-### Zed panels: source baseline 1.25.3
+### Zed navigation: source baseline 1.25.3
 
 | Native scope | Cycles |
 | --- | --- |
 | ProjectPanel and OutlinePanel, when not editing | `j → n → k → e → j`; `l ↔ i` |
 | Git Changes/History lists, excluding branch/repository selectors | `j → n → k → e → j` |
 | Git Changes tree under the same selector exclusions | `i → u → l → i` |
+| GitGraph outside its search bar; FileHistoryView | `j → n → k → e → j` |
+| Settings navigation outside search; non-Editor ThreadsSidebar | `j → n → k → e → j`; `l ↔ i` |
+| Notebook command mode | `j → n → k → e → j`; `i ↔ u` |
+| Notebook/ThreadsSidebar child Editors in Vim Normal outside menus | `j → n → k → e → j`, preserving their specialized cell/sidebar motions |
+| Prompt selection, separately scoped for macOS and Linux | `l ↔ i` |
 
-Keep native left/collapse bindings. Project/Outline retain native Vim menu actions; Git retains its native menu actions. Vacated bindings are disabled with `null`. Rename/search/picker input is not translated.
+Keep native left/collapse bindings. Preserve each scope's native operation and arguments, including Vim menu actions and specialized Editor motions. Prompt retains its platform's native key-equivalent setting. Vacated bindings are disabled with `null`; unrelated aliases remain inherited. Rename/search/picker input is not translated.
 
-The Zed fixture checks these panel definitions and candidate-rule collection, not the remaining editor-mode overrides or actual runtime dispatch. Copied edit-prediction defaults are inherited from Zed rather than maintained here.
+The Zed fixture checks these navigation definitions, selected overlapping source/user layers, and candidate-rule collection. It is not a context evaluator or verification of other editor-mode overrides or actual runtime dispatch. Copied edit-prediction defaults are inherited from Zed rather than maintained here.
 
 ### Vim / Neovim / Zed Vim-normal references
 

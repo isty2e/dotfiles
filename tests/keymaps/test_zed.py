@@ -9,7 +9,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-from typing import TypedDict, cast
+from typing import NotRequired, TypedDict, cast
 
 import json5
 
@@ -36,7 +36,10 @@ class _RuleData(TypedDict):
     binding: int
 
 
-class _PanelData(TypedDict):
+class _ProfileData(TypedDict):
+    native_metadata: NotRequired[dict[str, _JsonValue]]
+    base_metadata: NotRequired[list[dict[str, _JsonValue]]]
+    overlap_variants: NotRequired[list[list[dict[str, _JsonValue]]]]
     metadata: dict[str, _JsonValue]
     cycles: list[list[str]]
     vacancies: list[str]
@@ -52,14 +55,14 @@ class _Fixture(TypedDict):
     sources: list[str]
     tracked_sequences: list[list[str]]
     native_rules: list[_RuleData]
-    panels: list[_PanelData]
-    outside_panel_slots: list[_SlotData]
+    profiles: list[_ProfileData]
+    other_editor_slots: list[_SlotData]
 
 
-class ZedPanelTest(unittest.TestCase):
+class ZedNavigationTest(unittest.TestCase):
     def setUp(self) -> None:
         test_dir = Path(__file__).resolve().parent
-        fixture_path = test_dir / "fixtures" / "zed-1.25.3-panels.json"
+        fixture_path = test_dir / "fixtures" / "zed-1.25.3.json"
         self.fixture = cast(_Fixture, json.loads(fixture_path.read_text()))
         self.native = [
             _Binding(
@@ -76,48 +79,70 @@ class ZedPanelTest(unittest.TestCase):
         keymap = cast(_Keymap, json5.loads(keymap_path.read_text()))
         self.user = _collect_bindings([("user", keymap)])
 
-    def test_panel_cycles_preserve_native_rules_and_vacancies(self) -> None:
-        for panel in self.fixture["panels"]:
-            metadata = panel["metadata"]
-            before = {
-                rule.keystrokes[0]: rule.action
-                for rule in self.native
-                if rule.metadata == metadata and len(rule.keystrokes) == 1
-            }
-            for vacancy in panel["vacancies"]:
-                self.assertNotIn(vacancy, before)
-                before[vacancy] = None
-            after = before | {
-                rule.keystrokes[0]: rule.action
-                for rule in self.user
-                if rule.metadata == metadata and len(rule.keystrokes) == 1
-            }
+    def test_navigation_cycles_preserve_native_rules_and_vacancies(self) -> None:
+        for profile in self.fixture["profiles"]:
+            metadata = profile["metadata"]
+            variants: list[list[dict[str, _JsonValue]]] = [
+                [],
+                *profile.get("overlap_variants", []),
+            ]
+            for extra in variants:
+                base = [*profile.get("base_metadata", []), *extra]
+                native_layers = [*base, profile.get("native_metadata", metadata)]
+                user_layers = [*base, metadata]
+                before = {
+                    rule.keystrokes[0]: rule.action
+                    for rule in self.native
+                    if rule.metadata in native_layers and len(rule.keystrokes) == 1
+                }
+                for vacancy in profile["vacancies"]:
+                    self.assertNotIn(vacancy, before)
+                    before[vacancy] = None
+                after = before | {
+                    rule.keystrokes[0]: rule.action
+                    for rule in self.user
+                    if rule.metadata in user_layers and len(rule.keystrokes) == 1
+                }
 
-            for cycle in panel["cycles"]:
-                for source, destination in zip(
-                    cycle, cycle[1:] + cycle[:1], strict=True
-                ):
-                    with self.subTest(
-                        context=metadata, source=source, destination=destination
+                for cycle in profile["cycles"]:
+                    for source, destination in zip(
+                        cycle, cycle[1:] + cycle[:1], strict=True
                     ):
-                        self.assertEqual(after[destination], before[source])
+                        with self.subTest(
+                            context=metadata,
+                            extra=extra,
+                            source=source,
+                            destination=destination,
+                        ):
+                            self.assertEqual(after[destination], before[source])
 
-    def test_panel_footprint_and_other_competing_key_slots(self) -> None:
+    def test_navigation_footprint_and_other_competing_key_slots(self) -> None:
         watched = tuple(tuple(key) for key in self.fixture["tracked_sequences"])
         outside_slots = [
             (slot["metadata"], tuple(slot["keystrokes"]))
-            for slot in self.fixture["outside_panel_slots"]
+            for slot in self.fixture["other_editor_slots"]
         ]
         for rule in self.user:
             context = rule.metadata.get("context", "")
-            is_panel = isinstance(context, str) and any(
-                name in context for name in ("ProjectPanel", "OutlinePanel", "GitPanel")
+            is_navigation = isinstance(context, str) and any(
+                name in context
+                for name in (
+                    "ProjectPanel",
+                    "OutlinePanel",
+                    "GitPanel",
+                    "GitGraph",
+                    "FileHistoryView",
+                    "SettingsWindow",
+                    "NotebookEditor",
+                    "ThreadsSidebar",
+                    "Prompt",
+                )
             )
             with self.subTest(context=context, key=rule.keystrokes):
-                if is_panel:
+                if is_navigation:
                     matches = [
                         p
-                        for p in self.fixture["panels"]
+                        for p in self.fixture["profiles"]
                         if p["metadata"] == rule.metadata
                     ]
                     self.assertEqual(len(matches), 1)

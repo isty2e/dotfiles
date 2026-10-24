@@ -1,14 +1,23 @@
 {
   "upstream_ref": "v1.25.3",
-  "scope": "Panel source-data checks; not full editor or runtime certification.",
+  "scope": "Configured navigation source-data checks; not full editor or runtime certification.",
   "sources": ["vim.json", "default-macos.json", "default-linux.json", "specific-overrides.json", "macos/vscode.json", "linux/vscode.json", "specific-overrides-macos.json"],
   "catalogue_note": "Rules retain per-source order; macOS and Linux inputs are not one evaluated runtime keymap.",
   "outside_slots_note": "Unchanged editor footprint only, not validation of its existing action payloads.",
-  "panels": [
-    {"metadata": {"context": "ProjectPanel && not_editing"}, "cycles": [["h"], ["j", "n", "k", "e"], ["l", "i"]], "vacancies": ["n", "e", "i"]},
-    {"metadata": {"context": "OutlinePanel && not_editing"}, "cycles": [["h"], ["j", "n", "k", "e"], ["l", "i"]], "vacancies": ["n", "e", "i"]},
-    {"metadata": {"context": "GitPanel && (ChangesList || HistoryList) && !GitBranchSelector && !GitRepositorySelector", "use_key_equivalents": true}, "cycles": [["j", "n", "k", "e"]], "vacancies": ["n", "e"]},
-    {"metadata": {"context": "GitPanel && ChangesList && !GitBranchSelector && !GitRepositorySelector", "use_key_equivalents": true}, "cycles": [["h"], ["i", "u", "l"]], "vacancies": ["u"]}
+  "profiles": [
+    {"metadata":{"context":"ProjectPanel && not_editing"},"cycles":[["h"],["j","n","k","e"],["l","i"]],"vacancies":["n","e","i"]},
+    {"metadata":{"context":"OutlinePanel && not_editing"},"cycles":[["h"],["j","n","k","e"],["l","i"]],"vacancies":["n","e","i"]},
+    {"metadata":{"context":"GitPanel && (ChangesList || HistoryList) && !GitBranchSelector && !GitRepositorySelector","use_key_equivalents":true},"cycles":[["j","n","k","e"]],"vacancies":["n","e"]},
+    {"metadata":{"context":"GitPanel && ChangesList && !GitBranchSelector && !GitRepositorySelector","use_key_equivalents":true},"cycles":[["h"],["i","u","l"]],"vacancies":["u"]},
+    {"metadata":{"context":"GitGraph && !GitGraphSearchBar"},"cycles":[["j","n","k","e"]],"vacancies":["n","e"]},
+    {"metadata":{"context":"SettingsWindow > NavigationMenu && !search"},"cycles":[["h"],["j","n","k","e"],["l","i"]],"vacancies":["n","e","i"]},
+    {"metadata":{"context":"FileHistoryView"},"cycles":[["j","n","k","e"]],"vacancies":["n","e"]},
+    {"metadata":{"context":"NotebookEditor > Editor && VimControl && vim_mode == normal && !menu"},"base_metadata":[{"context":"VimControl && !menu"}],"cycles":[["j","n","k","e"]],"vacancies":[],"native_metadata":{"context":"NotebookEditor > Editor && VimControl && vim_mode == normal"}},
+    {"metadata":{"context":"NotebookEditor && notebook_mode == command"},"cycles":[["j","n","k","e"],["i","u"]],"vacancies":["n","e","u"]},
+    {"metadata":{"context":"ThreadsSidebar && !Editor"},"cycles":[["h"],["j","n","k","e"],["l","i"]],"vacancies":["n","e","i"]},
+    {"metadata":{"context":"ThreadsSidebar > Editor && VimControl && vim_mode == normal && !menu"},"base_metadata":[{"context":"VimControl && !menu"}],"overlap_variants":[[{"context":"Editor && mode == auto_height && VimControl"}]],"cycles":[["j","n","k","e"]],"vacancies":[],"native_metadata":{"context":"ThreadsSidebar > Editor && VimControl && vim_mode == normal"}},
+    {"metadata":{"context":"os == macos && Prompt","use_key_equivalents":true},"native_metadata":{"context":"Prompt","use_key_equivalents":true},"cycles":[["h"],["l","i"]],"vacancies":["i"]},
+    {"metadata":{"context":"os != macos && Prompt"},"native_metadata":{"context":"Prompt"},"cycles":[["h"],["l","i"]],"vacancies":["i"]}
   ],
   "native_rules": [
     {"source": "vim.json", "metadata": {"context": "VimControl && !menu"}, "keystrokes": ["i"], "action": ["vim::PushObject", {"around": false}], "block": 0, "binding": 0},
@@ -77,7 +86,7 @@
     {"source": "default-linux.json", "metadata": {"context": "GitCommit > Editor && mode == auto_height"}, "keystrokes": ["alt-l"], "action": "git::GenerateCommitMessage", "block": 75, "binding": 4},
     {"source": "default-linux.json", "metadata": {"context": "CommitEditor > Editor"}, "keystrokes": ["alt-l"], "action": "git::GenerateCommitMessage", "block": 79, "binding": 7}
   ],
-  "outside_panel_slots": [
+  "other_editor_slots": [
     {"metadata": {"context": "VimControl && !menu"}, "keystrokes": ["u"]},
     {"metadata": {"context": "VimControl && !menu"}, "keystrokes": ["n"]},
     {"metadata": {"context": "VimControl && !menu"}, "keystrokes": ["e"]},

@@ -1,4 +1,4 @@
-"""Check Zed native cycles and read-only maintenance comparisons.
+"""Check native navigation, modal input roles and read-only comparisons.
 
 Requires Python 3.11+ and tests/keymaps/requirements.txt, not a Zed executable.
 """
@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from collections.abc import Sequence
 from pathlib import Path
 from typing import NotRequired, TypedDict, cast
 
@@ -28,13 +29,25 @@ class _RuleData(TypedDict):
     binding: int
 
 
-class _ProfileData(TypedDict):
-    native_metadata: NotRequired[dict[str, _comparison.JsonValue]]
-    base_metadata: NotRequired[list[dict[str, _comparison.JsonValue]]]
-    overlap_variants: NotRequired[list[list[dict[str, _comparison.JsonValue]]]]
-    metadata: dict[str, _comparison.JsonValue]
+class _CycleData(TypedDict):
     cycles: list[list[str]]
     vacancies: list[str]
+    preserved_sequences: NotRequired[list[list[str]]]
+
+
+class _ProfileData(_CycleData):
+    metadata: dict[str, _comparison.JsonValue]
+    native_metadata: NotRequired[dict[str, _comparison.JsonValue]]
+    base_metadata: NotRequired[list[dict[str, _comparison.JsonValue]]]
+    user_base_metadata: NotRequired[list[dict[str, _comparison.JsonValue]]]
+    overlap_variants: NotRequired[list[list[dict[str, _comparison.JsonValue]]]]
+    user_overlap_variants: NotRequired[list[list[dict[str, _comparison.JsonValue]]]]
+
+
+class _ModalCase(_CycleData):
+    name: str
+    native_layers: list[dict[str, _comparison.JsonValue]]
+    user_layers: list[dict[str, _comparison.JsonValue]]
 
 
 class _SlotData(TypedDict):
@@ -48,76 +61,112 @@ class _Fixture(TypedDict):
     tracked_sequences: list[list[str]]
     native_rules: list[_RuleData]
     profiles: list[_ProfileData]
+    modal_cases: list[_ModalCase]
+    modal_slots: list[_SlotData]
     other_editor_slots: list[_SlotData]
 
 
-class ZedNavigationTest(unittest.TestCase):
-    def test_tracking_manifest_matches_all_user_overrides(self) -> None:
-        tracked = {tuple(key) for key in self.fixture["tracked_sequences"]}
-        defined = {rule.keystrokes for rule in self.user}
-        self.assertEqual(tracked, defined)
+def _project_bindings(
+    rules: Sequence[_comparison.Binding],
+    layers: Sequence[dict[str, _comparison.JsonValue]],
+) -> dict[tuple[str, ...], _comparison.JsonValue]:
+    return {rule.keystrokes: rule.action for rule in rules if rule.metadata in layers}
 
+
+class ZedNavigationTest(unittest.TestCase):
     def setUp(self) -> None:
         test_dir = Path(__file__).resolve().parent
-        fixture_path = test_dir / "fixtures" / "zed-1.25.3.json"
-        self.fixture = cast(_Fixture, json.loads(fixture_path.read_text()))
+        self.fixture = cast(
+            _Fixture, json.loads((test_dir / "fixtures/zed-1.25.3.json").read_text())
+        )
         self.native = [
             _comparison.Binding(
-                rule["source"],
-                rule["metadata"],
-                tuple(rule["keystrokes"]),
-                rule["action"],
-                rule["block"],
-                rule["binding"],
+                row["source"],
+                row["metadata"],
+                tuple(row["keystrokes"]),
+                row["action"],
+                row["block"],
+                row["binding"],
             )
-            for rule in self.fixture["native_rules"]
+            for row in self.fixture["native_rules"]
         ]
-        keymap_path = test_dir.parents[1] / "zed" / "keymap.json"
-        keymap = cast(_comparison.Keymap, json5.loads(keymap_path.read_text()))
+        keymap = cast(
+            _comparison.Keymap,
+            json5.loads((test_dir.parents[1] / "zed/keymap.json").read_text()),
+        )
         self.user = _comparison.collect_bindings([("user", keymap)])
+
+    def _assert_cycles(
+        self,
+        spec: _CycleData,
+        before: dict[tuple[str, ...], _comparison.JsonValue],
+        overrides: dict[tuple[str, ...], _comparison.JsonValue],
+    ) -> None:
+        for value in spec["vacancies"]:
+            key = tuple(value.split())
+            self.assertNotIn(key, before)
+            before[key] = None
+        after = before | overrides
+        for cycle in spec["cycles"]:
+            for source, destination in zip(cycle, cycle[1:] + cycle[:1], strict=True):
+                with self.subTest(source=source, destination=destination):
+                    self.assertEqual(
+                        after[tuple(destination.split())], before[tuple(source.split())]
+                    )
+        for sequence in spec.get("preserved_sequences", []):
+            with self.subTest(preserved=sequence):
+                self.assertEqual(after[tuple(sequence)], before[tuple(sequence)])
+
+    def test_tracking_manifest_matches_all_user_overrides(self) -> None:
+        self.assertEqual(
+            {tuple(k) for k in self.fixture["tracked_sequences"]},
+            {r.keystrokes for r in self.user},
+        )
 
     def test_navigation_cycles_preserve_native_rules_and_vacancies(self) -> None:
         for profile in self.fixture["profiles"]:
             metadata = profile["metadata"]
-            variants: list[list[dict[str, _comparison.JsonValue]]] = [
+            native_variants = [[], *profile.get("overlap_variants", [])]
+            user_variants = [
                 [],
-                *profile.get("overlap_variants", []),
+                *profile.get(
+                    "user_overlap_variants", profile.get("overlap_variants", [])
+                ),
             ]
-            for extra in variants:
-                base = [*profile.get("base_metadata", []), *extra]
-                native_layers = [*base, profile.get("native_metadata", metadata)]
-                user_layers = [*base, metadata]
-                before = {
-                    rule.keystrokes[0]: rule.action
-                    for rule in self.native
-                    if rule.metadata in native_layers and len(rule.keystrokes) == 1
-                }
-                for vacancy in profile["vacancies"]:
-                    self.assertNotIn(vacancy, before)
-                    before[vacancy] = None
-                after = before | {
-                    rule.keystrokes[0]: rule.action
-                    for rule in self.user
-                    if rule.metadata in user_layers and len(rule.keystrokes) == 1
-                }
+            for extra, user_extra in zip(native_variants, user_variants, strict=True):
+                native_layers = [
+                    *profile.get("base_metadata", []),
+                    *extra,
+                    profile.get("native_metadata", metadata),
+                ]
+                user_layers = [
+                    *profile.get(
+                        "user_base_metadata", profile.get("base_metadata", [])
+                    ),
+                    *user_extra,
+                    metadata,
+                ]
+                with self.subTest(context=metadata, extra=extra):
+                    self._assert_cycles(
+                        profile,
+                        _project_bindings(self.native, native_layers),
+                        _project_bindings(self.user, user_layers),
+                    )
 
-                for cycle in profile["cycles"]:
-                    for source, destination in zip(
-                        cycle, cycle[1:] + cycle[:1], strict=True
-                    ):
-                        with self.subTest(
-                            context=metadata,
-                            extra=extra,
-                            source=source,
-                            destination=destination,
-                        ):
-                            self.assertEqual(after[destination], before[source])
+    def test_modal_cycles_and_native_input_roles(self) -> None:
+        for case in self.fixture["modal_cases"]:
+            with self.subTest(case=case["name"]):
+                self._assert_cycles(
+                    case,
+                    _project_bindings(self.native, case["native_layers"]),
+                    _project_bindings(self.user, case["user_layers"]),
+                )
 
     def test_navigation_footprint_and_other_competing_key_slots(self) -> None:
         watched = tuple(tuple(key) for key in self.fixture["tracked_sequences"])
         outside_slots = [
             (slot["metadata"], tuple(slot["keystrokes"]))
-            for slot in self.fixture["other_editor_slots"]
+            for slot in self.fixture["other_editor_slots"] + self.fixture["modal_slots"]
         ]
         for rule in self.user:
             context = rule.metadata.get("context", "")
@@ -144,8 +193,13 @@ class ZedNavigationTest(unittest.TestCase):
                     ]
                     self.assertEqual(len(matches), 1)
                     allowed = {
-                        (key,) for cycle in matches[0]["cycles"] for key in cycle
+                        tuple(key.split())
+                        for cycle in matches[0]["cycles"]
+                        for key in cycle
                     }
+                    allowed.update(
+                        tuple(key) for key in matches[0].get("preserved_sequences", [])
+                    )
                     self.assertIn(rule.keystrokes, allowed)
                 elif rule.relates_to(watched):
                     self.assertIn((rule.metadata, rule.keystrokes), outside_slots)
@@ -153,8 +207,9 @@ class ZedNavigationTest(unittest.TestCase):
     def test_prediction_candidate_rules_remain_inherited(self) -> None:
         watched = (("alt-l",),)
         native = [rule for rule in self.native if rule.relates_to(watched)]
-        combined = native + [rule for rule in self.user if rule.relates_to(watched)]
-        self.assertEqual(combined, native)
+        self.assertEqual(
+            native + [rule for rule in self.user if rule.relates_to(watched)], native
+        )
 
 
 class ZedCandidateTest(unittest.TestCase):

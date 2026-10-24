@@ -68,7 +68,29 @@ Baseline: [25.07.1 defaults](https://github.com/helix-editor/helix/blob/25.07.1/
 
 Keep native left/collapse bindings. Preserve each scope's native operation and arguments, including Vim menu actions and specialized Editor motions. Prompt retains its platform's native key-equivalent setting. Vacated bindings are disabled with `null`; unrelated aliases remain inherited. Rename/search/picker input is not translated.
 
-The Zed fixture checks these navigation definitions, selected overlapping source/user layers, and candidate-rule collection. It is not a context evaluator or verification of other editor-mode overrides or actual runtime dispatch. Copied edit-prediction defaults are inherited from Zed rather than maintained here.
+The Zed fixture checks configured bindings through selected overlapping source/user layers and candidate-rule collection. It is not a context evaluator or actual runtime dispatch verification. Copied edit-prediction defaults are inherited from Zed rather than maintained here.
+
+### Zed Vim/Helix modal editing: source baseline 1.25.3
+
+| Native input role | Cycles |
+| --- | --- |
+| Vim Normal, Visual and operator motions | `j → g j → n → k → g k → e → j` |
+| Helix Normal outside the search bar | `j → n → k → e → j`; `g j → g n → g k → g e → g j` |
+| Helix Select and search-bar Normal | `j → g n → g k → e → j`; `k → g e → g j → n → k` |
+| Insertion/inner object, undo/case/operator command, right | `i → u → l → i` |
+| Long-word end, join/vacancy, previous search, hover | `J → N → K → E → J` |
+| Vim Normal line insertion/history/screen bottom | `I → U → Ctrl-r → L → I` |
+| Visual, pending operators and Helix uppercase roles | `I → U → L → I` |
+| Helix implementation/staging/end of line | `g i → g u → g l → g i` |
+| Ctrl-w focus/splits, including Ctrl-modified aliases | `j → n → k → e → j`; `l ↔ i` |
+| Ctrl-w pane movement | `J → N → K → E → J`; `L ↔ I` |
+| Helix Space-w focus | `j → n → k → e → j`; `l ↔ i` |
+
+Normal history uses `l/L` for Undo/Redo; Vim Visual instead preserves native lower/uppercase conversion there. Helix retains its native Ctrl-r redo alias. Its Select-mode `I` vacancy moves to `U`, rather than inventing an insertion command absent from that native role. Ctrl-w `k` and Ctrl-w Ctrl-k retain the displaced new-file split operation.
+
+Native object selectors, literal character arguments, register names and mode-specific insert/waiting/replace control namespaces are not transposed. The generic movement scope excludes object-selection states; `u` selects the inner object before its native selector. Unrelated modal command-alphabet remaps are removed in favor of native bindings. Personal comma-tab and existing completion-popup gestures remain unchanged.
+
+Specialized notebook/sidebar Editors keep cell/sidebar motion on `n/e` and retain their native display-line `g j/g k` aliases. Ordinary Vim logical motion uses `g j/g k`; ordinary Helix logical motion uses `g n/g e`. This modal rewrite does not change menu-owned input or non-modal document editing.
 
 ### Vim / Neovim / Zed Vim-normal references
 
@@ -85,7 +107,7 @@ Resolve each native action, payload, and effective context before adopting a ref
 
 ### Text-object spellings
 
-Use `u` for Zed inner-object selection (`duw`) and retain Helix `m i`. The Helix override-scope check protects `m i` by leaving its native bindings untouched. Zed dispatch verification remains follow-up work; its chosen spelling is policy, not a claim of existing test coverage.
+Use `u` for Zed inner-object selection (`duw`) and retain Helix `m i`. The Helix override-scope check protects `m i` by leaving its native bindings untouched. Zed source-data tests distinguish outer object selection from native object selectors; actual dispatch verification remains separate.
 
 ## Deferred and out-of-scope choices
 

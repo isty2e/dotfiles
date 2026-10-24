@@ -60,6 +60,11 @@ class _Fixture(TypedDict):
 
 
 class ZedNavigationTest(unittest.TestCase):
+    def test_tracking_manifest_matches_all_user_overrides(self) -> None:
+        tracked = {tuple(key) for key in self.fixture["tracked_sequences"]}
+        defined = {rule.keystrokes for rule in self.user}
+        self.assertEqual(tracked, defined)
+
     def setUp(self) -> None:
         test_dir = Path(__file__).resolve().parent
         fixture_path = test_dir / "fixtures" / "zed-1.25.3.json"

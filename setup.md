@@ -1,5 +1,7 @@
 # Settings
 
+See [Colemak keymap policy](docs/keymaps.md). Execution and migration are tracked in Kata.
+
 ## dotfiles
 
 ```bash

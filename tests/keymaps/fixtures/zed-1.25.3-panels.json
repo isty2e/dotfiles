@@ -95,5 +95,6 @@
     {"metadata": {"context": "vim_operator == d"}, "keystrokes": ["l"]},
     {"metadata": {"context": "vim_operator == gu"}, "keystrokes": ["l"]},
     {"metadata": {"context": "Editor && mode == auto_height && VimControl"}, "keystrokes": ["k"]}
-  ]
+  ],
+  "tracked_sequences": [["h"],["j"],["n"],["k"],["e"],["i"],["u"],["l"],["alt-l"]]
 }

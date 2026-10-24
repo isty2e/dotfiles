@@ -41,6 +41,16 @@
       "shift-l": null
     }
   },
+  // Operation ranges retain logical-line motion; cursor motion above uses display lines.
+  {
+    "context": "VimControl && !menu && !(vim_operator == a || vim_operator == i || vim_operator == cs || vim_operator == helix_next || vim_operator == helix_previous) && vim_mode == operator",
+    "bindings": {
+      "n": "vim::Down",
+      "e": "vim::Up",
+      "g j": ["vim::Down", {"display_lines": true}],
+      "g k": ["vim::Up", {"display_lines": true}]
+    }
+  },
   // History cycles follow each native mode; Visual retains case conversion.
   {
     "context": "(vim_mode == normal || vim_mode == helix_normal) && !menu",

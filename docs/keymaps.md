@@ -8,7 +8,7 @@ Native editor files own bindings; chezmoi handles placement, not semantic repair
 
 | Intention | Keys | Meaning |
 | --- | --- | --- |
-| Left / down / up / right | `h / n / e / i` | Default vertical navigation follows display lines |
+| Left / down / up / right | `h / n / e / i` | Cursor navigation follows display lines; operator line motions retain logical lines |
 | Previous word / next word / word end | `b / w / j` | Native word boundaries |
 | Insert / return to command mode | `u / Esc` | Ordinary modal text editing |
 | Undo / redo | `l / L` | `L` is redo, not undo-line |
@@ -74,7 +74,8 @@ The Zed fixture checks configured bindings through selected overlapping source/u
 
 | Native input role | Cycles |
 | --- | --- |
-| Vim Normal, Visual and operator motions | `j → g j → n → k → g k → e → j` |
+| Vim Normal and Visual cursor motions | `j → g j → n → k → g k → e → j` |
+| Vim operator-pending motions | `j → n → k → e → j`; native display-line `g j/g k` remain unchanged |
 | Helix Normal outside the search bar | `j → n → k → e → j`; `g j → g n → g k → g e → g j` |
 | Helix Select and search-bar Normal | `j → g n → g k → e → j`; `k → g e → g j → n → k` |
 | Insertion/inner object, undo/case/operator command, right | `i → u → l → i` |
@@ -87,6 +88,8 @@ The Zed fixture checks configured bindings through selected overlapping source/u
 | Helix Space-w focus | `j → n → k → e → j`; `l ↔ i` |
 
 Normal history uses `l/L` for Undo/Redo; Vim Visual instead preserves native lower/uppercase conversion there. Helix retains its native Ctrl-r redo alias. Its Select-mode `I` vacancy moves to `U`, rather than inventing an insertion command absent from that native role. Ctrl-w `k` and Ctrl-w Ctrl-k retain the displaced new-file split operation.
+
+Completion and signature navigation inherit native Ctrl-n, while Ctrl-k keeps digraph input. Helix hover inherits Space-k. The earlier manual case-conversion aliases are not retained: `g u` is implementation navigation in the configured cycle, and unchanged `g Shift-u` is native unstaging. The former Insert Ctrl-x Ctrl-i/Ctrl-x Ctrl-j aliases are not defined here; they are not redundant copies of current defaults.
 
 Native object selectors, literal character arguments, register names and mode-specific insert/waiting/replace control namespaces are not transposed. The generic movement scope excludes object-selection states; `u` selects the inner object before its native selector. Unrelated modal command-alphabet remaps are removed in favor of native bindings. Personal comma-tab and existing completion-popup gestures remain unchanged.
 

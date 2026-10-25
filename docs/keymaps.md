@@ -95,22 +95,47 @@ Native object selectors, literal character arguments, register names and mode-sp
 
 Specialized notebook/sidebar Editors keep cell/sidebar motion on `n/e` and retain their native display-line `g j/g k` aliases. Ordinary Vim logical motion uses `g j/g k`; ordinary Helix logical motion uses `g n/g e`. This modal rewrite does not change menu-owned input or non-modal document editing.
 
-### Vim / Neovim / Zed Vim-normal references
+### Vim and Neovim
 
-These are reference cycles, not a completed inventory for every mode or context.
+Normal and Visual cursor movement uses display lines, including counts; `g j/g k`
+retain logical-line movement. Operator-pending `n/e` uses logical lines so `dn`
+stays linewise. Insert, Select, command-line and terminal input are not transposed.
 
-| Native operations | Reference cycle |
+| Native operations / context | Cycle |
 | --- | --- |
-| Logical/display movement, search, word end | `j → g j → n → k → g k → e → j` |
-| Insertion, undo, right | `i → u → l → i` |
+| Normal/Visual logical/display movement, search, word end | `j → g j → n → k → g k → e → j` |
+| Operator logical movement, search, word end | `j → n → k → e → j` |
+| Normal insertion/undo/right; Visual inner-object/lowercase/right | `i → u → l → i` |
 | Join, previous search, keyword operation, long-word end | `J → N → K → E → J` |
-| First-nonblank insertion, undo-line, redo, screen bottom | `I → U → Ctrl-r → L → I` |
+| Normal first-nonblank insertion, undo-line, redo, screen bottom | `I → U → Ctrl-r → L → I` |
+| Visual block insertion, uppercase, screen bottom | `I → U → L → I` |
+| Operator inner-object/right and screen-bottom slots | `i → u → l → i`; `I → U → L → I` |
+| Window down/new split/up and displaced blank | `Ctrl-w j → n → k → e → j` |
+| Window right/include-file; far-right/include-definition | `Ctrl-w i ↔ l`; `Ctrl-w I ↔ L` |
+| Window bottom/top and displaced blanks | `Ctrl-w J → N → K → E → J` |
 
-Resolve each native action, payload, and effective context before adopting a reference cycle. Operator/object input is not automatically a copy of Normal navigation.
+Window lowercase Ctrl-key alternatives follow the same window-local cycles.
+Vacant Normal/Visual window slots are no-ops; vacant operator slots cancel the
+pending operator. Unrelated Ctrl shortcuts and native command spellings are not
+transposed. Existing personal tab, completion and terminal gestures stay separate.
+
+In Neovim, `config/keymaps.lua` owns general mode maps, `config/lsp.lua` owns
+attached-buffer hover on `E` and search on `K`, and each plugin owns its local interaction. Neo-tree
+retains native parent/child handlers, moves file details to `u` in its filesystem,
+buffer and Git sources, and uses `n/e` in its normal-mode filter. Telescope uses
+`n/e` for normal-mode selection and `I` for its displaced list-bottom action.
+Insert-mode queries stay literal; unrelated command letters use plugin defaults.
+
+NERDTree retains its native commands with local displacements: `j → n → k → e → j`,
+`i → u → l → i`, `J → N → K → E → J`, and `I → U → Ctrl-r → L → I`.
+Its preview split remains `g i` rather than being derived from the new split key.
 
 ### Text-object spellings
 
-Use `u` for Zed inner-object selection (`duw`) and retain Helix `m i`. The Helix override-scope check protects `m i` by leaving its native bindings untouched. Zed source-data tests distinguish outer object selection from native object selectors; actual dispatch verification remains separate.
+Use `u` for Vim, Neovim and Zed inner-object selection (`duw`) and retain Helix
+`m i`. Following selectors remain native. The Helix override-scope check protects
+`m i` by leaving its native bindings untouched. Zed source-data tests distinguish
+outer object selection from native selectors; actual dispatch verification remains separate.
 
 ## Deferred and out-of-scope choices
 
@@ -123,4 +148,4 @@ Use `u` for Zed inner-object selection (`duw`) and retain Helix `m i`. The Helix
 | chezmoi source-tree migration | Separate work; maintainer/user | Authorize filesystem handoff after independent keymap repair |
 | Zed version-mismatch test / update watcher | Not adopted; user | An automatic update-notification workflow is requested |
 | Scheduled repair / unattended apply / GUI automation | Not authorized; user | Approve the operating and verification model |
-| Neovim repository move / plugin overhaul | Separate work; user | An independent ownership or tooling decision |
+| Neovim repository move / live deployment | Separate work; user | Authorize filesystem handoff; native plugin selection is owned by the independent Neovim configuration |

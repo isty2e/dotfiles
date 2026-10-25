@@ -72,8 +72,8 @@ Only personal color sources are pinned. The manager follows upstream `master`;
 this does not guarantee compatibility with every future upstream change. Exact
 plugin-version replay, editing history/caches, and external tools such as Ruff,
 isort, language runtimes and other ALE executables are outside this recovery
-scope. Existing Vim mappings are retained; keymap redesign is separate from
-recovery. Neovim has an independent configuration.
+scope. Fixed Colemak mappings follow [the keymap policy](docs/keymaps.md), while
+recovery and deployment remain separate. Neovim has an independent configuration.
 
 The full suite fetches the same latest vim-plug URL once for its real-manager
 checks; network or upstream compatibility failures are test failures:
@@ -90,6 +90,21 @@ python tests/vim/test_recovery.py VimRecoveryTests -v
 ```
 
 Neither tier installs the declared plugins or establishes their runtime compatibility.
+
+The native keymap integration suite needs actual Vim and an already installed
+vim-plug/NERDTree runtime. Run it in a terminal after plugin startup:
+
+```sh
+sh tests/keymaps/run-vim.sh
+```
+
+`VIM_TEST_BINARY` can select an actual Vim executable, and `VIM_TEST_RUNTIME` can
+select an existing runtime directory. The runner uses a temporary home and XDG
+state, borrows cached plugin code, and does not run `VimSetup`. Missing prerequisites
+or a non-terminal invocation produce exit code 77. Normal terminal Vim lets startup
+and UI commands execute in their native context; Ex-only runs are not treated as
+full-profile coverage. Core movement, native
+operators, literal input, window cycles and NERDTree commands are tested by effects.
 
 ## chezmoi placement
 

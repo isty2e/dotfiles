@@ -326,12 +326,11 @@ needs no new issue; multiple execution steps alone do not require tracking. Cont
 keeping its owning record current.
 
 If the request or current context provides concrete signs of an existing Kata owner (an issue reference, a known
-continuation, or a link from the relevant branch/PR), reuse that owner or load the skill for a scoped lookup before
+continuation, or a link from the relevant branch/PR), reuse that owner or make a scoped lookup before
 treating the work as untracked. A project binding alone does not require this search.
 
-Load and apply `kata-task-management` before any Kata operation, including direct requests, and when starting or
-continuing work that needs tracking. If that need emerges during execution, load it then. Before pausing or handing
-off, ensure known remaining commitments, blockers, and partially applied changes that need management are tracked.
+For Kata operations, apply `kata-task-management` under the existing skill-loading and reuse rules. Before pausing or
+handing off, ensure known remaining commitments, blockers, and partially applied changes that need management are tracked.
 Unaccepted suggestions are not commitments. No per-turn checklist or report is required. Do not maintain competing
 persistent task lists.
 

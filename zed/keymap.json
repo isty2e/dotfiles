@@ -1,119 +1,92 @@
 [
+  // Object-selector keys keep their native meaning; the outer inner-object key moves to u.
   {
-    "context": "VimControl && !menu",
+    "context": "VimControl && !menu && !(vim_operator == a || vim_operator == i || vim_operator == cs || vim_operator == helix_next || vim_operator == helix_previous)",
     "bindings": {
-      "u": ["vim::PushObject", { "around": false }],
-      "ctrl-n": "vim::Down",
+      "n": [
+        "vim::Down",
+        {
+          "display_lines": true
+        }
+      ],
+      "e": [
+        "vim::Up",
+        {
+          "display_lines": true
+        }
+      ],
+      "j": "vim::NextWordEnd",
+      "g j": "vim::Down",
+      "k": "vim::MoveToNextMatch",
+      "g k": "vim::Up",
+      "u": [
+        "vim::PushObject",
+        {
+          "around": false
+        }
+      ],
+      "i": "vim::Right",
+      "l": null,
+      "shift-j": [
+        "vim::NextWordEnd",
+        {
+          "ignore_punctuation": true
+        }
+      ],
+      "shift-n": null,
+      "shift-k": "vim::MoveToPreviousMatch",
+      "shift-e": "editor::Hover",
+      "shift-i": "vim::WindowBottom",
+      "shift-u": null,
+      "shift-l": null
+    }
+  },
+  // Operation ranges retain logical-line motion; cursor motion above uses display lines.
+  {
+    "context": "VimControl && !menu && !(vim_operator == a || vim_operator == i || vim_operator == cs || vim_operator == helix_next || vim_operator == helix_previous) && vim_mode == operator",
+    "bindings": {
       "n": "vim::Down",
       "e": "vim::Up",
-      "i": "vim::Right",
-
-      // Word motions
-      "j": "vim::NextWordEnd",
-      "g j": "vim::PreviousWordEnd",
-      // Subword motions
-      // "w": "vim::NextSubwordStart",
-      // "b": "vim::PreviousSubwordStart",
-      // "e": "vim::NextSubwordEnd",
-      // "g e": "vim::PreviousSubwordEnd",
-      "shift-j": ["vim::NextWordEnd", { "ignore_punctuation": true }],
-      "g shift-j": ["vim::PreviousWordEnd", { "ignore_punctuation": true }],
-      "k": "vim::MoveToNextMatch",
-      "shift-k": "vim::MoveToPreviousMatch",
-      "ctrl-i": "pane::GoForward",
-      "shift-n": "editor::Hover",
-      "ctrl-u": "vim::ScrollUp",
-      "ctrl-j": "vim::LineDown",
-      // "g" commands
-      "g r i": "editor::GoToImplementation",
-      "g shift-u": "editor::GoToImplementation",
-      "g k": "vim::SelectNextMatch",
-      "g shift-k": "vim::SelectPreviousMatch",
-      "g i": "vim::SelectNext",
-      "g shift-i": "vim::SelectPrevious",
-      "g n": ["vim::Down", { "display_lines": true }],
-      "g e": ["vim::Up", { "display_lines": true }],
-      "g u": "vim::InsertAtPrevious",
-      "shift-l": "vim::WindowBottom",
-      // z commands
-      "z l": "vim::ColumnRight",
-      "z shift-l": "vim::HalfPageRight"
+      "g j": ["vim::Down", {"display_lines": true}],
+      "g k": ["vim::Up", {"display_lines": true}]
     }
   },
-  {
-    "context": "Editor && vim_mode == normal && !VimWaiting && !menu",
-    "bindings": {
-      // put key-bindings here if you want them to work only in normal mode
-      ", .": "pane::ActivateNextItem",
-      ", m": "pane::ActivatePreviousItem"
-    }
-  },
-  {
-    "context": "Editor && vim_mode == helix_normal && !VimWaiting && !menu",
-    "bindings": {
-      // put key-bindings here if you want them to work only in normal mode
-      ", .": "pane::ActivateNextItem",
-      ", m": "pane::ActivatePreviousItem"
-    }
-  },
-  {
-    "context": "vim_mode == normal || vim_mode == visual || vim_mode == operator",
-    "bindings": {
-      "[ e": "editor::MoveLineUp",
-      "] e": "editor::MoveLineDown"
-    }
-  },
-  {
-    "context": "vim_mode == normal",
-    "bindings": {
-      "u": "vim::InsertBefore",
-      "g shift-n": "vim::JoinLinesNoWhitespace"
-    }
-  },
-  {
-    "context": "vim_mode == visual",
-    "bindings": {
-      "shift-u": "vim::InsertBefore",
-      "g shift-u": "vim::VisualInsertFirstNonWhiteSpace",
-      "shift-n": "vim::JoinLines",
-      "g shift-n": "vim::JoinLinesNoWhitespace",
-      "u": ["vim::PushObject", { "around": false }]
-    }
-  },
-  {
-    "context": "vim_mode == helix_select",
-    "bindings": {
-      "shift-n": "vim::JoinLines",
-      "u": "vim::InsertBefore"
-    }
-  },
-  {
-    "context": "vim_mode == insert",
-    "bindings": {
-      "ctrl-x ctrl-i": "editor::ToggleCodeActions", // zed specific
-      "ctrl-x ctrl-j": "vim::LineDown",
-      "ctrl-u": "editor::DeleteToBeginningOfLine",
-      "ctrl-j": "vim::InsertFromBelow",
-      "ctrl-n": ["vim::PushDigraph", {}]
-    }
-  },
-  {
-    "context": "showing_completions",
-    "bindings": {
-      "ctrl-j": "vim::LineDown"
-    }
-  },
+  // History cycles follow each native mode; Visual retains case conversion.
   {
     "context": "(vim_mode == normal || vim_mode == helix_normal) && !menu",
     "bindings": {
-      "shift-n": "vim::JoinLines",
-      "shift-u": "vim::InsertFirstNonWhitespace",
       "l": "vim::Undo",
-      "shift-l": "vim::UndoLastLine"
+      "shift-n": "vim::JoinLines",
+      "shift-u": "vim::InsertFirstNonWhitespace"
     }
   },
   {
-    "context": "vim_mode == helix_normal && !menu",
+    "context": "vim_mode == normal && !menu",
+    "bindings": {
+      "u": "vim::InsertBefore",
+      "ctrl-r": "vim::UndoLastLine",
+      "shift-l": "vim::Redo"
+    }
+  },
+  {
+    "context": "vim_mode == visual && !menu",
+    "bindings": {
+      "l": "vim::ConvertToLowerCase",
+      "shift-n": "vim::JoinLines",
+      "shift-u": "vim::InsertBefore",
+      "shift-l": "vim::ConvertToUpperCase"
+    }
+  },
+  {
+    "context": "vim_mode == helix_select && !menu",
+    "bindings": {
+      "u": "vim::InsertBefore",
+      "l": "vim::Undo",
+      "shift-n": "vim::JoinLines"
+    }
+  },
+  {
+    "context": "VimControl && vim_mode == helix_normal && !menu && !BufferSearchBar",
     "bindings": {
       "u": "vim::HelixInsert"
     }
@@ -122,124 +95,134 @@
     "context": "(vim_mode == helix_normal || vim_mode == helix_select) && !menu",
     "bindings": {
       "i": "vim::WrappingRight",
-      "g u": "vim::PushLowercase",
-      "g shift-u": "vim::PushUppercase",
-      // Goto mode
-      "g k": "pane::ActivateNextItem",
-      // "tab": "pane::ActivateNextItem",
-      // "shift-tab": "pane::ActivatePrevItem",
+      "k": "vim::HelixSelectNext",
+      "shift-k": "vim::HelixSelectPrevious",
       "shift-i": "pane::ActivateNextItem",
-      "g i": "vim::EndOfLine",
+      "shift-l": "editor::Redo",
+      "g n": "vim::Down",
+      "g e": "vim::Up",
       "g j": "vim::EndOfDocument",
-
-      // Window mode
-      "space w i": "workspace::ActivatePaneRight",
-      "space w e": "workspace::ActivatePaneUp",
+      "g k": "pane::ActivateNextItem",
+      "g i": "vim::EndOfLine",
+      "g u": "editor::GoToImplementation",
+      "g l": "git::StageAndNext",
       "space w n": "workspace::ActivatePaneDown",
-      // Space mode
-      "space n": "editor::Hover"
+      "space w e": "workspace::ActivatePaneUp",
+      "space w i": "workspace::ActivatePaneRight",
+      "space w j": null,
+      "space w k": null,
+      "space w l": null
     }
   },
   {
-    "context": "vim_mode == insert && !(showing_code_actions || showing_completions)",
+    "context": "vim_operator == d && !menu",
     "bindings": {
-      "ctrl-k": "editor::ShowWordCompletions"
+      "l": "git::StageAndNext",
+      "shift-l": "git::UnstageAndNext"
     }
   },
   {
-    "context": "(vim_mode == insert || vim_mode == normal) && showing_signature_help && !showing_completions",
+    "context": "vim_operator == gu && !menu",
     "bindings": {
-      "ctrl-k": "editor::SignatureHelpNext"
-    }
-  },
-  {
-    "context": "vim_mode == replace",
-    "bindings": {
-      "ctrl-n": ["vim::PushDigraph", {}]
-    }
-  },
-  {
-    "context": "vim_mode == waiting",
-    "bindings": {
-      "ctrl-n": ["vim::PushDigraph", {}]
-    }
-  },
-  {
-    "context": "vim_operator == a || vim_operator == i || vim_operator == cs || vim_operator == helix_next || vim_operator == helix_previous",
-    "bindings": {
-      // Subword TextObject
-      "i": "vim::IndentObj",
-      "shift-i": ["vim::IndentObj", { "include_below": true }],
-      "j": "vim::EntireFile"
-    }
-  },
-  {
-    "context": "vim_operator == d",
-    "bindings": {
-      "l": "git::StageAndNext", // "d u"
-      "shift-l": "git::UnstageAndNext" // "d shift-u"
-    }
-  },
-  {
-    "context": "vim_operator == gu",
-    "bindings": {
-      "g l": "vim::CurrentLine",
       "l": "vim::CurrentLine"
     }
   },
   {
-    "context": "vim_operator == gU",
+    "context": "vim_operator == gU && !menu",
     "bindings": {
-      "g shift-l": "vim::CurrentLine",
       "shift-l": "vim::CurrentLine"
     }
   },
   {
-    "context": "VimControl || !Editor && !Terminal",
+    "context": "VimControl && !menu || !Editor && !Terminal",
     "bindings": {
-      // window related commands (ctrl-w X)
-      "ctrl-w ctrl-i": "workspace::ActivatePaneRight",
-      "ctrl-w ctrl-e": "workspace::ActivatePaneUp",
-      "ctrl-w ctrl-n": "workspace::ActivatePaneDown",
-      "ctrl-w i": "workspace::ActivatePaneRight",
-      "ctrl-w e": "workspace::ActivatePaneUp",
       "ctrl-w n": "workspace::ActivatePaneDown",
-      "ctrl-w shift-i": "workspace::SwapPaneRight",
-      "ctrl-w shift-e": "workspace::SwapPaneUp",
-      "ctrl-w shift-n": "workspace::SwapPaneDown"
+      "ctrl-w k": "workspace::NewFileSplitHorizontal",
+      "ctrl-w e": "workspace::ActivatePaneUp",
+      "ctrl-w i": "workspace::ActivatePaneRight",
+      "ctrl-w j": null,
+      "ctrl-w l": null,
+      "ctrl-w ctrl-n": "workspace::ActivatePaneDown",
+      "ctrl-w ctrl-k": "workspace::NewFileSplitHorizontal",
+      "ctrl-w ctrl-e": "workspace::ActivatePaneUp",
+      "ctrl-w ctrl-i": "workspace::ActivatePaneRight",
+      "ctrl-w ctrl-j": null,
+      "ctrl-w ctrl-l": null,
+      "ctrl-w shift-n": "workspace::MovePaneDown",
+      "ctrl-w shift-e": "workspace::MovePaneUp",
+      "ctrl-w shift-i": "workspace::MovePaneRight",
+      "ctrl-w shift-j": null,
+      "ctrl-w shift-k": null,
+      "ctrl-w shift-l": null
     }
   },
   {
-    // netrw compatibility
+    "context": "Editor && mode == auto_height && VimControl && !menu && !(vim_operator == a || vim_operator == i || vim_operator == cs || vim_operator == helix_next || vim_operator == helix_previous)",
+    "bindings": {
+      "k": null,
+      "shift-k": null
+    }
+  },
+  {
+    "context": "Editor && vim_mode == normal && !VimWaiting && !menu",
+    "bindings": {
+      ", .": "pane::ActivateNextItem",
+      ", m": "pane::ActivatePreviousItem"
+    }
+  },
+  {
+    "context": "Editor && vim_mode == helix_normal && !VimWaiting && !menu",
+    "bindings": {
+      ", .": "pane::ActivateNextItem",
+      ", m": "pane::ActivatePreviousItem"
+    }
+  },
+  // Preserve the existing popup gesture outside this modal-mode rewrite.
+  {
+    "context": "showing_completions",
+    "bindings": {
+      "ctrl-j": "vim::LineDown"
+    }
+  },
+  {
     "context": "ProjectPanel && not_editing",
     "bindings": {
-      "n": "menu::SelectNext",
-      "e": "menu::SelectPrevious",
-      "i": "project_panel::ExpandSelectedEntry"
+      "n": "vim::MenuSelectNext",
+      "e": "vim::MenuSelectPrevious",
+      "i": "project_panel::ExpandSelectedEntry",
+      "j": null,
+      "k": null,
+      "l": null
     }
   },
   {
     "context": "OutlinePanel && not_editing",
     "bindings": {
-      "n": "menu::SelectNext",
-      "e": "menu::SelectPrevious"
+      "n": "vim::MenuSelectNext",
+      "e": "vim::MenuSelectPrevious",
+      "i": "outline_panel::ExpandSelectedEntry",
+      "j": null,
+      "k": null,
+      "l": null
     }
   },
   {
-    "context": "GitPanel && ChangesList",
+    "context": "GitPanel && (ChangesList || HistoryList) && !GitBranchSelector && !GitRepositorySelector",
     "use_key_equivalents": true,
     "bindings": {
-      "e": "menu::SelectPrevious",
       "n": "menu::SelectNext",
-      "u": "git_panel::FocusEditor"
+      "e": "menu::SelectPrevious",
+      "j": null,
+      "k": null
     }
   },
   {
-    "context": "Editor && mode == auto_height && VimControl",
+    "context": "GitPanel && ChangesList && !GitBranchSelector && !GitRepositorySelector",
+    "use_key_equivalents": true,
     "bindings": {
-      // TODO: Implement search
-      "k": null,
-      "shift-k": null
+      "i": "git_panel::ExpandSelectedEntry",
+      "u": "git_panel::FocusEditor",
+      "l": null
     }
   },
   {
@@ -249,12 +232,108 @@
     }
   },
   {
-    "context": "os != macos && Editor && edit_prediction_conflict",
+    "context": "GitGraph && !GitGraphSearchBar",
     "bindings": {
-      // alt-l is provided as an alternative to tab/alt-tab. and will be displayed in the UI. This
-      // is because alt-tab may not be available, as it is often used for window switching on Linux
-      // and Windows.
-      "alt-l": "editor::AcceptEditPrediction"
+      "n": "vim::MenuSelectNext",
+      "e": "vim::MenuSelectPrevious",
+      "j": null,
+      "k": null
+    }
+  },
+  {
+    "context": "SettingsWindow > NavigationMenu && !search",
+    "bindings": {
+      "n": "settings_editor::FocusNextNavEntry",
+      "e": "settings_editor::FocusPreviousNavEntry",
+      "i": "settings_editor::ExpandNavEntry",
+      "j": null,
+      "k": null,
+      "l": null
+    }
+  },
+  {
+    "context": "FileHistoryView",
+    "bindings": {
+      "n": "menu::SelectNext",
+      "e": "menu::SelectPrevious",
+      "j": null,
+      "k": null
+    }
+  },
+  {
+    "context": "NotebookEditor && notebook_mode == command",
+    "bindings": {
+      "n": "menu::SelectNext",
+      "e": "menu::SelectPrevious",
+      "u": "notebook::EnterEditMode",
+      "j": null,
+      "k": null,
+      "i": null
+    }
+  },
+  {
+    "context": "ThreadsSidebar && !Editor",
+    "bindings": {
+      "n": "menu::SelectNext",
+      "e": "menu::SelectPrevious",
+      "i": "menu::SelectChild",
+      "j": null,
+      "k": null,
+      "l": null
+    }
+  },
+  {
+    "context": "os == macos && Prompt",
+    "use_key_equivalents": true,
+    "bindings": {
+      "i": "menu::SelectNext",
+      "l": null
+    }
+  },
+  {
+    "context": "os != macos && Prompt",
+    "bindings": {
+      "i": "menu::SelectNext",
+      "l": null
+    }
+  },
+  // Specialized Editor rules follow generic modal bindings and retain native display aliases.
+  {
+    "context": "NotebookEditor > Editor && VimControl && vim_mode == normal && !menu",
+    "bindings": {
+      "n": "notebook::NotebookMoveDown",
+      "e": "notebook::NotebookMoveUp",
+      "g j": [
+        "vim::Down",
+        {
+          "display_lines": true
+        }
+      ],
+      "g k": [
+        "vim::Up",
+        {
+          "display_lines": true
+        }
+      ]
+    }
+  },
+  {
+    "context": "ThreadsSidebar > Editor && VimControl && vim_mode == normal && !menu",
+    "bindings": {
+      "n": "editor::MoveDown",
+      "e": "editor::MoveUp",
+      "g j": [
+        "vim::Down",
+        {
+          "display_lines": true
+        }
+      ],
+      "g k": [
+        "vim::Up",
+        {
+          "display_lines": true
+        }
+      ]
     }
   }
 ]

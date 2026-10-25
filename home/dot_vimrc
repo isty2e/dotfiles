@@ -173,8 +173,6 @@ else
 endif
 
 let mapleader = ','
-nnoremap j gj
-nnoremap k gk
 nnoremap <leader><space> :noh<CR>
 nnoremap <leader>m :tabp<CR>
 nnoremap <leader>. :tabn<CR>
@@ -214,6 +212,14 @@ let g:indentLine_color_gui = '#3a3a3a'
 let g:indentLine_char = '│'
 
 nnoremap <leader>e <Esc>:NERDTreeToggle<CR>
+let g:NERDTreeMapOpenExpl = 'j'
+let g:NERDTreeMapOpenSplit = 'u'
+let g:NERDTreeMapUpdir = 'l'
+let g:NERDTreeMapJumpLastChild = 'N'
+let g:NERDTreeMapJumpFirstChild = 'E'
+let g:NERDTreeMapToggleHidden = 'U'
+let g:NERDTreeMapUpdirKeepOpen = '<C-r>'
+let g:NERDTreeMapPreviewSplit = 'gi'
 let g:NERDSpaceDelims = 1
 let g:NERDDefaultAlign = 'left'
 let g:syntastic_disabled_filetypes = ['tex', 'latex']
@@ -251,69 +257,51 @@ let g:ale_python_isort_options = '--profile=black'
 let g:ale_python_black_options = '--preview'
 let g:ale_python_ruff_format_options = '--preview'
 
-" Legacy mappings are preserved here; modal policy migration is separate.
-let g:colemak_mapping = 1
+" Fixed Colemak roles; native operator and literal-input grammars stay separate.
+for s:mode in ['n', 'x']
+  for [s:from, s:to] in [
+        \ ['n', 'gj'], ['e', 'gk'], ['j', 'e'], ['k', 'n'],
+        \ ['gj', 'j'], ['gk', 'k'], ['u', 'i'], ['l', 'u'], ['i', 'l'],
+        \ ['J', 'E'], ['N', 'J'], ['K', 'N'], ['E', 'K']]
+    execute s:mode . 'noremap ' . s:from . ' ' . s:to
+  endfor
+endfor
 
-function! ColemakToQwerty()
-  noremap f e
-  nnoremap p r|xnoremap p r|onoremap p r
-  noremap g t
-  noremap j y
-  noremap l u
-  noremap u i
-  noremap y o
-  noremap ; p
-  noremap r s
-  noremap s d
-  noremap t f
-  noremap d g
-  noremap n j
-  noremap e k
-  noremap i l
-  noremap o :
-  noremap k n
+nnoremap U I
+nnoremap <C-r> U
+nnoremap L <C-r>
+nnoremap I L
+xnoremap U I
+xnoremap L U
+xnoremap I L
 
-  noremap F E
-  nnoremap P R|xnoremap P R|onoremap P R
-  noremap G T
-  noremap J Y
-  noremap L U
-  noremap U I
-  noremap Y O
-  noremap : P
-  noremap R S
-  noremap S D
-  noremap T F
-  noremap D G
-  noremap N J
-  noremap E K
-  noremap I L
-  noremap O :
-  noremap K N
+" Empty operator slots cancel instead of leaving a destructive operator pending.
+onoremap n j
+onoremap e k
+onoremap j e
+onoremap k n
+onoremap i l
+onoremap u i
+onoremap l <Esc>
+onoremap J E
+onoremap N <Esc>
+onoremap K N
+onoremap E <Esc>
+onoremap I L
+onoremap U <Esc>
+onoremap L <Esc>
 
-  noremap <C-s> <C-d>
-  noremap <C-l> <C-u>
-  noremap jj yy
-  noremap dd gg
-  noremap ss dd
-endfunction
-
-function! RestoreQwerty()
-  mapclear
-  mapclear!
-endfunction
-
-function! ToggleColemakMapping()
-  if g:colemak_mapping == 1
-    call RestoreQwerty()
-    let g:colemak_mapping = 0
-    echo 'QWERTY mapping activated'
-  else
-    call ColemakToQwerty()
-    let g:colemak_mapping = 1
-    echo 'Colemak mapping activated'
-  endif
-endfunction
-
-call ColemakToQwerty()
-nnoremap <leader>cm :call ToggleColemakMapping()<CR>
+let s:window_bindings = [
+      \ ['j', '<Nop>'], ['n', '<C-w>j'], ['k', '<C-w>n'], ['e', '<C-w>k'],
+      \ ['i', '<C-w>l'], ['l', '<C-w>i'],
+      \ ['J', '<Nop>'], ['N', '<C-w>J'], ['K', '<Nop>'], ['E', '<C-w>K'],
+      \ ['I', '<C-w>L'], ['L', '<C-w>I']]
+for s:mode in ['n', 'x']
+  for [s:from, s:to] in s:window_bindings
+    execute s:mode . 'noremap <C-w>' . s:from . ' ' . s:to
+    if s:from =~# '^[a-z]$'
+      execute s:mode . 'noremap <C-w><C-' . s:from . '> ' . s:to
+    endif
+  endfor
+endfor
+unlet s:mode s:from s:to s:window_bindings

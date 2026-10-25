@@ -3,31 +3,30 @@ theme = "papercolor-light"
 [editor]
 true-color = true
 
-# === Helix Colemak 전용 리바인딩 ===
-
-# ---------- NORMAL ----------
+# Cycles and native baseline: docs/keymaps.md.
 [keys.normal]
-h = "move_char_left"        # ←
-i = "move_char_right"       # →
-e = "move_visual_line_up"   # ↑
-n = "move_visual_line_down" # ↓
+h = "move_char_left"
+i = "move_char_right"
+e = "move_visual_line_up"
+n = "move_visual_line_down"
 
 N = "join_selections"
 
-u = "insert_mode" # insert
-l = "undo"        # undo
-L = "redo"        # redo
+u = "insert_mode"
+l = "undo"
+L = "redo"
 
-k = "search_next" # 다음 검색 결과
-K = "search_prev" # 이전 검색 결과
+k = "search_next"
+K = "search_prev"
 
-j = "move_next_word_end"      # 단어 끝(e)로
-J = "move_next_long_word_end" # 긴 단어 끝(E)로
+j = "move_next_word_end"
+J = "move_next_long_word_end"
+E = "keep_selections"
 
-I = "no_op"                # 오타 방지
+# Vacancies need explicit no_op bindings to suppress inherited defaults.
+I = "no_op"
 U = "insert_at_line_start"
 
-# ---------- SELECT (VISUAL) ----------
 [keys.select]
 h = "extend_char_left"
 i = "extend_char_right"
@@ -45,19 +44,11 @@ K = "extend_search_prev"
 
 j = "extend_next_word_end"
 J = "extend_next_long_word_end"
+E = "keep_selections"
 
 I = "no_op"
-U = "no_op"
+U = "insert_at_line_start"
 
-# ---------- INSERT ----------
-[keys.insert]
-# 원하면 화살표키 무력화/노말 복귀 등을 여기 추가
-# 예시) 'jk'로 노말 복귀:
-# j = { k = "normal_mode" }
-
-# ---------- 'g' 마이너 모드 ----------
-# QWERTY h/j/k/l 가정으로 배치된 기본 g-명령을
-# Colemak 홈로우에서 덜 헷갈리게 재배열.
 [keys.normal.g]
 n = "move_line_down"
 e = "move_line_up"
@@ -75,27 +66,77 @@ k = "goto_next_buffer"
 j = "extend_to_last_line"
 
 [keys.normal."C-w"]
-# 이동 (HNEI)
 h = "jump_view_left"
 n = "jump_view_down"
 e = "jump_view_up"
 i = "jump_view_right"
 
-# 스왑 (대문자 HNEI)
 H = "swap_view_left"
 N = "swap_view_down"
 E = "swap_view_up"
 I = "swap_view_right"
+
+k = { s = "hsplit_new", v = "vsplit_new", C-s = "hsplit_new", C-v = "vsplit_new" }
+
+j = "no_op"
+l = "no_op"
+J = "no_op"
+K = "no_op"
+L = "no_op"
 
 [keys.select."C-w"]
-# 이동 (HNEI)
 h = "jump_view_left"
 n = "jump_view_down"
 e = "jump_view_up"
 i = "jump_view_right"
 
-# 스왑 (대문자 HNEI)
 H = "swap_view_left"
 N = "swap_view_down"
 E = "swap_view_up"
 I = "swap_view_right"
+
+k = { s = "hsplit_new", v = "vsplit_new", C-s = "hsplit_new", C-v = "vsplit_new" }
+
+j = "no_op"
+l = "no_op"
+J = "no_op"
+K = "no_op"
+L = "no_op"
+
+[keys.normal.space.w]
+h = "jump_view_left"
+n = "jump_view_down"
+e = "jump_view_up"
+i = "jump_view_right"
+
+H = "swap_view_left"
+N = "swap_view_down"
+E = "swap_view_up"
+I = "swap_view_right"
+
+k = { s = "hsplit_new", v = "vsplit_new", C-s = "hsplit_new", C-v = "vsplit_new" }
+
+j = "no_op"
+l = "no_op"
+J = "no_op"
+K = "no_op"
+L = "no_op"
+
+[keys.select.space.w]
+h = "jump_view_left"
+n = "jump_view_down"
+e = "jump_view_up"
+i = "jump_view_right"
+
+H = "swap_view_left"
+N = "swap_view_down"
+E = "swap_view_up"
+I = "swap_view_right"
+
+k = { s = "hsplit_new", v = "vsplit_new", C-s = "hsplit_new", C-v = "vsplit_new" }
+
+j = "no_op"
+l = "no_op"
+J = "no_op"
+K = "no_op"
+L = "no_op"

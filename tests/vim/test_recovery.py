@@ -62,8 +62,20 @@ class VimTestCase(unittest.TestCase):
             + "\ncall writefile([json_encode(g:result)], $RESULT)\nqa!\n"
         )
         assert VIM is not None
+        log = self.root / "vim.log"
         completed = subprocess.run(
-            [VIM, "-Nu", str(self.vimrc), "-n", "-i", "NONE", "-es", "-S", str(probe)],
+            [
+                VIM,
+                "-Nu",
+                str(self.vimrc),
+                "-n",
+                "-i",
+                "NONE",
+                "-es",
+                "-V1" + str(log),
+                "-S",
+                str(probe),
+            ],
             env=self.env,
             cwd=self.root,
             capture_output=True,
@@ -71,7 +83,13 @@ class VimTestCase(unittest.TestCase):
             text=True,
             timeout=30,
         )
-        self.assertEqual(completed.returncode, 0, completed.stdout + completed.stderr)
+        self.assertEqual(
+            completed.returncode,
+            0,
+            completed.stdout
+            + completed.stderr
+            + (log.read_text() if log.exists() else ""),
+        )
         return Path(self.env["RESULT"]).read_text()
 
     def _seed_manager(self, source: Path = FIXTURES / "plug.vim") -> None:
@@ -169,6 +187,7 @@ let g:result = [g:plugs.fzf, len(g:plugs)]
             Path(self.env["INSTALL_LOG"]).read_text().splitlines(), ["--sync", "--sync"]
         )
         self.assertFalse((self.home / ".fzf").exists())
+        self.assertFalse((self.home / ".vim/autoload/plug.vim.old").exists())
         for name in (".zshrc", ".bashrc"):
             self.assertEqual(
                 (self.home / name).read_text(), "keep existing shell settings\n"
@@ -205,6 +224,90 @@ let g:result = [before, g:vim_test_manager_source]
         self.assertEqual(result, ["existing", "downloaded"])
         self.assertEqual(manager.read_bytes(), (self.assets / "plug.vim").read_bytes())
 
+    def test_backup_tracks_only_the_previous_distinct_manager(self) -> None:
+        self._seed_manager()
+        manager = self.home / ".vim/autoload/plug.vim"
+        backup = manager.with_name("plug.vim.old")
+        provider = self.assets / "plug.vim"
+        base = manager.read_bytes()
+        original = base.rstrip(b"\n")
+        manager.write_bytes(original)
+        updated = base + b"\nlet g:vim_test_revision = 2\n"
+        provider.write_bytes(updated)
+
+        self._run_vim("VimSetup")
+        self.assertEqual(manager.read_bytes(), updated)
+        self.assertEqual(backup.read_bytes(), original)
+
+        self._run_vim("VimSetup")
+        self.assertEqual(manager.read_bytes(), updated)
+        self.assertEqual(backup.read_bytes(), original)
+
+        newest = base + b"\nlet g:vim_test_revision = 3\n"
+        provider.write_bytes(newest)
+        self._run_vim("VimSetup")
+        self.assertEqual(manager.read_bytes(), newest)
+        self.assertEqual(backup.read_bytes(), updated)
+        self.assertEqual(list(manager.parent.glob("*.download-*")), [])
+
+    def test_backup_publication_failure_does_not_replace_the_manager(self) -> None:
+        self._seed_manager()
+        manager = self.home / ".vim/autoload/plug.vim"
+        original = manager.read_bytes()
+        backup = manager.with_name("plug.vim.old")
+        backup.mkdir()
+        sentinel = backup / "existing"
+        sentinel.write_bytes(b"preserve this directory")
+        (self.assets / "plug.vim").write_bytes(
+            original + b"\nlet g:vim_test_revision = 2\n"
+        )
+        result = json.loads(
+            self._run_vim("""
+try
+  VimSetup
+catch
+  let g:result = v:exception
+endtry
+""")
+        )
+        self.assertIsInstance(result, str)
+        self.assertIn("VimSetup:", result)
+        self.assertEqual(manager.read_bytes(), original)
+        self.assertEqual(sentinel.read_bytes(), b"preserve this directory")
+        self.assertFalse(Path(self.env["INSTALL_LOG"]).exists())
+        self.assertEqual(list(manager.parent.glob("*.download-*")), [])
+
+    def test_backup_restores_a_manager_after_an_upstream_source_error(self) -> None:
+        self._seed_manager()
+        manager = self.home / ".vim/autoload/plug.vim"
+        original = manager.read_bytes()
+        (self.assets / "plug.vim").write_text(
+            "throw 'injected upstream source failure'\n"
+        )
+        result = json.loads(
+            self._run_vim("""
+try
+  VimSetup
+catch
+  let g:result = v:exception
+endtry
+""")
+        )
+        self.assertEqual(result, "injected upstream source failure")
+        backup = manager.with_name("plug.vim.old")
+        self.assertEqual(backup.read_bytes(), original)
+        self.assertFalse(Path(self.env["INSTALL_LOG"]).exists())
+
+        shutil.copyfile(backup, manager)
+        result = json.loads(
+            self._run_vim("""
+call setline(1, ['first', 'second'])
+normal n
+let g:result = [line('.'), len(g:plugs)]
+""")
+        )
+        self.assertEqual(result, [2, 27])
+
     def test_failed_refresh_preserves_the_installed_manager_without_installing(
         self,
     ) -> None:
@@ -214,6 +317,9 @@ let g:result = [before, g:vim_test_manager_source]
             manager.read_text() + "\nlet g:vim_test_manager_source = 'existing'\n"
         )
         original = manager.read_bytes()
+        backup = manager.with_name("plug.vim.old")
+        previous = b"let g:vim_test_revision = 0\n"
+        backup.write_bytes(previous)
         for failure in ("FAIL_ASSET", "EMPTY_ASSET"):
             with self.subTest(failure=failure):
                 self.env[failure] = "plug.vim"
@@ -230,6 +336,7 @@ endtry
                 self.assertIn("VimSetup:", result[0])
                 self.assertEqual(result[1], "existing")
                 self.assertEqual(manager.read_bytes(), original)
+                self.assertEqual(backup.read_bytes(), previous)
                 self.assertFalse(Path(self.env["INSTALL_LOG"]).exists())
                 self.assertEqual(list(manager.parent.glob("*.download-*")), [])
                 del self.env[failure]

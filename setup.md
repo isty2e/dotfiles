@@ -20,22 +20,26 @@ colorscheme while keeping core editing available.
 Recovery requires Vim with `+eval`, Git, curl with HTTPS support, and network
 access to GitHub and plugin download hosts. It needs no administrator rights.
 Every `:VimSetup` fetches the latest vim-plug from its official `master` branch
-and replaces the installed manager, even when one already exists. It acquires
+and updates the installed manager when the content differs. It acquires
 missing personal color files into `~/.vim`, reloads the refreshed manager, then
 runs vim-plug's synchronous installation under `~/.vim/plugged`. This executes
 third-party plugin code and the fzf binary installer. The fzf hook uses `--bin`,
 not shell integration; setup does not edit shell startup files.
 
-In a new account, run from this checkout:
+Setup writes to `~/.vim`, including a symlink's destination. Do not run it against
+an existing shared or cloud-synced tree before settling that tree's migration.
+
+Use the actual Vim executable, not a shell alias for Neovim. In a new account,
+run from this checkout:
 
 ```sh
 cp -n .vimrc "$HOME/.vimrc"
 vim
 ```
 
-Then run `:VimSetup`, review its output and `:PlugStatus`, and restart Vim. To try
-the entrypoint without replacing an existing vimrc, use `vim -u "$PWD/.vimrc"`.
-Setup still writes to `~/.vim`; use a separate home directory for an isolated
+Then run `:VimSetup`, review its output and `:PlugStatus`, and restart Vim.
+To try the entrypoint without replacing an existing vimrc, use `vim -u "$PWD/.vimrc"`.
+That only selects the entrypoint; use a separate home directory for an isolated
 trial. Existing personal color files are kept; empty or unreadable color assets
 stop setup rather than being overwritten. A failed or empty manager download
 preserves the installed manager and stops setup instead of continuing with the
@@ -45,12 +49,26 @@ not publish partial files. Plugin state is owned by vim-plug: setup does not run
 forced-install retry after fixing the cause; repository status alone is not a
 feature-health check.
 
+Before replacing a different manager, setup saves its exact previous contents
+to `~/.vim/autoload/plug.vim.old`. Identical downloads leave this backup intact;
+first installation creates no backup. A backup-write failure stops replacement.
+The backup is published before the manager, not as a two-file transaction: if
+the final replacement fails, the active manager remains and `.old` may equal it.
+The copy is a previous version, not a verified known-good version. There is no
+automatic rollback. To restore it manually, close Vim, copy it back, and restart:
+
+```sh
+cp "$HOME/.vim/autoload/plug.vim.old" "$HOME/.vim/autoload/plug.vim"
+```
+
+The next `:VimSetup` attempts the latest upstream manager again.
+
 Only personal color sources are pinned. The manager follows upstream `master`;
 this does not guarantee compatibility with every future upstream change. Exact
 plugin-version replay, editing history/caches, and external tools such as Ruff,
-isort, language runtimes and other ALE executables are outside this recovery scope. The current
-legacy Vim mappings are retained; they have not yet been migrated to the shared
-Colemak policy. Neovim has an independent configuration.
+isort, language runtimes and other ALE executables are outside this recovery
+scope. The current legacy Vim mappings are retained; they have not yet been
+migrated to the shared Colemak policy. Neovim has an independent configuration.
 
 The full suite fetches the same latest vim-plug URL once for its real-manager
 checks; network or upstream compatibility failures are test failures:

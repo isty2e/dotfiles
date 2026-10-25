@@ -23,17 +23,34 @@ function! s:InstallAsset(asset, refresh) abort
   call mkdir(fnamemodify(target, ':h'), 'p')
   " Keep the temporary file on the target filesystem for rename().
   let temporary = target . '.download-' . fnamemodify(tempname(), ':t')
+  let backup_temporary = temporary . '.old'
   try
     let output = system('curl --fail --location --silent --show-error --output '
           \ . shellescape(temporary) . ' ' . shellescape(a:asset[1]))
     if v:shell_error || getfsize(temporary) <= 0
       throw 'VimSetup: download failed: ' . a:asset[0] . "\n" . output
     endif
+
+    if a:refresh && !empty(getftype(target))
+      if !filereadable(target)
+        throw 'VimSetup: cannot back up ' . target
+      endif
+      let installed = readfile(target, 'b')
+      if installed ==# readfile(temporary, 'b')
+        return
+      endif
+      if writefile(installed, backup_temporary, 'b') != 0
+            \ || rename(backup_temporary, target . '.old') != 0
+        throw 'VimSetup: could not back up ' . target
+      endif
+    endif
+
     if rename(temporary, target) != 0
       throw 'VimSetup: could not install ' . target
     endif
   finally
     call delete(temporary)
+    call delete(backup_temporary)
   endtry
 endfunction
 

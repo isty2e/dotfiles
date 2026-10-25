@@ -321,11 +321,19 @@ reporting or the next authorized delivery step.
 
 ## Task Management — Kata
 
-Use [Kata](https://www.katatracker.com/) for multi-step work, follow-ups, blockers, and completion tracking; do not
-maintain competing persistent task lists.
+Use Kata when work needs resumption, coordination, dependency management, or follow-up. Bounded, self-contained work
+needs no new issue; multiple execution steps alone do not require tracking. Continuing tracked work still requires
+keeping its owning record current.
 
-Before substantive work, load and apply `kata-task-management` to find or create the owning issue and initialize the
-workspace when needed. Brief scoping exploration and simple questions/lookups do not require registration.
+If the request or current context provides concrete signs of an existing Kata owner (an issue reference, a known
+continuation, or a link from the relevant branch/PR), reuse that owner or load the skill for a scoped lookup before
+treating the work as untracked. A project binding alone does not require this search.
+
+Load and apply `kata-task-management` before any Kata operation, including direct requests, and when starting or
+continuing work that needs tracking. If that need emerges during execution, load it then. Before pausing or handing
+off, ensure known remaining commitments, blockers, and partially applied changes that need management are tracked.
+Unaccepted suggestions are not commitments. No per-turn checklist or report is required. Do not maintain competing
+persistent task lists.
 
 <!-- KATA_END -->
 

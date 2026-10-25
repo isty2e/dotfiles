@@ -7,6 +7,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
 VIM_SOURCE = REPO / "home/dot_vimrc"
+NVIM_SOURCE = REPO / "home/dot_config/nvim"
 _configured_chezmoi = os.environ.get("CHEZMOI")
 _selected_chezmoi = (
     shutil.which(_configured_chezmoi or "chezmoi") or _configured_chezmoi
@@ -27,6 +28,13 @@ class ChezmoiSourceTests(unittest.TestCase):
         self.former = self.root / "former source"
         for directory in (self.home, self.destination, self.former, self.root / "tmp"):
             directory.mkdir()
+        self.sources = {Path(".vimrc"): VIM_SOURCE}
+        self.sources.update(
+            (Path(".config/nvim") / path.relative_to(NVIM_SOURCE), path)
+            for path in NVIM_SOURCE.rglob("*")
+            if path.is_file()
+        )
+
         self.environment = {
             "HOME": str(self.home),
             "XDG_CONFIG_HOME": str(self.home / ".config"),
@@ -64,11 +72,12 @@ class ChezmoiSourceTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         return result.stdout
 
-    def test_vim_is_the_only_managed_target(self) -> None:
-        managed = self._chezmoi("managed", "--path-style=relative")
-        self.assertEqual(managed.splitlines(), [".vimrc"])
+    def test_only_editor_configuration_files_are_managed(self) -> None:
+        managed = self._chezmoi("managed", "--include=files", "--path-style=relative")
+        expected = {path.as_posix() for path in self.sources}
+        self.assertEqual(set(managed.splitlines()), expected)
 
-    def test_apply_replaces_only_the_config_link_and_preserves_runtime(self) -> None:
+    def test_apply_replaces_config_links_and_preserves_unmanaged_state(self) -> None:
         old_config = self.former / "vimrc"
         old_config.write_bytes(b'" former Vim configuration\n')
         old_runtime = self.former / "vim"
@@ -80,6 +89,17 @@ class ChezmoiSourceTests(unittest.TestCase):
         config.symlink_to(old_config)
         runtime.symlink_to(old_runtime, target_is_directory=True)
 
+        old_nvim = self.former / "nvim-init.lua"
+        old_nvim.write_bytes(b"-- former Neovim configuration\n")
+        nvim = self.destination / ".config/nvim"
+        nvim.mkdir(parents=True)
+        nvim_init = nvim / "init.lua"
+        nvim_init.symlink_to(old_nvim)
+        metadata = nvim / ".git"
+        metadata.mkdir()
+        repository_marker = metadata / "preserved"
+        repository_marker.write_bytes(b"existing repository metadata")
+
         self.assertTrue(self._chezmoi("diff").strip())
         self.assertTrue(config.is_symlink())
         self.assertEqual(old_config.read_bytes(), b'" former Vim configuration\n')
@@ -87,9 +107,18 @@ class ChezmoiSourceTests(unittest.TestCase):
         self.assertFalse(config.is_symlink())
         self.assertEqual(config.read_bytes(), VIM_SOURCE.read_bytes())
         self.assertEqual(old_config.read_bytes(), b'" former Vim configuration\n')
+        self.assertFalse(nvim_init.is_symlink())
+        self.assertEqual(old_nvim.read_bytes(), b"-- former Neovim configuration\n")
+        for target, source in self.sources.items():
+            self.assertEqual(
+                (self.destination / target).read_bytes(), source.read_bytes()
+            )
         self.assertTrue(runtime.is_symlink())
         self.assertEqual(os.readlink(runtime), str(old_runtime))
         self.assertEqual(marker.read_bytes(), b"former runtime")
+        self.assertEqual(
+            repository_marker.read_bytes(), b"existing repository metadata"
+        )
 
         runtime.unlink()
         runtime.mkdir()

@@ -68,7 +68,7 @@ Baseline: [25.07.1 defaults](https://github.com/helix-editor/helix/blob/25.07.1/
 
 Keep native left/collapse bindings. Preserve each scope's native operation and arguments, including Vim menu actions and specialized Editor motions. Prompt retains its platform's native key-equivalent setting. Vacated bindings are disabled with `null`; unrelated aliases remain inherited. Rename/search/picker input is not translated.
 
-The Zed fixture checks configured bindings through selected overlapping source/user layers and candidate-rule collection. It is not a context evaluator or actual runtime dispatch verification. Copied edit-prediction defaults are inherited from Zed rather than maintained here.
+The Zed fixture checks configured bindings through selected overlapping source/user layers and candidate-rule collection; it does not reimplement Zed's context evaluator. Zed owns runtime key dispatch. Profile verification checks native contexts, action arguments and configured cycles, trusting the editor to execute its keymap contract. Manual GUI checks are optional troubleshooting for a concrete mismatch, not a completion prerequisite. Copied edit-prediction defaults are inherited from Zed rather than maintained here.
 
 ### Zed Vim/Helix modal editing: source baseline 1.25.3
 
@@ -135,7 +135,7 @@ Its preview split remains `g i` rather than being derived from the new split key
 Use `u` for Vim, Neovim and Zed inner-object selection (`duw`) and retain Helix
 `m i`. Following selectors remain native. The Helix override-scope check protects
 `m i` by leaving its native bindings untouched. Zed source-data tests distinguish
-outer object selection from native selectors; actual dispatch verification remains separate.
+outer object selection from native selectors; Zed owns execution of those bindings.
 
 ## Deferred and out-of-scope choices
 

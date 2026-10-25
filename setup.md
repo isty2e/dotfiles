@@ -52,6 +52,8 @@ feature-health check.
 Before replacing a different manager, setup saves its exact previous contents
 to `~/.vim/autoload/plug.vim.old`. Identical downloads leave this backup intact;
 first installation creates no backup. A backup-write failure stops replacement.
+Missing or zero-byte manager files are treated as uninstalled: they are neither
+sourced nor copied over an existing backup.
 The backup is published before the manager, not as a two-file transaction: if
 the final replacement fails, the active manager remains and `.old` may equal it.
 The copy is a previous version, not a verified known-good version. There is no

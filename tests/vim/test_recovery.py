@@ -121,6 +121,55 @@ let g:result = [&number, &shiftwidth, &expandtab, line('.'), g:colors_name]
         self.assertFalse(Path(self.env["CURL_LOG"]).exists())
         self.assertFalse(Path(self.env["INSTALL_LOG"]).exists())
 
+    def test_empty_manager_startup_keeps_core_editing_available(self) -> None:
+        self._seed_manager()
+        manager = self.home / ".vim/autoload/plug.vim"
+        manager.write_bytes(b"")
+        result = json.loads(
+            self._run_vim("""
+call setline(1, ['first', 'second'])
+normal n
+let g:result = [line('.'), g:colors_name, v:errmsg]
+""")
+        )
+        self.assertEqual(result, [2, "default", ""])
+        self.assertEqual(manager.read_bytes(), b"")
+        self.assertFalse(Path(self.env["CURL_LOG"]).exists())
+        self.assertFalse(Path(self.env["INSTALL_LOG"]).exists())
+
+    def test_empty_manager_can_be_recovered_without_creating_a_backup(self) -> None:
+        self._seed_manager()
+        manager = self.home / ".vim/autoload/plug.vim"
+        manager.write_bytes(b"")
+        result = json.loads(
+            self._run_vim("""
+VimSetup
+let g:result = len(g:plugs)
+""")
+        )
+        self.assertEqual(result, 27)
+        self.assertEqual(manager.read_bytes(), (self.assets / "plug.vim").read_bytes())
+        self.assertFalse(manager.with_name("plug.vim.old").exists())
+        self.assertEqual(
+            Path(self.env["INSTALL_LOG"]).read_text().splitlines(), ["--sync"]
+        )
+
+    def test_truncated_manager_does_not_replace_an_existing_backup(self) -> None:
+        self._seed_manager()
+        manager = self.home / ".vim/autoload/plug.vim"
+        backup = manager.with_name("plug.vim.old")
+        previous = manager.read_bytes() + b"\nlet g:vim_test_revision = 0\n"
+        backup.write_bytes(previous)
+        self._run_vim("""
+call writefile([], expand('~/.vim/autoload/plug.vim'), 'b')
+VimSetup
+""")
+        self.assertEqual(manager.read_bytes(), (self.assets / "plug.vim").read_bytes())
+        self.assertEqual(backup.read_bytes(), previous)
+        self.assertEqual(
+            Path(self.env["INSTALL_LOG"]).read_text().splitlines(), ["--sync"]
+        )
+
     def test_filetype_indentation_does_not_leak_to_other_buffers(self) -> None:
         self._seed_manager()
         result = json.loads(

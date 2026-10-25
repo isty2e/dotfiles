@@ -31,7 +31,7 @@ function! s:InstallAsset(asset, refresh) abort
       throw 'VimSetup: download failed: ' . a:asset[0] . "\n" . output
     endif
 
-    if a:refresh && !empty(getftype(target))
+    if a:refresh && !empty(getftype(target)) && getfsize(target) != 0
       if !filereadable(target)
         throw 'VimSetup: cannot back up ' . target
       endif
@@ -56,6 +56,7 @@ endfunction
 
 function! s:DeclarePlugins() abort
   if !filereadable(s:vimdir . '/autoload/plug.vim')
+        \ || getfsize(s:vimdir . '/autoload/plug.vim') <= 0
     return 0
   endif
 

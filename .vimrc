@@ -1,150 +1,164 @@
+let s:vimdir = expand('~/.vim')
+let s:color_source = 'https://raw.githubusercontent.com/isty2e/dotfiles/42895fa5391aa5fd7851cae18b22de818311f58c/.vim/colors/'
+let s:assets = [
+      \ ['autoload/plug.vim', 'https://raw.githubusercontent.com/junegunn/vim-plug/d80f495fabff8446972b8695ba251ca636a047b0/plug.vim'],
+      \ ['colors/evening_custom.vim', s:color_source . 'evening_custom.vim'],
+      \ ['colors/wombat256.vim', s:color_source . 'wombat256.vim'],
+      \ ['colors/wombat256mod.vim', s:color_source . 'wombat256mod.vim'],
+      \ ]
+
+function! s:InstallMissingAsset(asset) abort
+  let target = s:vimdir . '/' . a:asset[0]
+  if !empty(getftype(target))
+    if !filereadable(target) || getfsize(target) <= 0
+      throw 'VimSetup: existing asset is unreadable or empty: ' . target
+    endif
+    return
+  endif
+
+  if !executable('curl')
+    throw 'VimSetup: curl is required to download missing assets'
+  endif
+
+  call mkdir(fnamemodify(target, ':h'), 'p')
+  " Keep the temporary file on the target filesystem for rename().
+  let temporary = target . '.download-' . fnamemodify(tempname(), ':t')
+  try
+    let output = system('curl --fail --location --silent --show-error --output '
+          \ . shellescape(temporary) . ' ' . shellescape(a:asset[1]))
+    if v:shell_error || getfsize(temporary) <= 0
+      throw 'VimSetup: download failed: ' . a:asset[0] . "\n" . output
+    endif
+    if rename(temporary, target) != 0
+      throw 'VimSetup: could not install ' . target
+    endif
+  finally
+    call delete(temporary)
+  endtry
+endfunction
+
+function! s:DeclarePlugins() abort
+  if !filereadable(s:vimdir . '/autoload/plug.vim')
+    return 0
+  endif
+
+  execute 'source ' . fnameescape(s:vimdir . '/autoload/plug.vim')
+  call plug#begin(s:vimdir . '/plugged')
+
+  Plug 'tpope/vim-abolish'
+  Plug 'mileszs/ack.vim'
+  Plug 'godlygeek/tabular'
+  Plug 'junegunn/vim-easy-align'
+
+  Plug 'dense-analysis/ale'
+  Plug 'sheerun/vim-polyglot'
+  Plug 'jngeist/vim-multimarkdown'
+  Plug 'vim-latex/vim-latex'
+  Plug 'julialang/julia-vim'
+  Plug 'rhysd/vim-crystal'
+
+  Plug 'bling/vim-airline'
+  Plug 'vim-airline/vim-airline-themes'
+  Plug 'junegunn/seoul256.vim'
+  Plug 'tomasiser/vim-code-dark'
+  Plug 'luochen1990/rainbow'
+  Plug 'yggdroot/indentline'
+
+  Plug 'Lokaltog/vim-easymotion'
+  Plug 'haya14busa/incsearch.vim'
+  Plug 'haya14busa/incsearch-easymotion.vim'
+  Plug 'terryma/vim-multiple-cursors'
+  Plug 'scrooloose/nerdcommenter'
+  Plug 'scrooloose/nerdtree'
+
+  " Install only fzf's binary; --all also changes shell startup files.
+  Plug 'junegunn/fzf', { 'do': './install --bin' }
+  Plug 'junegunn/fzf.vim'
+  Plug 'vim-scripts/mru.vim'
+  Plug 'majutsushi/tagbar'
+  Plug 'MarcWeber/vim-addon-mw-utils'
+
+  call plug#end()
+  return 1
+endfunction
+
+function! s:VimSetup() abort
+  if !executable('git')
+    throw 'VimSetup: Git is required to install plugins'
+  endif
+
+  for asset in s:assets
+    call s:InstallMissingAsset(asset)
+  endfor
+  call s:DeclarePlugins()
+  PlugInstall --sync
+  echom 'Review the installation output and :PlugStatus, then restart Vim.'
+endfunction
+
+" Recovery is explicit; sourcing this file never starts an installation.
+command! VimSetup call s:VimSetup()
+let g:ale_completion_enabled = 1
+if !s:DeclarePlugins()
+  echom 'vim-plug is missing. Run :VimSetup to install the Vim environment.'
+elseif !empty(filter(copy(values(g:plugs)), '!isdirectory(v:val.dir)'))
+  echom 'Some plugins are missing. Run :VimSetup, then inspect :PlugStatus.'
+endif
+
 filetype plugin indent on
+syntax on
 
-" Specify a directory for plugins (for Neovim: ~/.local/share/nvim/plugged)
-call plug#begin('~/.vim/plugged')
-
-" my plugins
-
-" Abolish for substitution stuff
-Plug 'tpope/vim-abolish'
-
-" Ack/ag/rg, etc.
-Plug 'mileszs/ack.vim'
-Plug 'jremmen/vim-ripgrep'
-
-" Align
-Plug 'godlygeek/tabular'
-Plug 'junegunn/vim-easy-align'
-
-" Filetype supports and linting
-Plug 'dense-analysis/ale'
-Plug 'sheerun/vim-polyglot'
-Plug 'jngeist/vim-multimarkdown'
-Plug 'vim-latex/vim-latex'
-Plug 'julialang/julia-vim'
-Plug 'rhysd/vim-crystal'
-"Plug 'scrooloose/syntastic'
-
-" Cosmetics
-Plug 'bling/vim-airline'
-Plug 'tomasiser/vim-code-dark'
-Plug 'luochen1990/rainbow'
-Plug 'yggdroot/indentline'
-
-" Quick search and stuff
-Plug 'Lokaltog/vim-easymotion'
-Plug 'haya14busa/incsearch.vim'
-Plug 'haya14busa/incsearch-easymotion.vim'
-
-" Snippets and autocompletion
-Plug 'garbas/vim-snipmate'
-Plug 'ajh17/vimcompletesme'
-
-" Easy editing
-Plug 'terryma/vim-multiple-cursors'
-
-" Nerdy stuff
-Plug 'scrooloose/nerdcommenter'
-Plug 'scrooloose/nerdtree'
-
-" File search
-Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
-Plug 'junegunn/fzf.vim'
-Plug 'vim-scripts/mru.vim'
-
-" etc
-Plug 'majutsushi/tagbar'
-Plug 'MarcWeber/vim-addon-mw-utils'
-Plug 'vim-scripts/YankRing.vim'
-"Plug 'tomtom/tlib_vim'
-
-
-call plug#end()
-
-" backspace over lines
 set backspace=2
-
-" auto-indent
-set cin
-
-" hides buffer instead of closing them
+set cindent
 set hidden
 
-" highlight search results during search
 set hlsearch
-
-" incremental search
 set incsearch
-
-" case-insensitive search
 set ignorecase
-
-" always show the status line
-set laststatus=2
-
-" to improve security
-set modelines=0
-
-" show line numbers as default
-set nu
-
-" set pastetoggle
-set pastetoggle=<F2>
-
-" set ruler, thus enabling status line
-set ruler
-
-" leave at least three lines below and above curser
-set scrolloff=3
-
-" show partial commands and size of visual block
-set showcmd
-
-" show matching parentheses
-set showmatch
-
-" show whether paste is on or off
-set showmode
-
-" yes, case-insensitve search, but only if all characters are lowwercase.
 set smartcase
 
-" tab stuffs 
-set sts=2
-set sw=2
-set ts=2
+set modelines=0
+
+set laststatus=2
+set number
+set pastetoggle=<F2>
+set ruler
+set scrolloff=3
+set showcmd
+set showmatch
+set showmode
+
+set softtabstop=2
+set shiftwidth=2
+set tabstop=2
 set expandtab
 
-" max number of tabs
 set tabpagemax=100
-
-" change the title of terminal
 set title
-
-" tell vil fast redrawing is available
 set ttyfast
 
-" correct creepy auto-completion of vim
 set wildmode=longest:full
 set wildmenu
 
-syntax on
-filetype on
+augroup personal_indentation
+  autocmd!
+  autocmd FileType python setlocal softtabstop=4 shiftwidth=4 tabstop=4 expandtab
+  autocmd FileType html,ruby,rust,swift setlocal softtabstop=2 shiftwidth=2 tabstop=2 expandtab
+augroup END
 
-" leader key
-let mapleader=","
+if !empty(globpath(&runtimepath, 'colors/codedark.vim'))
+  colorscheme codedark
+else
+  colorscheme default
+endif
 
-" bindings
-nnoremap ; :
+let mapleader = ','
 nnoremap j gj
 nnoremap k gk
-"vnoremap j gj
-"vnoremap k gk
-nnoremap <leader><space> :noh<cr>
-nnoremap <leader>m :tabp<cr>
-nnoremap <leader>. :tabn<cr>
-nnoremap <leader>n :set nu!<cr>
-nnoremap <leader>t :tabe 
+nnoremap <leader><space> :noh<CR>
+nnoremap <leader>m :tabp<CR>
+nnoremap <leader>. :tabn<CR>
+nnoremap <leader>n :set nu!<CR>
+nnoremap <leader>t :tabe
 
 vnoremap <Tab> >gv
 vnoremap <S-Tab> <gv
@@ -155,97 +169,130 @@ nnoremap <C-k> <C-w>k
 nnoremap <C-l> <C-w>l
 
 if has('nvim')
-	tnoremap <C-h> <C-\><C-n><C-w>h
-	tnoremap <C-j> <C-\><C-n><C-w>j
-	tnoremap <C-k> <C-\><C-n><C-w>k
-	tnoremap <C-l> <C-\><C-n><C-w>l
-	tnoremap <Esc> <C-\><C-n>
+  tnoremap <C-h> <C-\><C-n><C-w>h
+  tnoremap <C-j> <C-\><C-n><C-w>j
+  tnoremap <C-k> <C-\><C-n><C-w>k
+  tnoremap <C-l> <C-\><C-n><C-w>l
+  tnoremap <Esc> <C-\><C-n>
 endif
 
-nnoremap <up> <nop>
-nnoremap <down> <nop>
-nnoremap <right> <nop>
-nnoremap <left> <nop>
-vnoremap <up> <nop>
-vnoremap <down> <nop>
-vnoremap <right> <nop>
-vnoremap <left> <nop>
+nnoremap <Up> <Nop>
+nnoremap <Down> <Nop>
+nnoremap <Right> <Nop>
+nnoremap <Left> <Nop>
+vnoremap <Up> <Nop>
+vnoremap <Down> <Nop>
+vnoremap <Right> <Nop>
+vnoremap <Left> <Nop>
 
-" set t_Co=256
-colo codedark
-" colo wombat256mod
-" colo evening
-"let g:seoul256_background = 234
-"colo seoul256
-
-" plugin-specific ones
-
-" Abolish
 nnoremap <leader>s :%Subvert/
-
-" Airline
 let g:airline#extensions#tabline#enabled = 1
 let g:airline#extensions#whitespace#enabled = 1
-"let g:airline_theme = "wombat"
-
-" indentline
 let g:indentLine_color_term = 237
-let g:indentLine_color_gui = "#3a3a3a"
+let g:indentLine_color_gui = '#3a3a3a'
 let g:indentLine_char = '│'
 
-" nerdtree
-nnoremap <leader>e <ESC>:NERDTreeToggle<CR>
-
-" nerdcommenter
+nnoremap <leader>e <Esc>:NERDTreeToggle<CR>
 let g:NERDSpaceDelims = 1
 let g:NERDDefaultAlign = 'left'
-
-" syntastic
 let g:syntastic_disabled_filetypes = ['tex', 'latex']
-
-" tabular
 vnoremap <leader><Tab> :Tabular /
-
-" easyalign
-" Start interactive EasyAlign in visual mode (e.g. vipga)
 xmap ga <Plug>(EasyAlign)
-" Start interactive EasyAlign for a motion/text object (e.g. gaip)
 nmap ga <Plug>(EasyAlign)
 
-" yankring
-map <leader>y :YRShow<cr>
+map <leader>y :YRShow<CR>
 let g:yankring_replace_n_pkey = '<m-p>'
 let g:yankring_replace_n_nkey = '<m-n>'
-
-" easymotion
 let g:EasyMotion_smartcase = 1
-map <Leader>v <Plug>(easymotion-prefix)
-"map <Leader><Leader> <Plug>(easymotion-prefix)
+map <leader>v <Plug>(easymotion-prefix)
 nmap s <Plug>(easymotion-s2)
-"map  / <Plug>(easymotion-sn)
-
-" incsearch
-map /  <Plug>(incsearch-forward)
-map ?  <Plug>(incsearch-backward)
+map / <Plug>(incsearch-forward)
+map ? <Plug>(incsearch-backward)
 map g/ <Plug>(incsearch-stay)
-
-" incsearch-easymotion
 map z/ <Plug>(incsearch-easymotion-/)
 map z? <Plug>(incsearch-easymotion-?)
 map zg/ <Plug>(incsearch-easymotion-stay)
-
-" fzf
 nnoremap <leader>f :FZF<CR>
-
-" mru
 nnoremap <leader>r :MRU<CR>
 
-" snipmate
-let g:snipMate = { 'snippet_version' : 1 }
-
-" ale
-let g:ale_linters = { "ruby": ['standardrb'] }
-let g:ale_fixers = { "python": ['black', 'isort'], "ruby": ['standardrb'] }
+let g:ale_fix_on_save = 1
+let g:ale_fixers = {
+      \ 'python': ['ruff_format', 'isort'],
+      \ 'ruby': ['standardrb'],
+      \ 'c': ['clang-format'],
+      \ 'go': ['gofmt'],
+      \ 'sh': ['shfmt'], 'bash': ['shfmt'], 'zsh': ['shfmt'],
+      \ 'bib': ['bibclean'], 'markdown': ['prettier'],
+      \ }
+let g:ale_linters = {'python': ['ruff'], 'ruby': ['standardrb']}
 let g:ale_python_flake8_options = '--max-line-length=88 --ignore=E203,E266,E501,E741,W391,W503'
 let g:ale_python_isort_options = '--profile=black'
-let g:ale_completion_enabled = 1
+let g:ale_python_black_options = '--preview'
+let g:ale_python_ruff_format_options = '--preview'
+
+" Legacy mappings are preserved here; modal policy migration is separate.
+let g:colemak_mapping = 1
+
+function! ColemakToQwerty()
+  noremap f e
+  nnoremap p r|xnoremap p r|onoremap p r
+  noremap g t
+  noremap j y
+  noremap l u
+  noremap u i
+  noremap y o
+  noremap ; p
+  noremap r s
+  noremap s d
+  noremap t f
+  noremap d g
+  noremap n j
+  noremap e k
+  noremap i l
+  noremap o :
+  noremap k n
+
+  noremap F E
+  nnoremap P R|xnoremap P R|onoremap P R
+  noremap G T
+  noremap J Y
+  noremap L U
+  noremap U I
+  noremap Y O
+  noremap : P
+  noremap R S
+  noremap S D
+  noremap T F
+  noremap D G
+  noremap N J
+  noremap E K
+  noremap I L
+  noremap O :
+  noremap K N
+
+  noremap <C-s> <C-d>
+  noremap <C-l> <C-u>
+  noremap jj yy
+  noremap dd gg
+  noremap ss dd
+endfunction
+
+function! RestoreQwerty()
+  mapclear
+  mapclear!
+endfunction
+
+function! ToggleColemakMapping()
+  if g:colemak_mapping == 1
+    call RestoreQwerty()
+    let g:colemak_mapping = 0
+    echo 'QWERTY mapping activated'
+  else
+    call ColemakToQwerty()
+    let g:colemak_mapping = 1
+    echo 'Colemak mapping activated'
+  endif
+endfunction
+
+call ColemakToQwerty()
+nnoremap <leader>cm :call ToggleColemakMapping()<CR>

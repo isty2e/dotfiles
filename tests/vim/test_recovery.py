@@ -5,15 +5,19 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import urllib.request
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 VIM = shutil.which("vim")
+LATEST_MANAGER_URL = (
+    "https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim"
+)
 
 
 @unittest.skipUnless(VIM, "Vim is required for the configuration integration tests")
-class VimRecoveryTests(unittest.TestCase):
+class VimTestCase(unittest.TestCase):
     def setUp(self) -> None:
         temporary = tempfile.TemporaryDirectory(prefix="vim recovery ")
         self.addCleanup(temporary.cleanup)
@@ -75,6 +79,8 @@ class VimRecoveryTests(unittest.TestCase):
         target.parent.mkdir(parents=True)
         shutil.copyfile(source, target)
 
+
+class VimRecoveryTests(VimTestCase):
     def test_bare_startup_loads_core_without_installing(self) -> None:
         result = json.loads(
             self._run_vim("""
@@ -88,8 +94,17 @@ let g:result = [&number, &shiftwidth, &expandtab, line('.'), g:colors_name]
         self.assertFalse(Path(self.env["CURL_LOG"]).exists())
         self.assertFalse(Path(self.env["INSTALL_LOG"]).exists())
 
+    def test_existing_manager_startup_does_not_refresh(self) -> None:
+        self._seed_manager()
+        manager = self.home / ".vim/autoload/plug.vim"
+        original = manager.read_bytes()
+        self._run_vim("")
+        self.assertEqual(manager.read_bytes(), original)
+        self.assertFalse(Path(self.env["CURL_LOG"]).exists())
+        self.assertFalse(Path(self.env["INSTALL_LOG"]).exists())
+
     def test_filetype_indentation_does_not_leak_to_other_buffers(self) -> None:
-        self._seed_manager(REPO / ".vim/autoload/plug.vim")
+        self._seed_manager()
         result = json.loads(
             self._run_vim("""
 let g:result = []
@@ -128,7 +143,11 @@ let g:result = [g:plugs.fzf, len(g:plugs)]
             json.loads(line)
             for line in Path(self.env["CURL_LOG"]).read_text().splitlines()
         ]
-        self.assertEqual(len(downloads), 4)
+        self.assertEqual(len(downloads), 5)
+        self.assertEqual(
+            [entry["url"] for entry in downloads if entry["url"].endswith("/plug.vim")],
+            [LATEST_MANAGER_URL, LATEST_MANAGER_URL],
+        )
         for downloaded in downloads:
             self.assertTrue(
                 downloaded["url"].startswith("https://raw.githubusercontent.com/")
@@ -155,7 +174,7 @@ let g:result = [g:plugs.fzf, len(g:plugs)]
                 (self.home / name).read_text(), "keep existing shell settings\n"
             )
 
-    def test_existing_assets_and_plugin_tree_are_preserved(self) -> None:
+    def test_existing_colors_and_plugin_tree_are_preserved(self) -> None:
         self._seed_manager()
         color = self.home / ".vim/colors/wombat256.vim"
         color.parent.mkdir()
@@ -166,7 +185,54 @@ let g:result = [g:plugs.fzf, len(g:plugs)]
         self._run_vim("VimSetup")
         self.assertEqual(color.read_text(), '" locally customized color\n')
         self.assertEqual(plugin.read_text(), '" keep local plugin modifications\n')
-        self.assertEqual(len(Path(self.env["CURL_LOG"]).read_text().splitlines()), 2)
+        self.assertEqual(len(Path(self.env["CURL_LOG"]).read_text().splitlines()), 3)
+
+    def test_existing_manager_is_refreshed_and_reloaded_in_the_same_session(
+        self,
+    ) -> None:
+        self._seed_manager()
+        manager = self.home / ".vim/autoload/plug.vim"
+        manager.write_text(
+            manager.read_text() + "\nlet g:vim_test_manager_source = 'existing'\n"
+        )
+        result = json.loads(
+            self._run_vim("""
+let before = g:vim_test_manager_source
+VimSetup
+let g:result = [before, g:vim_test_manager_source]
+""")
+        )
+        self.assertEqual(result, ["existing", "downloaded"])
+        self.assertEqual(manager.read_bytes(), (self.assets / "plug.vim").read_bytes())
+
+    def test_failed_refresh_preserves_the_installed_manager_without_installing(
+        self,
+    ) -> None:
+        self._seed_manager()
+        manager = self.home / ".vim/autoload/plug.vim"
+        manager.write_text(
+            manager.read_text() + "\nlet g:vim_test_manager_source = 'existing'\n"
+        )
+        original = manager.read_bytes()
+        for failure in ("FAIL_ASSET", "EMPTY_ASSET"):
+            with self.subTest(failure=failure):
+                self.env[failure] = "plug.vim"
+                result = json.loads(
+                    self._run_vim("""
+try
+  VimSetup
+catch
+  let g:result = [v:exception, g:vim_test_manager_source]
+endtry
+""")
+                )
+                self.assertIsInstance(result, list)
+                self.assertIn("VimSetup:", result[0])
+                self.assertEqual(result[1], "existing")
+                self.assertEqual(manager.read_bytes(), original)
+                self.assertFalse(Path(self.env["INSTALL_LOG"]).exists())
+                self.assertEqual(list(manager.parent.glob("*.download-*")), [])
+                del self.env[failure]
 
     def test_failed_and_empty_downloads_are_not_published_and_can_retry(self) -> None:
         for failure in ("FAIL_ASSET", "EMPTY_ASSET"):
@@ -271,11 +337,30 @@ endfor
         )
         self.assertEqual(result, ["evening_custom", "wombat256", "wombat256mod"])
 
-    def test_real_bundled_manager_parses_declarations_without_installing(self) -> None:
-        self._seed_manager(REPO / ".vim/autoload/plug.vim")
+
+class LatestManagerTests(VimTestCase):
+    _manager_source: Path
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        super().setUpClass()
+        temporary = tempfile.TemporaryDirectory(prefix="latest vim-plug ")
+        cls.addClassCleanup(temporary.cleanup)
+        cls._manager_source = Path(temporary.name) / "plug.vim"
+        with urllib.request.urlopen(LATEST_MANAGER_URL, timeout=30) as response:
+            cls._manager_source.write_bytes(response.read())
+
+    def test_latest_manager_parses_declarations_without_installing(self) -> None:
+        self._seed_manager(self._manager_source)
         result = json.loads(
             self._run_vim("""
 let g:result = [len(g:plugs), g:plugs.fzf.do, g:plugs.fzf.dir, g:ale_fixers.python]
+enew!
+setfiletype python
+call add(g:result, &shiftwidth)
+enew!
+setfiletype text
+call add(g:result, &shiftwidth)
 """)
         )
         self.assertEqual(result[:2], [27, "./install --bin"])
@@ -283,6 +368,7 @@ let g:result = [len(g:plugs), g:plugs.fzf.do, g:plugs.fzf.dir, g:ale_fixers.pyth
             Path(result[2]).resolve(), (self.home / ".vim/plugged/fzf").resolve()
         )
         self.assertEqual(result[3], ["ruff_format", "isort"])
+        self.assertEqual(result[4:], [4, 2])
         self.assertFalse(Path(self.env["CURL_LOG"]).exists())
         self.assertFalse(Path(self.env["INSTALL_LOG"]).exists())
 

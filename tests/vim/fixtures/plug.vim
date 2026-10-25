@@ -1,4 +1,10 @@
 " Test double for vim-plug's declaration and installation boundary, not Git.
+if exists('g:loaded_plug')
+  finish
+endif
+let g:loaded_plug = 1
+let g:vim_test_manager_source = 'downloaded'
+
 function! plug#begin(home) abort
   let g:plug_home = a:home
   let g:plugs = {}

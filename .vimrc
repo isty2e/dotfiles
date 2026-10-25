@@ -1,15 +1,15 @@
 let s:vimdir = expand('~/.vim')
 let s:color_source = 'https://raw.githubusercontent.com/isty2e/dotfiles/42895fa5391aa5fd7851cae18b22de818311f58c/.vim/colors/'
-let s:assets = [
-      \ ['autoload/plug.vim', 'https://raw.githubusercontent.com/junegunn/vim-plug/d80f495fabff8446972b8695ba251ca636a047b0/plug.vim'],
+let s:manager_asset = ['autoload/plug.vim', 'https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim']
+let s:color_assets = [
       \ ['colors/evening_custom.vim', s:color_source . 'evening_custom.vim'],
       \ ['colors/wombat256.vim', s:color_source . 'wombat256.vim'],
       \ ['colors/wombat256mod.vim', s:color_source . 'wombat256mod.vim'],
       \ ]
 
-function! s:InstallMissingAsset(asset) abort
+function! s:InstallAsset(asset, refresh) abort
   let target = s:vimdir . '/' . a:asset[0]
-  if !empty(getftype(target))
+  if !a:refresh && !empty(getftype(target))
     if !filereadable(target) || getfsize(target) <= 0
       throw 'VimSetup: existing asset is unreadable or empty: ' . target
     endif
@@ -17,7 +17,7 @@ function! s:InstallMissingAsset(asset) abort
   endif
 
   if !executable('curl')
-    throw 'VimSetup: curl is required to download missing assets'
+    throw 'VimSetup: curl is required to download assets'
   endif
 
   call mkdir(fnamemodify(target, ':h'), 'p')
@@ -87,9 +87,12 @@ function! s:VimSetup() abort
     throw 'VimSetup: Git is required to install plugins'
   endif
 
-  for asset in s:assets
-    call s:InstallMissingAsset(asset)
+  call s:InstallAsset(s:manager_asset, 1)
+  for asset in s:color_assets
+    call s:InstallAsset(asset, 0)
   endfor
+  " Reload the refreshed manager even if this session already sourced it.
+  unlet! g:loaded_plug
   call s:DeclarePlugins()
   PlugInstall --sync
   echom 'Review the installation output and :PlugStatus, then restart Vim.'

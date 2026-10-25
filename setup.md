@@ -19,10 +19,12 @@ colorscheme while keeping core editing available.
 
 Recovery requires Vim with `+eval`, Git, curl with HTTPS support, and network
 access to GitHub and plugin download hosts. It needs no administrator rights.
-`:VimSetup` downloads missing vim-plug and personal color files into `~/.vim`,
-then runs vim-plug's synchronous installation under `~/.vim/plugged`. This
-executes third-party plugin code and the fzf binary installer. The fzf hook uses
-`--bin`, not shell integration; setup does not edit shell startup files.
+Every `:VimSetup` fetches the latest vim-plug from its official `master` branch
+and replaces the installed manager, even when one already exists. It acquires
+missing personal color files into `~/.vim`, reloads the refreshed manager, then
+runs vim-plug's synchronous installation under `~/.vim/plugged`. This executes
+third-party plugin code and the fzf binary installer. The fzf hook uses `--bin`,
+not shell integration; setup does not edit shell startup files.
 
 In a new account, run from this checkout:
 
@@ -34,27 +36,37 @@ vim
 Then run `:VimSetup`, review its output and `:PlugStatus`, and restart Vim. To try
 the entrypoint without replacing an existing vimrc, use `vim -u "$PWD/.vimrc"`.
 Setup still writes to `~/.vim`; use a separate home directory for an isolated
-trial. Existing nonempty manager/color files are kept. Empty or unreadable
-assets stop setup rather than being overwritten. A failed download leaves no
-partial target; rerunning setup reuses files already acquired. Plugin state is
-owned by vim-plug: setup does not run `PlugUpdate` or `PlugClean`. Plugin hook
-failures may require vim-plug's explicit forced-install retry after fixing the
-cause; repository status alone is not a feature-health check.
+trial. Existing personal color files are kept; empty or unreadable color assets
+stop setup rather than being overwritten. A failed or empty manager download
+preserves the installed manager and stops setup instead of continuing with the
+old version. Downloads are staged beside their targets, so failed transfers do
+not publish partial files. Plugin state is owned by vim-plug: setup does not run
+`PlugUpdate` or `PlugClean`. Plugin hook failures may require vim-plug's explicit
+forced-install retry after fixing the cause; repository status alone is not a
+feature-health check.
 
-Only the vim-plug bootstrap and personal asset sources are pinned. Exact plugin-version
-replay, editing history/caches, and external tools such as Ruff, isort, language
-runtimes and other ALE executables are outside this recovery scope. The current
+Only personal color sources are pinned. The manager follows upstream `master`;
+this does not guarantee compatibility with every future upstream change. Exact
+plugin-version replay, editing history/caches, and external tools such as Ruff,
+isort, language runtimes and other ALE executables are outside this recovery scope. The current
 legacy Vim mappings are retained; they have not yet been migrated to the shared
 Colemak policy. Neovim has an independent configuration.
 
-Offline checks use real Vim, a download/installation double, and a checked-in
-copy of the recovery's pinned vim-plug for declaration parsing:
+The full suite fetches the same latest vim-plug URL once for its real-manager
+checks; network or upstream compatibility failures are test failures:
 
 ```sh
 python -m unittest discover -s tests/vim -v
 ```
 
-These checks do not establish real-network plugin installation or compatibility.
+Workflow and failure tests use real Vim with download/installation doubles and
+can run without network access:
+
+```sh
+python tests/vim/test_recovery.py VimRecoveryTests -v
+```
+
+Neither tier installs the declared plugins or establishes their runtime compatibility.
 
 ## Pi themes
 

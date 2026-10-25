@@ -47,8 +47,8 @@ runtimes and other ALE executables are outside this recovery scope. The current
 legacy Vim mappings are retained; they have not yet been migrated to the shared
 Colemak policy. Neovim has an independent configuration.
 
-Offline checks use real Vim, a download/installation double, and the bundled
-vim-plug for declaration parsing:
+Offline checks use real Vim, a download/installation double, and a checked-in
+copy of the recovery's pinned vim-plug for declaration parsing:
 
 ```sh
 python -m unittest discover -s tests/vim -v

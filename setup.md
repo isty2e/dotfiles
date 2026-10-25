@@ -108,9 +108,11 @@ operators, literal input, window cycles and NERDTree commands are tested by effe
 
 ## chezmoi placement
 
-The repository's `.chezmoiroot` file selects `home/` as its source state. The only
-managed target is `.vimrc`, from the plain, non-template `home/dot_vimrc` file.
-Tests, docs and `.vim/colors` stay outside that state. The color files are authored
+The repository's `.chezmoiroot` file selects `home/` as its source state. It manages
+`.vimrc` from plain `home/dot_vimrc` and the Neovim configuration files from
+`home/dot_config/nvim/` at `.config/nvim/`. These editors keep separate native
+loaders; sharing a Git repository does not make one depend on the other.
+Tests, docs, Lua tooling and `.vim/colors` stay outside that state. The color files are authored
 assets used by standalone recovery and its tests, not a runtime tree to symlink
 into a home directory. Do not symlink the repository's `.vim` directory as `~/.vim`.
 
@@ -119,13 +121,14 @@ temporary `HOME`, `TMPDIR`, all four `XDG_CONFIG_HOME`, `XDG_CACHE_HOME`,
 `XDG_DATA_HOME`, `XDG_STATE_HOME` paths, and a temporary `--destination`.
 Changing only `--destination` does not isolate chezmoi's own state. Run `managed`
 to confirm the target list, review `diff`, then use `apply` in that same isolated
-environment. Apply places the vimrc only: it does not invoke `:VimSetup`, install
-plugins, or manage `~/.vim`.
+environment. Apply places configuration only: it does not invoke `:VimSetup`,
+install plugins/language servers/parsers, or manage `~/.vim` and Neovim data/caches.
 
 The optional chezmoi tests run with an executable found on `PATH` or selected by
 `CHEZMOI`; otherwise they explicitly skip. They use isolated homes and exercise
 the actual `managed`, `diff`, `apply` and `verify` commands, including replacing a
-synthetic vimrc symlink without changing its old target or the runtime directory:
+synthetic Vim and Neovim entrypoint symlinks without changing their old targets,
+Vim runtime or unmanaged repository metadata:
 
 ```sh
 python -m unittest discover -s tests/chezmoi -v
@@ -142,6 +145,22 @@ To roll back that migration, preserve the new local runtime under another name
 and restore both recorded links. Stop running `chezmoi apply` until deciding
 whether to retry or withdraw the Vim source: restoring the links does not remove
 the desired vimrc from chezmoi, and a later apply would replace it again.
+
+## Neovim
+
+See [Neovim configuration](docs/neovim.md) for selected plugins, language tools,
+native keymap ownership and installation. The runtime source is
+`home/dot_config/nvim/`; `tests/nvim/` and this repository's Lua tooling are not
+deployed. The native integration runner uses an existing plugin cache without
+installing dependencies:
+
+```sh
+sh tests/nvim/run-keymaps.sh
+```
+
+Before actual-home adoption, preserve an existing `~/.config/nvim` Git working
+tree outside the target path. Source consolidation leaves that repository and its
+history untouched and does not authorize applying over it or deleting its metadata.
 
 ## Pi themes
 

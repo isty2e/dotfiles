@@ -119,7 +119,8 @@ Vacant Normal/Visual window slots are no-ops; vacant operator slots cancel the
 pending operator. Unrelated Ctrl shortcuts and native command spellings are not
 transposed. Existing personal tab, completion and terminal gestures stay separate.
 
-In Neovim, `config/keymaps.lua` owns general mode maps, `config/lsp.lua` owns
+In `home/dot_config/nvim/`, `lua/config/keymaps.lua` owns general mode maps and
+`lua/config/lsp.lua` owns
 attached-buffer hover on `E` and search on `K`, and each plugin owns its local interaction. Neo-tree
 retains native parent/child handlers, moves file details to `u` in its filesystem,
 buffer and Git sources, and uses `n/e` in its normal-mode filter. Telescope uses
@@ -148,4 +149,4 @@ outer object selection from native selectors; Zed owns execution of those bindin
 | chezmoi source-tree migration | Separate work; maintainer/user | Authorize filesystem handoff after independent keymap repair |
 | Zed version-mismatch test / update watcher | Not adopted; user | An automatic update-notification workflow is requested |
 | Scheduled repair / unattended apply / GUI automation | Not authorized; user | Approve the operating and verification model |
-| Neovim repository move / live deployment | Separate work; user | Authorize filesystem handoff; native plugin selection is owned by the independent Neovim configuration |
+| Neovim live deployment / old-repository archival | Separate work; user | Source consolidation does not authorize replacing home targets or archiving/deleting the old repository |

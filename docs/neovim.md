@@ -26,19 +26,22 @@ plugin data as an installation step. Plugin data, editor state and caches are
 separate from the configuration; selecting a different configuration does not
 isolate them. This source consolidation does not perform that live handoff.
 
-Install lazy.nvim explicitly if it is not already present:
+Start Neovim and run `:NvimSetup`, review the results in `:Lazy`, then restart
+Neovim. The command works even before lazy.nvim is installed: it acquires the
+manager from its stable release when missing, then uses native lazy.nvim
+installation for missing plugins and unfinished builds, selecting revisions from
+the lockfile. Existing managers and healthy plugin checkouts are reused; setup
+does not run update, sync, clean, or restore operations.
 
-```sh
-git clone --filter=blob:none --branch=stable https://github.com/folke/lazy.nvim.git \
-  "${XDG_DATA_HOME:-$HOME/.local/share}/nvim/lazy/lazy.nvim"
-```
+Setup is an explicit network/install action and executes third-party plugin code.
+Neither ordinary startup nor chezmoi application starts it automatically. Startup
+does not check for updates, install language servers or download Tree-sitter
+parsers. Without lazy.nvim, options, core editing maps and `:NvimSetup` remain
+available, with a warning; that is not the full plugin profile.
 
-Start Neovim and run `:Lazy install` to acquire the declared plugins. This is an
-explicit network/install action and executes third-party plugin code. Ordinary
-startup does not clone lazy.nvim, install missing plugins, check for updates,
-install language servers or download Tree-sitter parsers. Without lazy.nvim,
-options and core editing maps still load, with a warning; that is not the full
-plugin profile.
+A failed manager clone is not published, so `:NvimSetup` can retry it. An existing
+incomplete manager path is left untouched; move it aside before retrying. Plugin
+installation results and retries remain visible in native `:Lazy`.
 
 `lazy-lock.json` records the selected plugin revisions. Use `:Lazy restore` to
 return installed plugins to those revisions. Review and commit lockfile changes
@@ -132,6 +135,18 @@ The OS clipboard is explicit through registers such as `"+`; ordinary yanks are
 not automatically synchronized to it.
 
 ## Verify without deployment
+
+Test explicit setup and its failure/retry behavior without network access:
+
+```sh
+sh tests/nvim/run-setup.sh
+```
+
+The base tests need only Neovim. With Git and an existing lazy.nvim checkout, a
+second tier bootstraps a manager and installs local fixture plugins, checking
+lockfile selection and preservation of an existing checkout. Without those
+optional inputs, only that native tier is skipped. Set `LAZY` to select a cached
+manager and `NVIM` to select the Neovim executable.
 
 The integration runner uses a temporary home, all four XDG directories and a
 fixture Git repository. It borrows an existing selected-plugin cache and never

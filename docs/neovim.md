@@ -28,7 +28,7 @@ isolate them. This source consolidation does not perform that live handoff.
 
 Start Neovim and run `:NvimSetup`, review the results in `:Lazy`, then restart
 Neovim. The command works even before lazy.nvim is installed: it acquires the
-manager from its stable branch when missing, then uses native lazy.nvim
+manager from its stable release when missing, then uses native lazy.nvim
 installation for missing plugins and unfinished builds, selecting revisions from
 the lockfile. Existing managers and healthy plugin checkouts are reused; setup
 does not run update, sync, clean, or restore operations.

@@ -1,0 +1,160 @@
+[workspace]
+name = "base"
+requires-pixi = ">=0.81.0"
+channels = ["pytorch", "bioconda", "conda-forge"]
+platforms = [
+  { name = "mac", platform = "osx-arm64", macos = "14.0" },
+  { name = "linux-cuda", platform = "linux-64", cuda = "12.8" },
+]
+
+[dependencies]
+python = "==3.11"
+pip = "*"
+tmalign = "*"
+
+# Optional QM tools remain unselected.
+# tblite = "*"
+# tblite-python = "*"
+# xtb = "*"
+# xtb-python = "*"
+# crest = "*"
+
+[pypi-dependencies]
+# Scientific computing
+numpy = "*"
+scipy = "*"
+array_api_compat = "*"
+array_api_strict = "*"
+einops = "*"
+einx = "*"
+opt_einsum = "*"
+
+# Optimization
+cvxpy = "*"
+pyscipopt = ">=6.1.0,<7"
+optuna = "*"
+
+# Data and processing
+pandas = "*"
+polars = "*"
+pyarrow = "*"
+duckdb = "*"
+duckdb_engine = "*"
+sqlalchemy = "*"
+cleanlab = "*"
+genieclust = "*"
+umap-learn = "*"
+umato = "*"
+hdbscan = "*"
+
+# Learning
+scikit-learn = ">=1.3.0"
+# snapml = "*"
+torch = "*"
+lightning = "*"
+torchmetrics = "*"
+transformers = "*"
+datasets = "*"
+tokenizers = "*"
+tiktoken = "*"
+wandb = "*"
+lightgbm = "*"
+linearboost = "*"
+
+# Chemistry and biology
+rdkit = "*"
+ase = "*"
+datamol = "*"
+medchem = "*"
+selfies = "*"
+pubchempy = "*"
+# chembl_webservices = "*"
+biopython = "*"
+gemmi = "*"
+# dxtb = { version = "*", extras = ["libcint"] }
+
+# Plotting and type utilities
+altair = "*"
+plotnine = "*"
+returns = "*"
+pyfunctional = "*"
+jaxtyping = "*"
+beartype = "*"
+
+# Build tools, notebooks and parallel work
+hatchling = "*"
+hatch-vcs = "*"
+scikit-build-core = "*"
+marimo = "*"
+jupyter = "*"
+mpi4py = "*"
+mpich = "*"
+parmap = "*"
+
+# Documentation and office files
+mkdocs = "*"
+mkdocs-autorefs = "*"
+mkdocs-jupyter = "*"
+mkdocs-material = "*"
+mkdocstrings = "*"
+mkdocstrings-python = "*"
+python-docx = "*"
+python-pptx = "*"
+openpyxl = "*"
+python-calamine = "*"
+pdf2image = "*"
+defusedxml = "*"
+
+# Utilities
+loguru = "*"
+psutil = "*"
+requests = "*"
+zstandard = "*"
+dill = "*"
+cloudpickle = "*"
+hydra-core = "*"
+hydra-colorlog = "*"
+typer = "*"
+
+# In-house packages
+std-chem = { git = "https://github.com/Standigm/std_chem" }
+
+# Development and language tools
+pre-commit = "*"
+pytest = ">=6.0"
+pyupgrade = "*"
+ruff = "*"
+basedpyright = "*"
+zuban = "*"
+ty = "*"
+pyrefly = "*"
+mypy = "*"
+
+# Current deployment choices, not claims of package availability on other systems.
+[target.osx-arm64.dependencies]
+openbabel = "*"
+
+[target.osx-arm64.pypi-dependencies]
+mlx = "*"
+# Preserve the current bound until a newer release is validated for macOS 14.
+CDPKit = "<1.3.0"
+Pras-Server = "==1.2.1"
+schedule = "*"
+fastapi = "*"
+uuid7 = "*"
+streamlit = "*"
+streamlit-aggrid = "*"
+cloudscraper = "*"
+
+[target.linux-64.dependencies]
+cuda-version = "12.8.*"
+# Open Babel is not selected for this target.
+
+[target.linux-64.pypi-dependencies]
+mip = "*"
+CDPKit = "*"
+pint = "*"
+submitit = "*"
+cgl = { git = "https://github.com/Standigm/chemgl" }
+# Restrict the CUDA wheel source to Linux PyTorch, not all PyPI requests.
+torch = { version = "*", index = "https://download.pytorch.org/whl/cu128" }

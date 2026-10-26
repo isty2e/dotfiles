@@ -1,0 +1,69 @@
+#!/bin/sh
+set -eu
+
+case ${1-} in
+    -h|--help)
+        printf '%s\n' 'Usage: sh bootstrap.sh' \
+            'Prepare chezmoi and mise, bind this checkout, and apply its configuration.' \
+            'Missing bootstrap tools use their official installers in ~/.local/bin.' \
+            'A full apply also runs mise install when the tool declaration changes.' \
+            'Pixi environments, editor plugins, logins and shell changes remain manual.'
+        exit 0
+        ;;
+esac
+if [ "$#" -ne 0 ]; then
+    printf '%s\n' 'Usage: sh bootstrap.sh' >&2
+    exit 1
+fi
+
+: "${HOME:?HOME must be set}"
+repo=$(CDPATH='' cd -P "$(dirname "$0")" && pwd)
+export PATH="$HOME/.local/bin:${PATH:-/usr/bin:/bin}"
+
+if ! command -v chezmoi >/dev/null 2>&1 || ! command -v mise >/dev/null 2>&1; then
+    command -v curl >/dev/null 2>&1 || {
+        printf '%s\n' 'curl is required to download the missing bootstrap tools.' >&2
+        exit 1
+    }
+    temporary=$(mktemp -d)
+    trap 'rm -rf "$temporary"' 0
+    trap 'exit 1' HUP INT TERM
+    mkdir -p "$HOME/.local/bin"
+
+    if ! command -v chezmoi >/dev/null 2>&1; then
+        printf '%s\n' 'Installing chezmoi in ~/.local/bin using get.chezmoi.io'
+        curl -fsSL --proto '=https' --proto-redir '=https' \
+            https://get.chezmoi.io -o "$temporary/chezmoi.sh"
+        sh "$temporary/chezmoi.sh" -b "$HOME/.local/bin"
+    fi
+    if ! command -v mise >/dev/null 2>&1; then
+        printf '%s\n' 'Installing mise in ~/.local/bin using mise.run'
+        curl -fsSL --proto '=https' --proto-redir '=https' \
+            https://mise.run -o "$temporary/mise.sh"
+        MISE_INSTALL_PATH="$HOME/.local/bin/mise" sh "$temporary/mise.sh"
+    fi
+    hash -r
+fi
+
+chezmoi_bin=$(command -v chezmoi)
+"$chezmoi_bin" --version >/dev/null
+mise --version >/dev/null
+config_file=$("$chezmoi_bin" execute-template '{{ .chezmoi.configFile }}')
+
+if [ -e "$config_file" ] || [ -L "$config_file" ]; then
+    active_source=$("$chezmoi_bin" source-path)
+    expected_source=$("$chezmoi_bin" --source "$repo" source-path)
+    if [ ! -d "$active_source" ] || \
+        [ "$(CDPATH='' cd -P "$active_source" && pwd)" != "$expected_source" ]; then
+        printf '%s\n' \
+            'chezmoi is configured for another source; no configuration was applied.' \
+            "Review $config_file and set sourceDir to $repo before retrying." >&2
+        exit 1
+    fi
+    "$chezmoi_bin" apply
+else
+    "$chezmoi_bin" --source "$repo" init --apply
+fi
+
+printf '%s\n' 'chezmoi apply completed. See setup.md for shell activation.' \
+    'Install the Pixi base environment and editor plugins separately; see setup.md.'

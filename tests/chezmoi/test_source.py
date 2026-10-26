@@ -11,6 +11,8 @@ VIM_SOURCE = REPO / "home/dot_vimrc"
 NVIM_SOURCE = REPO / "home/private_dot_config/nvim"
 HELIX_SOURCE = REPO / "home/private_dot_config/helix"
 ZED_SOURCE = REPO / "home/private_dot_config/zed"
+PIXI_SOURCE = REPO / "home/pixi-env/base/pixi.toml"
+MISE_SOURCE = REPO / "home/private_dot_config/mise/config.toml"
 _configured_chezmoi = os.environ.get("CHEZMOI")
 _selected_chezmoi = (
     shutil.which(_configured_chezmoi or "chezmoi") or _configured_chezmoi
@@ -35,12 +37,17 @@ class ChezmoiSourceTests(unittest.TestCase):
         temporary = tempfile.TemporaryDirectory(prefix="chezmoi vim ")
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name).resolve()
+        self.source = REPO
         self.home = self.root / "process home"
         self.destination = self.root / "destination"
         self.former = self.root / "former source"
         for directory in (self.home, self.destination, self.former, self.root / "tmp"):
             directory.mkdir()
-        self.sources = {Path(".vimrc"): VIM_SOURCE}
+        self.sources = {
+            Path(".vimrc"): VIM_SOURCE,
+            Path("pixi-env/base/pixi.toml"): PIXI_SOURCE,
+            Path(".config/mise/config.toml"): MISE_SOURCE,
+        }
         for name, source in (
             ("nvim", NVIM_SOURCE),
             ("helix", HELIX_SOURCE),
@@ -59,12 +66,21 @@ class ChezmoiSourceTests(unittest.TestCase):
             "XDG_DATA_HOME": str(self.home / ".local/share"),
             "XDG_STATE_HOME": str(self.home / ".local/state"),
             "TMPDIR": str(self.root / "tmp"),
-            "PATH": os.defpath,
+            "PATH": str(self.home / ".local/bin") + os.pathsep + os.defpath,
             "SHELL": "/bin/sh",
             "LANG": "en_US.UTF-8",
             "GIT_CONFIG_NOSYSTEM": "1",
             "GIT_CONFIG_GLOBAL": "/dev/null",
         }
+        mise = self.home / ".local/bin/mise"
+        mise.parent.mkdir(parents=True)
+        mise.write_text(
+            "#!/bin/sh\nset -eu\n"
+            '[ -f "$MISE_GLOBAL_CONFIG_FILE" ]\n'
+            'printf "%s\\n" "$MISE_GLOBAL_CONFIG_FILE" "$@" >> "$HOME/mise-calls"\n'
+            '[ ! -f "$HOME/fail-mise" ]\n'
+        )
+        mise.chmod(0o755)
 
     def _chezmoi(self, *arguments: str) -> str:
         assert CHEZMOI is not None
@@ -72,7 +88,7 @@ class ChezmoiSourceTests(unittest.TestCase):
             [
                 CHEZMOI,
                 "--source",
-                str(REPO),
+                str(self.source),
                 "--destination",
                 str(self.destination),
                 "--no-tty",
@@ -89,10 +105,111 @@ class ChezmoiSourceTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         return result.stdout
 
-    def test_only_editor_configuration_files_are_managed(self) -> None:
+    def test_only_authored_configuration_files_are_managed(self) -> None:
         managed = self._chezmoi("managed", "--include=files", "--path-style=relative")
         expected = {path.as_posix() for path in self.sources}
         self.assertEqual(set(managed.splitlines()), expected)
+
+    def test_full_apply_installs_tools_after_configuration_and_skips_repeats(
+        self,
+    ) -> None:
+        self._chezmoi("apply")
+        calls = self.home / "mise-calls"
+        self.assertEqual(
+            calls.read_text().splitlines()[0],
+            str(self.destination / ".config/mise/config.toml"),
+        )
+        self.assertCountEqual(
+            calls.read_text().splitlines()[1:],
+            ["--cd", str(self.destination), "install"],
+        )
+        initial = calls.read_bytes()
+        self._chezmoi("apply")
+        self.assertEqual(calls.read_bytes(), initial)
+
+    def test_mise_declaration_change_runs_install_again(self) -> None:
+        self.source = self.root / "source"
+        self.source.mkdir()
+        shutil.copyfile(REPO / ".chezmoiroot", self.source / ".chezmoiroot")
+        shutil.copytree(REPO / "home", self.source / "home")
+        self._chezmoi("apply")
+        calls = self.home / "mise-calls"
+        initial = calls.read_bytes()
+        declaration = self.source / MISE_SOURCE.relative_to(REPO)
+        declaration.write_text('[tools]\nnode = "22"\n')
+
+        self._chezmoi("apply")
+        self.assertEqual(calls.read_bytes(), initial * 2)
+        self.assertEqual(
+            (self.destination / ".config/mise/config.toml").read_bytes(),
+            declaration.read_bytes(),
+        )
+        repeated = calls.read_bytes()
+        self._chezmoi("apply")
+        self.assertEqual(calls.read_bytes(), repeated)
+
+    def test_failed_install_is_retried_without_rolling_back_configuration(self) -> None:
+        failure = self.home / "fail-mise"
+        failure.touch()
+        with self.assertRaises(AssertionError):
+            self._chezmoi("apply")
+        self.assertEqual(
+            (self.destination / ".config/mise/config.toml").read_bytes(),
+            MISE_SOURCE.read_bytes(),
+        )
+        calls = self.home / "mise-calls"
+        initial = calls.read_bytes()
+        failure.unlink()
+
+        self._chezmoi("apply")
+        self.assertEqual(calls.read_bytes(), initial * 2)
+        recovered = calls.read_bytes()
+        self._chezmoi("apply")
+        self.assertEqual(calls.read_bytes(), recovered)
+
+    def test_placement_only_apply_defers_installation_until_full_apply(self) -> None:
+        self._chezmoi("apply", "--exclude=scripts")
+        self.assertFalse((self.home / "mise-calls").exists())
+        self.assertEqual(
+            (self.destination / ".config/mise/config.toml").read_bytes(),
+            MISE_SOURCE.read_bytes(),
+        )
+        self._chezmoi("apply")
+        self.assertTrue((self.home / "mise-calls").is_file())
+
+    def test_pixi_generated_state_is_not_deployed(self) -> None:
+        self.source = self.root / "source"
+        self.source.mkdir()
+        (self.source / ".chezmoiroot").write_bytes((REPO / ".chezmoiroot").read_bytes())
+        shutil.copytree(REPO / "home", self.source / "home")
+        workspace = Path("pixi-env/base")
+        prefix = workspace / ".pixi/envs/default/bin/python"
+        generated = self.source / "home" / prefix
+        generated.parent.mkdir(parents=True)
+        generated.write_bytes(b"generated source environment")
+        (self.source / "home" / workspace / "pixi.lock").write_bytes(
+            b"generated source solver state"
+        )
+
+        existing = self.destination / prefix
+        existing.parent.mkdir(parents=True)
+        existing.write_bytes(b"existing installed environment")
+        local_state = self.destination / workspace / "pixi.lock"
+        local_state.write_bytes(b"local solver state")
+
+        managed = self._chezmoi("managed", "--include=files", "--path-style=relative")
+        self.assertEqual(
+            set(managed.splitlines()), {p.as_posix() for p in self.sources}
+        )
+        for _ in range(2):
+            self._chezmoi("apply")
+            self._chezmoi("verify")
+            self.assertEqual(
+                (self.destination / workspace / "pixi.toml").read_bytes(),
+                PIXI_SOURCE.read_bytes(),
+            )
+            self.assertEqual(existing.read_bytes(), b"existing installed environment")
+            self.assertEqual(local_state.read_bytes(), b"local solver state")
 
     def test_apply_replaces_config_links_and_preserves_unmanaged_state(self) -> None:
         old_config = self.former / "vimrc"

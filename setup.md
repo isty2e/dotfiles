@@ -2,7 +2,69 @@
 
 See [Colemak keymap policy](docs/keymaps.md). Execution and migration are tracked in Kata.
 
-## dotfiles
+## Bootstrap a checkout
+
+Start with Git, a POSIX shell and HTTPS-capable curl. Existing homes need a
+configuration diff and backup first; follow the editor handoff instructions below
+before replacing linked configuration. Bootstrap does not migrate editor runtimes.
+
+```sh
+git clone https://github.com/isty2e/dotfiles.git "$HOME/dotfiles"
+cd "$HOME/dotfiles"
+sh bootstrap.sh
+```
+
+Bootstrap reuses chezmoi and mise found on `PATH`, including existing package-manager
+installations. Missing tools are installed into `~/.local/bin` by downloading and
+executing their official installers from [get.chezmoi.io](https://get.chezmoi.io)
+and [mise.run](https://mise.run). It does not invoke sudo, Homebrew or `chsh`.
+For manual provisioning, install those two executables using their official
+instructions, then rerun bootstrap; it will skip their acquisition. No Python,
+Node or Pixi environment is needed to run bootstrap itself.
+
+On first initialization, `home/.chezmoi.toml.tmpl` records this checkout as
+chezmoi's `sourceDir`; there is no second source clone. An existing configuration
+bound to this checkout is reused without regenerating its settings. If it points
+elsewhere, bootstrap stops: review the reported configuration file and reconcile
+`sourceDir` explicitly before retrying. Bootstrap can run from outside the checkout.
+
+A full chezmoi apply places the authored configuration, then runs `mise install`
+using the managed global TOML. This can download tools and execute third-party
+installation code. The native `run_onchange_after` action runs on first application
+and when its rendered contents change; the mise TOML fingerprint is part of those
+contents. Unchanged repeat applies skip the action. Successful run state is not
+installed-tool health: use native mise commands for repair or updates.
+
+After an installation failure, files already applied and completed native tool
+installs are not rolled back. Fix the reported cause and rerun bootstrap or a full
+`chezmoi apply`. For configuration-only placement, use `chezmoi apply --exclude=scripts`.
+Applying an individual file does not promise to run the installation action.
+
+Bootstrap changes `PATH` only in its child process. Shell configuration is not
+currently deployed by this source. Make the bootstrap executables available in
+your current shell, then configure [mise activation](https://mise.jdx.dev/getting-started.html)
+for the shell you use; opening another terminal alone does not add that integration:
+
+```sh
+export PATH="$HOME/.local/bin:$PATH"
+mise ls
+```
+
+Logins, credentials and login-shell selection remain separate. Pixi base environment
+installation and `:VimSetup`/`:NvimSetup` remain explicit operations described below.
+
+The bootstrap tests use offline installer/executable doubles. Native chezmoi
+integration additionally checks source binding and configuration preservation when
+chezmoi and Git are available; it still uses a mise double, not real tool acquisition:
+
+```sh
+python -m unittest discover -s tests/bootstrap -v
+```
+
+## Legacy shell notes
+
+These historical shell files are not applied by bootstrap or chezmoi. Review them
+separately rather than treating these commands as the current environment restore path.
 
 ```bash
 git clone https://github.com/tarjoilija/zgen
@@ -126,8 +188,9 @@ temporary `HOME`, `TMPDIR`, all four `XDG_CONFIG_HOME`, `XDG_CACHE_HOME`,
 `XDG_DATA_HOME`, `XDG_STATE_HOME` paths, and a temporary `--destination`.
 Changing only `--destination` does not isolate chezmoi's own state. Run `managed`
 to confirm the target list, review `diff`, then use `apply` in that same isolated
-environment. Apply places configuration only: it does not invoke `:VimSetup`,
-install plugins/language servers/parsers, or manage `~/.vim`, Neovim data/caches
+environment. Exclude scripts for a placement-only rehearsal; a full apply can install
+mise tools as described above. It does not invoke `:VimSetup`/`:NvimSetup`, install
+editor plugins/language servers/parsers, or manage `~/.vim`, Neovim data/caches
 or Helix's generated `runtime/grammars` tree.
 The Pixi base manifest is also placed as described below; its environment is not
 installed by apply.
@@ -163,8 +226,8 @@ Before an approved live migration, record both existing Vim link targets. If
 `~/.vim` is the expected link to a shared runtime, remove only the link and create
 a local directory before running `:VimSetup`. Stop on an unexpected target type;
 never recursively remove the shared directory. There is no persistent chezmoi
-removal rule for this generated runtime. Permanent CLI provisioning, sourceDir
-binding and actual-home apply are separate from this source preparation.
+removal rule for this generated runtime. The fresh-machine bootstrap is not a
+replacement for this existing-home migration or its runtime handoff.
 
 To roll back that migration, preserve the new local runtime under another name
 and restore both recorded links. Stop running `chezmoi apply` until deciding
@@ -204,11 +267,14 @@ zvec-grep use explicit npm backend identifiers; their commands are `codegraph`
 and `zg`. Node is declared for the npm tools' runtime requirements. Project-scoped
 mise declarations retain their normal precedence over these global defaults.
 
-Chezmoi places the declaration only. Tool acquisition and activation are separate
-steps; this file does not configure shell activation, authentication, search
-indexes or model caches. Python environment packages remain in the Pixi manifest
-rather than being duplicated here. Existing executable providers are not removed
-by this source-preparation step; any provider transfer is separate. Mise retains
+Chezmoi places the declaration and its after-action invokes native mise installation
+as described in the bootstrap section. The action explicitly selects the projected
+global TOML, including in isolated destinations or with a custom XDG configuration
+directory; native mise project/default precedence still applies. This file does not
+configure shell activation, authentication, search indexes or model caches.
+Python environment packages remain in the Pixi manifest
+rather than being duplicated here. Existing executable providers are not removed;
+any provider retirement is separate. Mise retains
 its native version-cleanup behavior.
 
 Set `MISE` to the actual mise executable to run the optional native metadata

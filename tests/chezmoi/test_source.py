@@ -66,12 +66,21 @@ class ChezmoiSourceTests(unittest.TestCase):
             "XDG_DATA_HOME": str(self.home / ".local/share"),
             "XDG_STATE_HOME": str(self.home / ".local/state"),
             "TMPDIR": str(self.root / "tmp"),
-            "PATH": os.defpath,
+            "PATH": str(self.home / ".local/bin") + os.pathsep + os.defpath,
             "SHELL": "/bin/sh",
             "LANG": "en_US.UTF-8",
             "GIT_CONFIG_NOSYSTEM": "1",
             "GIT_CONFIG_GLOBAL": "/dev/null",
         }
+        mise = self.home / ".local/bin/mise"
+        mise.parent.mkdir(parents=True)
+        mise.write_text(
+            "#!/bin/sh\nset -eu\n"
+            '[ -f "$MISE_GLOBAL_CONFIG_FILE" ]\n'
+            'printf "%s\\n" "$MISE_GLOBAL_CONFIG_FILE" "$@" >> "$HOME/mise-calls"\n'
+            '[ ! -f "$HOME/fail-mise" ]\n'
+        )
+        mise.chmod(0o755)
 
     def _chezmoi(self, *arguments: str) -> str:
         assert CHEZMOI is not None
@@ -100,6 +109,73 @@ class ChezmoiSourceTests(unittest.TestCase):
         managed = self._chezmoi("managed", "--include=files", "--path-style=relative")
         expected = {path.as_posix() for path in self.sources}
         self.assertEqual(set(managed.splitlines()), expected)
+
+    def test_full_apply_installs_tools_after_configuration_and_skips_repeats(
+        self,
+    ) -> None:
+        self._chezmoi("apply")
+        calls = self.home / "mise-calls"
+        self.assertEqual(
+            calls.read_text().splitlines()[0],
+            str(self.destination / ".config/mise/config.toml"),
+        )
+        self.assertCountEqual(
+            calls.read_text().splitlines()[1:],
+            ["--cd", str(self.destination), "install"],
+        )
+        initial = calls.read_bytes()
+        self._chezmoi("apply")
+        self.assertEqual(calls.read_bytes(), initial)
+
+    def test_mise_declaration_change_runs_install_again(self) -> None:
+        self.source = self.root / "source"
+        self.source.mkdir()
+        shutil.copyfile(REPO / ".chezmoiroot", self.source / ".chezmoiroot")
+        shutil.copytree(REPO / "home", self.source / "home")
+        self._chezmoi("apply")
+        calls = self.home / "mise-calls"
+        initial = calls.read_bytes()
+        declaration = self.source / MISE_SOURCE.relative_to(REPO)
+        declaration.write_text('[tools]\nnode = "22"\n')
+
+        self._chezmoi("apply")
+        self.assertEqual(calls.read_bytes(), initial * 2)
+        self.assertEqual(
+            (self.destination / ".config/mise/config.toml").read_bytes(),
+            declaration.read_bytes(),
+        )
+        repeated = calls.read_bytes()
+        self._chezmoi("apply")
+        self.assertEqual(calls.read_bytes(), repeated)
+
+    def test_failed_install_is_retried_without_rolling_back_configuration(self) -> None:
+        failure = self.home / "fail-mise"
+        failure.touch()
+        with self.assertRaises(AssertionError):
+            self._chezmoi("apply")
+        self.assertEqual(
+            (self.destination / ".config/mise/config.toml").read_bytes(),
+            MISE_SOURCE.read_bytes(),
+        )
+        calls = self.home / "mise-calls"
+        initial = calls.read_bytes()
+        failure.unlink()
+
+        self._chezmoi("apply")
+        self.assertEqual(calls.read_bytes(), initial * 2)
+        recovered = calls.read_bytes()
+        self._chezmoi("apply")
+        self.assertEqual(calls.read_bytes(), recovered)
+
+    def test_placement_only_apply_defers_installation_until_full_apply(self) -> None:
+        self._chezmoi("apply", "--exclude=scripts")
+        self.assertFalse((self.home / "mise-calls").exists())
+        self.assertEqual(
+            (self.destination / ".config/mise/config.toml").read_bytes(),
+            MISE_SOURCE.read_bytes(),
+        )
+        self._chezmoi("apply")
+        self.assertTrue((self.home / "mise-calls").is_file())
 
     def test_pixi_generated_state_is_not_deployed(self) -> None:
         self.source = self.root / "source"

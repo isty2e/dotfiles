@@ -1,0 +1,249 @@
+import json
+import os
+import shutil
+import subprocess
+import tempfile
+import unittest
+from pathlib import Path
+
+import tomllib
+
+REPO = Path(__file__).resolve().parents[2]
+CHEZMOI = shutil.which(os.environ.get("CHEZMOI", "chezmoi"))
+GIT = shutil.which("git")
+
+
+class _BootstrapTests(unittest.TestCase):
+    def setUp(self) -> None:
+        temporary = tempfile.TemporaryDirectory(prefix="bootstrap '$ ")
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name).resolve()
+        self.home = self.root / "home '$"
+        self.home.mkdir()
+        self.repo = self.root / "checkout '$"
+        self.repo.mkdir()
+        shutil.copyfile(REPO / "bootstrap.sh", self.repo / "bootstrap.sh")
+        shutil.copyfile(REPO / ".chezmoiroot", self.repo / ".chezmoiroot")
+        shutil.copytree(REPO / "home", self.repo / "home")
+        self.utilities = self.root / "utilities"
+        self.utilities.mkdir()
+        for name in ("dirname", "mktemp", "rm", "mkdir", "sh", "cp", "ln"):
+            executable = shutil.which(name)
+            assert executable is not None
+            (self.utilities / name).symlink_to(executable)
+        (self.root / "tmp").mkdir()
+        self.environment = {
+            "HOME": str(self.home),
+            "PATH": str(self.utilities),
+            "XDG_CONFIG_HOME": str(self.home / ".config"),
+            "XDG_CACHE_HOME": str(self.home / ".cache"),
+            "XDG_DATA_HOME": str(self.home / ".local/share"),
+            "XDG_STATE_HOME": str(self.home / ".local/state"),
+            "TMPDIR": str(self.root / "tmp"),
+            "SHELL": "/bin/sh",
+            "GIT_CONFIG_NOSYSTEM": "1",
+            "GIT_CONFIG_GLOBAL": "/dev/null",
+        }
+        self.chezmoi = self.home / "chezmoi-executable"
+        self.chezmoi.write_text(
+            '#!/bin/sh\n[ "${1-}" != --version ] || exit 0\n'
+            ': > "$HOME/chezmoi-queried"\nexit 17\n'
+        )
+        self.chezmoi.chmod(0o755)
+        mise = self.home / "mise-executable"
+        mise.write_text(
+            "#!/bin/sh\nset -eu\n"
+            '[ "${1-}" != --version ] || exit 0\n'
+            '[ -f "$MISE_GLOBAL_CONFIG_FILE" ]\n'
+            'printf "%s\\n" "$MISE_GLOBAL_CONFIG_FILE" "$@" >> "$HOME/mise-calls"\n'
+            '[ ! -f "$HOME/fail-mise" ]\n'
+        )
+        mise.chmod(0o755)
+        (self.home / "install-chezmoi.sh").write_text(
+            "set -eu\n"
+            'printf "%s\\n" chezmoi >> "$HOME/installers"\n'
+            '[ ! -f "$HOME/fail-installer" ] || exit 19\n'
+            '[ "$1" = -b ]\n'
+            'ln -s "$HOME/chezmoi-executable" "$2/chezmoi"\n'
+        )
+        (self.home / "install-mise.sh").write_text(
+            "set -eu\n"
+            'printf "%s\\n" mise >> "$HOME/installers"\n'
+            'ln -s "$HOME/mise-executable" "$MISE_INSTALL_PATH"\n'
+        )
+        curl = self.utilities / "curl"
+        curl.write_text(
+            "#!/bin/sh\nset -eu\n"
+            'while [ "$#" -gt 0 ]; do\n'
+            "  case $1 in\n"
+            "    -o) output=$2; shift 2 ;;\n"
+            "    https://*) url=$1; shift ;;\n"
+            "    *) shift ;;\n"
+            "  esac\n"
+            "done\n"
+            'printf "%s\\n" "$url" >> "$HOME/downloads"\n'
+            'if [ -f "$HOME/fail-download" ]; then\n'
+            '  printf \': > "$HOME/partial-executed"\\n\' > "$output"\n'
+            "  exit 22\n"
+            "fi\n"
+            "case $url in\n"
+            '  https://get.chezmoi.io) cp "$HOME/install-chezmoi.sh" "$output" ;;\n'
+            '  https://mise.run) cp "$HOME/install-mise.sh" "$output" ;;\n'
+            "  *) exit 23 ;;\n"
+            "esac\n"
+        )
+        curl.chmod(0o755)
+
+    def _run_bootstrap(self, *arguments: str) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            ["/bin/sh", str(self.repo / "bootstrap.sh"), *arguments],
+            cwd=self.root,
+            env=self.environment,
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+
+
+class BootstrapAcquisitionTests(_BootstrapTests):
+    def test_help_does_not_prepare_or_download_tools(self) -> None:
+        result = self._run_bootstrap("--help")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertFalse((self.home / "downloads").exists())
+        self.assertFalse((self.home / ".local").exists())
+
+    def test_acquisition_precedes_handoff_and_reuses_installed_tools(self) -> None:
+        result = self._run_bootstrap()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertTrue((self.home / "chezmoi-queried").exists())
+        downloads = self.home / "downloads"
+        self.assertEqual(
+            downloads.read_text().splitlines(),
+            ["https://get.chezmoi.io", "https://mise.run"],
+        )
+        self.assertEqual(
+            (self.home / "installers").read_text().splitlines(), ["chezmoi", "mise"]
+        )
+        initial = downloads.read_bytes()
+        result = self._run_bootstrap()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(downloads.read_bytes(), initial)
+        self.assertEqual(list((self.root / "tmp").iterdir()), [])
+
+    def test_failed_download_is_not_executed(self) -> None:
+        (self.home / "fail-download").touch()
+        result = self._run_bootstrap()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertFalse((self.home / "installers").exists())
+        self.assertFalse((self.home / "partial-executed").exists())
+        self.assertEqual(
+            (self.home / "downloads").read_text().splitlines(),
+            ["https://get.chezmoi.io"],
+        )
+        self.assertEqual(list((self.root / "tmp").iterdir()), [])
+
+    def test_failed_installer_stops_before_other_acquisition(self) -> None:
+        (self.home / "fail-installer").touch()
+        result = self._run_bootstrap()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(
+            (self.home / "installers").read_text().splitlines(), ["chezmoi"]
+        )
+        self.assertFalse((self.home / "mise-calls").exists())
+        self.assertFalse((self.home / "chezmoi-queried").exists())
+        self.assertEqual(list((self.root / "tmp").iterdir()), [])
+
+
+@unittest.skipUnless(CHEZMOI and GIT, "chezmoi and git are required for native setup")
+class BootstrapNativeTests(_BootstrapTests):
+    def setUp(self) -> None:
+        super().setUp()
+        assert CHEZMOI is not None and GIT is not None
+        self.chezmoi.unlink()
+        self.chezmoi.symlink_to(Path(CHEZMOI).resolve())
+        subprocess.run(
+            [GIT, "init", "-q", str(self.repo)],
+            env=self.environment,
+            check=True,
+            capture_output=True,
+            timeout=30,
+        )
+
+    def test_fresh_setup_persists_checkout_and_invokes_native_apply(self) -> None:
+        result = self._run_bootstrap()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        config = self.home / ".config/chezmoi/chezmoi.toml"
+        self.assertEqual(tomllib.loads(config.read_text())["sourceDir"], str(self.repo))
+        self.assertEqual(
+            (self.home / ".config/mise/config.toml").read_bytes(),
+            (REPO / "home/private_dot_config/mise/config.toml").read_bytes(),
+        )
+        self.assertEqual(
+            (self.home / "mise-calls").read_text().splitlines()[0],
+            str(self.home / ".config/mise/config.toml"),
+        )
+        self.assertCountEqual(
+            (self.home / "mise-calls").read_text().splitlines()[1:],
+            ["--cd", str(self.home), "install"],
+        )
+        self.assertFalse((self.home / ".local/share/chezmoi/.git").exists())
+
+    def test_same_checkout_reuses_config_without_dropping_existing_settings(
+        self,
+    ) -> None:
+        first = self._run_bootstrap()
+        self.assertEqual(first.returncode, 0, first.stderr)
+        config = self.home / ".config/chezmoi/chezmoi.toml"
+        config.write_text(config.read_text() + '\n[data]\nkeep = "yes"\n')
+        original = config.read_bytes()
+        calls = (self.home / "mise-calls").read_bytes()
+
+        result = self._run_bootstrap()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(config.read_bytes(), original)
+        self.assertEqual((self.home / "mise-calls").read_bytes(), calls)
+
+    def test_conflicting_binding_preserves_config_and_does_not_apply(self) -> None:
+        other = self.root / "another checkout"
+        other.mkdir()
+        config = self.home / ".config/chezmoi/chezmoi.toml"
+        config.parent.mkdir(parents=True)
+        original = f'sourceDir = {json.dumps(str(other))}\n[data]\nkeep = "yes"\n'
+        config.write_text(original)
+
+        result = self._run_bootstrap()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(config.read_text(), original)
+        self.assertFalse((self.home / "mise-calls").exists())
+        self.assertFalse((self.home / ".vimrc").exists())
+
+    def test_existing_providers_are_reused_without_installing_local_copies(
+        self,
+    ) -> None:
+        (self.utilities / "chezmoi").symlink_to(self.chezmoi)
+        (self.utilities / "mise").symlink_to(self.home / "mise-executable")
+        result = self._run_bootstrap()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertFalse((self.home / "downloads").exists())
+        self.assertFalse((self.home / ".local/bin").exists())
+        self.assertTrue((self.home / "mise-calls").is_file())
+
+    def test_failed_first_apply_resumes_with_the_persisted_binding(self) -> None:
+        failure = self.home / "fail-mise"
+        failure.touch()
+        result = self._run_bootstrap()
+        self.assertNotEqual(result.returncode, 0)
+        config = self.home / ".config/chezmoi/chezmoi.toml"
+        original = config.read_bytes()
+        calls = (self.home / "mise-calls").read_bytes()
+        failure.unlink()
+
+        result = self._run_bootstrap()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(config.read_bytes(), original)
+        self.assertEqual((self.home / "mise-calls").read_bytes(), calls * 2)
+
+
+if __name__ == "__main__":
+    unittest.main()

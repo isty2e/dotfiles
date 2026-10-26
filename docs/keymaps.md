@@ -119,7 +119,7 @@ Vacant Normal/Visual window slots are no-ops; vacant operator slots cancel the
 pending operator. Unrelated Ctrl shortcuts and native command spellings are not
 transposed. Existing personal tab, completion and terminal gestures stay separate.
 
-In `home/dot_config/nvim/`, `lua/config/keymaps.lua` owns general mode maps and
+In `home/private_dot_config/nvim/`, `lua/config/keymaps.lua` owns general mode maps and
 `lua/config/lsp.lua` owns
 attached-buffer hover on `E` and search on `K`, and each plugin owns its local interaction. Neo-tree
 retains native parent/child handlers, moves file details to `u` in its filesystem,

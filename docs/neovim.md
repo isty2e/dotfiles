@@ -5,7 +5,7 @@ an AstroNvim or LazyVim profile. It requires Neovim 0.11+, Git, and a terminal w
 true-color support. A Nerd Font is optional for file icons. Telescope live grep
 requires ripgrep; its native fzf sorter additionally needs a C compiler and Make.
 
-The canonical source is `home/dot_config/nvim/` in this dotfiles repository.
+The canonical source is `home/private_dot_config/nvim/` in this dotfiles repository.
 Paths below are relative to that directory unless stated otherwise. The former
 [standalone repository](https://github.com/isty2e/dotfiles.nvim) is retained for
 history, not as a second source to synchronize. Vim still has its independent
@@ -13,7 +13,7 @@ history, not as a second source to synchronize. Vim still has its independent
 
 ## Install and update
 
-Place the contents of `home/dot_config/nvim/` at Neovim's configuration directory,
+Place the contents of `home/private_dot_config/nvim/` at Neovim's configuration directory,
 normally `~/.config/nvim`, through the reviewed chezmoi procedure in
 [setup.md](../setup.md#chezmoi-placement). Do not clone the whole dotfiles repository
 there. Without chezmoi, copy that directory's contents into an empty configuration
@@ -158,7 +158,7 @@ sh tests/nvim/run-keymaps.sh
 
 Pass the cache directory as the first argument when it is elsewhere. To exercise
 an isolated chezmoi result, set `KEYMAP_TEST_CONFIG` to its `.config/nvim` directory;
-the default is this repository's `home/dot_config/nvim`. Missing
+the default is this repository's `home/private_dot_config/nvim`. Missing
 Neovim, Git or the neo-tree cache produces exit code 77; other incomplete caches
 surface integration failures. The runner exercises real plugin buffers,
 picker input, completion, native LSP attachment with an
@@ -173,7 +173,7 @@ scratch=$(mktemp -d)
 env -i PATH="$PATH" HOME="$scratch" TMPDIR="$scratch" \
   XDG_CONFIG_HOME="$scratch/config" XDG_DATA_HOME="$scratch/data" \
   XDG_CACHE_HOME="$scratch/cache" XDG_STATE_HOME="$scratch/state" \
-  KEYMAP_TEST_CONFIG="$root/home/dot_config/nvim" \
+  KEYMAP_TEST_CONFIG="$root/home/private_dot_config/nvim" \
   nvim --headless -u NONE -i NONE -l "$root/tests/nvim/core.lua"
 rm -rf "$scratch"
 ```

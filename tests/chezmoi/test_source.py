@@ -1,5 +1,6 @@
 import os
 import shutil
+import stat
 import subprocess
 import tempfile
 import unittest
@@ -7,9 +8,9 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
 VIM_SOURCE = REPO / "home/dot_vimrc"
-NVIM_SOURCE = REPO / "home/dot_config/nvim"
-HELIX_SOURCE = REPO / "home/dot_config/helix"
-ZED_SOURCE = REPO / "home/dot_config/zed"
+NVIM_SOURCE = REPO / "home/private_dot_config/nvim"
+HELIX_SOURCE = REPO / "home/private_dot_config/helix"
+ZED_SOURCE = REPO / "home/private_dot_config/zed"
 _configured_chezmoi = os.environ.get("CHEZMOI")
 _selected_chezmoi = (
     shutil.which(_configured_chezmoi or "chezmoi") or _configured_chezmoi
@@ -21,6 +22,15 @@ CHEZMOI = (
 
 @unittest.skipUnless(CHEZMOI, "chezmoi is required; set CHEZMOI to its executable")
 class ChezmoiSourceTests(unittest.TestCase):
+    def test_private_config_mode_survives_repeated_apply(self) -> None:
+        self._chezmoi("apply")
+        config = self.destination / ".config"
+        self.assertEqual(stat.S_IMODE(config.stat().st_mode), 0o700)
+
+        self._chezmoi("apply")
+        self._chezmoi("verify")
+        self.assertEqual(stat.S_IMODE(config.stat().st_mode), 0o700)
+
     def setUp(self) -> None:
         temporary = tempfile.TemporaryDirectory(prefix="chezmoi vim ")
         self.addCleanup(temporary.cleanup)

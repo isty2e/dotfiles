@@ -108,11 +108,13 @@ operators, literal input, window cycles and NERDTree commands are tested by effe
 
 ## chezmoi placement
 
-The repository's `.chezmoiroot` file selects `home/` as its source state. It manages
+The repository's `.chezmoiroot` file selects `home/` as its source state.
+`private_dot_config/` keeps the native `.config` directory private (`0700`);
+the `private_` prefix is a chezmoi attribute, not part of the target path. It manages
 `.vimrc` from plain `home/dot_vimrc` and the Neovim configuration files from
-`home/dot_config/nvim/` at `.config/nvim/`. Helix configuration, language settings
-and themes come from `home/dot_config/helix/` at `.config/helix/`. Zed settings
-and keymaps come from `home/dot_config/zed/` at `.config/zed/`. These editors keep
+`home/private_dot_config/nvim/` at `.config/nvim/`. Helix configuration, language settings
+and themes come from `home/private_dot_config/helix/` at `.config/helix/`. Zed settings
+and keymaps come from `home/private_dot_config/zed/` at `.config/zed/`. These editors keep
 separate native loaders; sharing a Git repository does not make one depend on
 another.
 Tests, docs, Lua tooling and `.vim/colors` stay outside that state. The color files are authored
@@ -171,7 +173,7 @@ the desired vimrc from chezmoi, and a later apply would replace it again.
 
 See [Neovim configuration](docs/neovim.md) for selected plugins, language tools,
 native keymap ownership and installation. The runtime source is
-`home/dot_config/nvim/`; `tests/nvim/` and this repository's Lua tooling are not
+`home/private_dot_config/nvim/`; `tests/nvim/` and this repository's Lua tooling are not
 deployed. The native integration runner uses an existing plugin cache without
 installing dependencies:
 

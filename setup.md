@@ -191,6 +191,34 @@ history untouched and does not authorize applying over it or deleting its metada
 
 See [Pi PaperColor themes](pi/README.md) for installation and palette details.
 
+## Mise global tools
+
+`home/private_dot_config/mise/config.toml` is the plain source for
+`~/.config/mise/config.toml`. Its single native `[tools]` table is grouped with
+comment headings and blank lines: runtimes/environments, agent/terminal tools,
+repository search, delivery/tasks and JavaScript/TypeScript quality. These are
+editing groups, not nested tool namespaces or separate installation profiles.
+
+Node uses the `lts` selector; other listed tools use `latest`. CodeGraph and
+zvec-grep use explicit npm backend identifiers; their commands are `codegraph`
+and `zg`. Node is declared for the npm tools' runtime requirements. Project-scoped
+mise declarations retain their normal precedence over these global defaults.
+
+Chezmoi places the declaration only. Tool acquisition and activation are separate
+steps; this file does not configure shell activation, authentication, search
+indexes or model caches. Python environment packages remain in the Pixi manifest
+rather than being duplicated here. Existing executable providers are not removed
+by this source-preparation step; any provider transfer is separate. Mise retains
+its native version-cleanup behavior.
+
+Set `MISE` to the actual mise executable to run the optional native metadata
+check. It reads the copied declaration with isolated home, config, data, cache
+and state paths; otherwise it skips explicitly:
+
+```sh
+python -m unittest discover -s tests/mise -v
+```
+
 ## Pixi base environment
 
 `home/pixi-env/base/pixi.toml` is the plain source for

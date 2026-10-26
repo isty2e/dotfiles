@@ -12,6 +12,7 @@ NVIM_SOURCE = REPO / "home/private_dot_config/nvim"
 HELIX_SOURCE = REPO / "home/private_dot_config/helix"
 ZED_SOURCE = REPO / "home/private_dot_config/zed"
 PIXI_SOURCE = REPO / "home/pixi-env/base/pixi.toml"
+MISE_SOURCE = REPO / "home/private_dot_config/mise/config.toml"
 _configured_chezmoi = os.environ.get("CHEZMOI")
 _selected_chezmoi = (
     shutil.which(_configured_chezmoi or "chezmoi") or _configured_chezmoi
@@ -45,6 +46,7 @@ class ChezmoiSourceTests(unittest.TestCase):
         self.sources = {
             Path(".vimrc"): VIM_SOURCE,
             Path("pixi-env/base/pixi.toml"): PIXI_SOURCE,
+            Path(".config/mise/config.toml"): MISE_SOURCE,
         }
         for name, source in (
             ("nvim", NVIM_SOURCE),

@@ -1,0 +1,28 @@
+[tools]
+# Runtimes and environments
+node = "lts"
+bun = "latest"
+pixi = "latest"
+
+# Agent CLIs and terminal workspaces
+antigravity-cli = "latest"
+claude = "latest"
+codex = "latest"
+opencode = "latest"
+"npm:@earendil-works/pi-coding-agent" = "latest"
+herdr = "latest"
+
+# Repository search and navigation
+ripgrep = "latest"
+fd = "latest"
+fzf = "latest"
+"npm:@colbymchenry/codegraph" = "latest"
+"npm:@zvec/zvec-grep" = "latest"
+
+# Repository delivery and task execution
+github-cli = "latest"
+just = "latest"
+
+# JavaScript and TypeScript quality
+oxfmt = "latest"
+oxlint = "latest"

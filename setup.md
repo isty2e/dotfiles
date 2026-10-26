@@ -8,6 +8,9 @@ Start with Git, a POSIX shell and HTTPS-capable curl. Existing homes need a
 configuration diff and backup first; follow the editor handoff instructions below
 before replacing linked configuration. Bootstrap does not migrate editor runtimes.
 
+For an existing home, also review the [binary-provider handoff boundaries](#mise-global-tools)
+for Kata, tmux and editor runtimes before installing the newly declared binaries.
+
 ```sh
 git clone https://github.com/isty2e/dotfiles.git "$HOME/dotfiles"
 cd "$HOME/dotfiles"
@@ -17,7 +20,8 @@ sh bootstrap.sh
 Bootstrap reuses chezmoi and mise found on `PATH`, including existing package-manager
 installations. Missing tools are installed into `~/.local/bin` by downloading and
 executing their official installers from [get.chezmoi.io](https://get.chezmoi.io)
-and [mise.run](https://mise.run). It does not invoke sudo, Homebrew or `chsh`.
+and [mise.run](https://mise.run). The bootstrap itself does not invoke sudo,
+Homebrew or `chsh`; native tool backends retain their own platform prerequisites.
 For manual provisioning, install those two executables using their official
 instructions, then rerun bootstrap; it will skip their acquisition. No Python,
 Node or Pixi environment is needed to run bootstrap itself.
@@ -257,33 +261,62 @@ See [Pi PaperColor themes](pi/README.md) for installation and palette details.
 ## Mise global tools
 
 `home/private_dot_config/mise/config.toml` is the plain source for
-`~/.config/mise/config.toml`. Its single native `[tools]` table is grouped with
-comment headings and blank lines: runtimes/environments, agent/terminal tools,
-repository search, delivery/tasks and JavaScript/TypeScript quality. These are
-editing groups, not nested tool namespaces or separate installation profiles.
+`~/.config/mise/config.toml`. Native `[tools]` declarations are grouped with
+comment headings and blank lines: runtimes/environments, editors/typesetting,
+agent/terminal tools, repository search/navigation, delivery/task execution,
+shell/system utilities, and JavaScript/TypeScript quality. Provider-specific
+options use native tool subtables rather than another manifest or installer.
 
-Node uses the `lts` selector; other listed tools use `latest`. CodeGraph and
-zvec-grep use explicit npm backend identifiers; their commands are `codegraph`
-and `zg`. Node is declared for the npm tools' runtime requirements. Project-scoped
-mise declarations retain their normal precedence over these global defaults.
+Node uses `lts`; tool version selectors otherwise use `latest`. CodeGraph uses
+the registry alias instead of an explicit npm key. Pi and zvec-grep retain explicit
+npm keys, backed by the declared Node runtime. Neovim explicitly uses its Aqua
+release backend; Vim, Helix and the other plain keys use their registry defaults.
+Chezmoi and mise itself remain independent bootstrap tools, not entries in this list.
+Ruby can fall back to a source build when a precompiled runtime is unavailable;
+its build dependencies must already be available on a no-admin host.
+
+Rust uses mise's rustup-backed toolchain management. Native idiomatic Rust file
+reading is enabled so `rust-toolchain.toml` can select the project toolchain
+instead of the global default. The mise 2026.10.12 registry does not recognize
+extensionless `rust-toolchain` files; do not assume a legacy file overrides the
+global default. Check that boundary before enabling mise's Rust in an existing
+project. Other project-scoped mise
+declarations retain their normal precedence. uv is a CLI default, not a replacement
+for the Pixi base environment or project-owned Python environments.
+
+pre-commit uses the PyPI backend with uv and a private Python 3.13 interpreter;
+it does not require the Pixi base or introduce a global mise Python. The Pixi
+manifest's pre-commit dependency is retained for that separate environment.
+Existing installed hooks may reference an older interpreter; inspect or reinstall
+affected hooks when actually changing their CLI/interpreter provider.
+
+The explicit GitHub adapters select ordinary Mac/Linux release archives.
+Dundee's gdu is exposed as `gdu-go` so it does not shadow GNU coreutils' `gdu`.
+Kata excludes Homebrew-flavor assets. Installing its CLI does not perform a
+daemon/database handoff: verify the existing data and daemon configuration before
+an actual provider switch, and avoid mixing mise with Kata's self-updater.
+Likewise, an editor binary change still needs runtime/plugin/grammar compatibility
+checks at adoption; tmux server/session lifetime and Starship prompt activation
+remain separate from binary acquisition.
 
 Chezmoi places the declaration and its after-action invokes native mise installation
 as described in the bootstrap section. The action explicitly selects the projected
 global TOML, including in isolated destinations or with a custom XDG configuration
 directory; native mise project/default precedence still applies. This file does not
 configure shell activation, authentication, search indexes or model caches.
-Python environment packages remain in the Pixi manifest
-rather than being duplicated here. Existing executable providers are not removed;
-any provider retirement is separate. Mise retains
-its native version-cleanup behavior.
+Scientific libraries remain in the Pixi manifest. Existing executable providers
+are not removed; any provider retirement is separate. Mise retains its native
+version-cleanup behavior.
 
 Set `MISE` to the actual mise executable to run the optional native metadata
-check. It reads the copied declaration with isolated home, config, data, cache
-and state paths; otherwise it skips explicitly:
+checks. They load the copied declaration and verify project Rust selection without
+installation, using isolated home/config/data/cache/state paths and offline mode;
+otherwise they skip explicitly:
 
 ```sh
 python -m unittest discover -s tests/mise -v
 ```
+
 
 ## Pixi base environment
 

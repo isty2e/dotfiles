@@ -18,7 +18,7 @@ run() {
     XDG_CONFIG_HOME="$scratch/config" XDG_CACHE_HOME="$scratch/cache" \
     XDG_STATE_HOME="$scratch/state" TMPDIR="$scratch" SHELL=/bin/sh \
     GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=/dev/null GIT_TERMINAL_PROMPT=0 \
-    NVIM_SETUP_SOURCE="$repo/home/dot_config/nvim" NVIM_SETUP_TEST_ROOT="$scratch/$1" \
+    NVIM_SETUP_SOURCE="$repo/home/private_dot_config/nvim" NVIM_SETUP_TEST_ROOT="$scratch/$1" \
     NVIM_SETUP_NATIVE_LAZY="$native" NVIM_SETUP_REAL_GIT="$git" \
     "$binary" --headless -u NONE -i NONE -l "$repo/tests/nvim/$2"
 }

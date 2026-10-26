@@ -36,7 +36,9 @@ class HelixCyclesTest(unittest.TestCase):
     def test_native_cycles_preserve_every_source_binding(self) -> None:
         test_dir = Path(__file__).resolve().parent
         native = _read_keymaps(test_dir / "fixtures" / "helix-25.07.1.toml")
-        overrides = _read_keymaps(test_dir.parents[1] / "helix" / "config.toml")
+        overrides = _read_keymaps(
+            test_dir.parents[1] / "home/private_dot_config/helix/config.toml"
+        )
         # Both native window prefixes contain these same selected bindings.
         native["normal"]["space"] = {"w": deepcopy(native["normal"]["C-w"])}
         native["select"] = _merge_keymaps(native["normal"], native["select"])

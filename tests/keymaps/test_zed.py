@@ -92,7 +92,11 @@ class ZedNavigationTest(unittest.TestCase):
         ]
         keymap = cast(
             _comparison.Keymap,
-            json5.loads((test_dir.parents[1] / "zed/keymap.json").read_text()),
+            json5.loads(
+                (
+                    test_dir.parents[1] / "home/private_dot_config/zed/keymap.json"
+                ).read_text()
+            ),
         )
         self.user = _comparison.collect_bindings([("user", keymap)])
 

@@ -16,6 +16,7 @@ herdr = "latest"
 ripgrep = "latest"
 fd = "latest"
 fzf = "latest"
+ast-grep = "latest"
 "npm:@colbymchenry/codegraph" = "latest"
 "npm:@zvec/zvec-grep" = "latest"
 

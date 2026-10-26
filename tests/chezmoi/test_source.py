@@ -8,6 +8,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[2]
 VIM_SOURCE = REPO / "home/dot_vimrc"
 NVIM_SOURCE = REPO / "home/dot_config/nvim"
+HELIX_SOURCE = REPO / "home/dot_config/helix"
 _configured_chezmoi = os.environ.get("CHEZMOI")
 _selected_chezmoi = (
     shutil.which(_configured_chezmoi or "chezmoi") or _configured_chezmoi
@@ -29,11 +30,12 @@ class ChezmoiSourceTests(unittest.TestCase):
         for directory in (self.home, self.destination, self.former, self.root / "tmp"):
             directory.mkdir()
         self.sources = {Path(".vimrc"): VIM_SOURCE}
-        self.sources.update(
-            (Path(".config/nvim") / path.relative_to(NVIM_SOURCE), path)
-            for path in NVIM_SOURCE.rglob("*")
-            if path.is_file()
-        )
+        for name, source in (("nvim", NVIM_SOURCE), ("helix", HELIX_SOURCE)):
+            self.sources.update(
+                (Path(".config") / name / path.relative_to(source), path)
+                for path in source.rglob("*")
+                if path.is_file()
+            )
 
         self.environment = {
             "HOME": str(self.home),
@@ -141,6 +143,44 @@ class ChezmoiSourceTests(unittest.TestCase):
         )
         self.assertEqual(marker.read_bytes(), b"former runtime")
         self.assertTrue(self._chezmoi("diff").strip())
+
+    def test_helix_directory_handoff_preserves_unmanaged_grammars(self) -> None:
+        old = self.former / "helix"
+        grammar = old / "runtime/grammars/python.so"
+        grammar.parent.mkdir(parents=True)
+        grammar.write_bytes(b"existing native grammar")
+        old_config = old / "config.toml"
+        old_config.write_bytes(b'theme = "former"\n')
+        target = self.destination / ".config/helix"
+        target.parent.mkdir(parents=True)
+        target.symlink_to(old, target_is_directory=True)
+
+        self.assertTrue(self._chezmoi("diff").strip())
+        self.assertTrue(target.is_symlink())
+        self._chezmoi("apply")
+        self.assertFalse(target.is_symlink())
+        self.assertEqual(old_config.read_bytes(), b'theme = "former"\n')
+        self.assertEqual(grammar.read_bytes(), b"existing native grammar")
+
+        runtime = old / "runtime"
+        runtime.rename(target / "runtime")
+        self._chezmoi("apply")
+        self._chezmoi("verify")
+        self.assertEqual(
+            (target / "runtime/grammars/python.so").read_bytes(),
+            b"existing native grammar",
+        )
+
+        preserved = self.root / "new helix configuration"
+        target.rename(preserved)
+        (preserved / "runtime").rename(old / "runtime")
+        target.symlink_to(old, target_is_directory=True)
+        self.assertEqual(target.readlink(), old)
+        self.assertEqual(grammar.read_bytes(), b"existing native grammar")
+        self.assertEqual(
+            (preserved / "config.toml").read_bytes(),
+            (HELIX_SOURCE / "config.toml").read_bytes(),
+        )
 
 
 if __name__ == "__main__":

@@ -110,8 +110,10 @@ operators, literal input, window cycles and NERDTree commands are tested by effe
 
 The repository's `.chezmoiroot` file selects `home/` as its source state. It manages
 `.vimrc` from plain `home/dot_vimrc` and the Neovim configuration files from
-`home/dot_config/nvim/` at `.config/nvim/`. These editors keep separate native
-loaders; sharing a Git repository does not make one depend on the other.
+`home/dot_config/nvim/` at `.config/nvim/`. Helix configuration, language settings
+and themes come from `home/dot_config/helix/` at `.config/helix/`. These editors
+keep separate native loaders; sharing a Git repository does not make one depend
+on another.
 Tests, docs, Lua tooling and `.vim/colors` stay outside that state. The color files are authored
 assets used by standalone recovery and its tests, not a runtime tree to symlink
 into a home directory. Do not symlink the repository's `.vim` directory as `~/.vim`.
@@ -122,13 +124,23 @@ temporary `HOME`, `TMPDIR`, all four `XDG_CONFIG_HOME`, `XDG_CACHE_HOME`,
 Changing only `--destination` does not isolate chezmoi's own state. Run `managed`
 to confirm the target list, review `diff`, then use `apply` in that same isolated
 environment. Apply places configuration only: it does not invoke `:VimSetup`,
-install plugins/language servers/parsers, or manage `~/.vim` and Neovim data/caches.
+install plugins/language servers/parsers, or manage `~/.vim`, Neovim data/caches
+or Helix's generated `runtime/grammars` tree.
+
+For a linked Helix configuration directory, preserve the original link and local
+runtime before replacing the link with a regular directory. Keep existing
+`runtime/grammars`, including its source cache, under the local `.config/helix/`;
+do not copy it into the chezmoi source tree or add a persistent removal rule.
+Stop Helix for the handoff so an existing process cannot retain obsolete runtime
+paths. After placement, ordinary apply preserves that unmanaged runtime. Rollback
+must preserve newer configuration, restore runtime custody and the original link,
+and select the matching source checkout before applying again.
 
 The optional chezmoi tests run with an executable found on `PATH` or selected by
 `CHEZMOI`; otherwise they explicitly skip. They use isolated homes and exercise
-the actual `managed`, `diff`, `apply` and `verify` commands, including replacing a
-synthetic Vim and Neovim entrypoint symlinks without changing their old targets,
-Vim runtime or unmanaged repository metadata:
+the actual `managed`, `diff`, `apply` and `verify` commands, including replacing
+synthetic Vim/Neovim entrypoint links and a linked Helix directory without
+changing their former sources, unmanaged runtime or repository metadata:
 
 ```sh
 python -m unittest discover -s tests/chezmoi -v

@@ -9,7 +9,7 @@ configuration diff and backup first; follow the editor handoff instructions belo
 before replacing linked configuration. Bootstrap does not migrate editor runtimes.
 
 For an existing home, also review the [binary-provider handoff boundaries](#mise-global-tools)
-for Kata, tmux and editor runtimes before installing the newly declared binaries.
+for tmux and editor runtimes before installing the newly declared binaries.
 
 ```sh
 git clone https://github.com/isty2e/dotfiles.git "$HOME/dotfiles"
@@ -269,8 +269,8 @@ options use native tool subtables rather than another manifest or installer.
 
 Node uses `lts`; tool version selectors otherwise use `latest`. CodeGraph uses
 the registry alias instead of an explicit npm key. Pi and zvec-grep retain explicit
-npm keys, backed by the declared Node runtime. Neovim explicitly uses its Aqua
-release backend; Vim, Helix and the other plain keys use their registry defaults.
+npm keys, backed by the declared Node runtime. Neovim, Vim, Helix and the other
+plain keys use their registry defaults rather than pinning a backend here.
 Chezmoi and mise itself remain independent bootstrap tools, not entries in this list.
 Ruby can fall back to a source build when a precompiled runtime is unavailable;
 its build dependencies must already be available on a no-admin host.
@@ -290,12 +290,12 @@ manifest's pre-commit dependency is retained for that separate environment.
 Existing installed hooks may reference an older interpreter; inspect or reinstall
 affected hooks when actually changing their CLI/interpreter provider.
 
-The explicit GitHub adapters select ordinary Mac/Linux release archives.
+The explicit gdu GitHub adapter selects ordinary Mac/Linux release archives.
 Dundee's gdu is exposed as `gdu-go` so it does not shadow GNU coreutils' `gdu`.
-Kata excludes Homebrew-flavor assets. Installing its CLI does not perform a
-daemon/database handoff: verify the existing data and daemon configuration before
-an actual provider switch, and avoid mixing mise with Kata's self-updater.
-Likewise, an editor binary change still needs runtime/plugin/grammar compatibility
+Kata stays outside this manifest: keep its existing installer/package manager and
+corresponding update procedure, which owns its daemon lifecycle. Revisit mise
+ownership only when deliberately changing that installation/update boundary.
+An editor binary change still needs runtime/plugin/grammar compatibility
 checks at adoption; tmux server/session lifetime and Starship prompt activation
 remain separate from binary acquisition.
 

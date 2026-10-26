@@ -11,7 +11,7 @@ pnpm = "latest"
 
 # Editors and typesetting
 vim = "latest"
-"aqua:neovim/neovim" = "latest"
+neovim = "latest"
 helix = "latest"
 typst = "latest"
 
@@ -54,11 +54,6 @@ python = "3.13"
 version = "latest"
 matching_regex = '^gdu_(darwin|linux)_(amd64|arm64)\.tgz$'
 rename_exe = "gdu-go"
-
-# Use the ordinary rootless release, not the Homebrew-flavor binary.
-[tools."github:kenn-io/kata"]
-version = "latest"
-matching_regex = '^kata_[^_]+_(darwin|linux)_(amd64|arm64)\.tar\.gz$'
 
 [settings]
 idiomatic_version_file_enable_tools = ["rust"]

@@ -9,6 +9,7 @@ REPO = Path(__file__).resolve().parents[2]
 VIM_SOURCE = REPO / "home/dot_vimrc"
 NVIM_SOURCE = REPO / "home/dot_config/nvim"
 HELIX_SOURCE = REPO / "home/dot_config/helix"
+ZED_SOURCE = REPO / "home/dot_config/zed"
 _configured_chezmoi = os.environ.get("CHEZMOI")
 _selected_chezmoi = (
     shutil.which(_configured_chezmoi or "chezmoi") or _configured_chezmoi
@@ -30,7 +31,11 @@ class ChezmoiSourceTests(unittest.TestCase):
         for directory in (self.home, self.destination, self.former, self.root / "tmp"):
             directory.mkdir()
         self.sources = {Path(".vimrc"): VIM_SOURCE}
-        for name, source in (("nvim", NVIM_SOURCE), ("helix", HELIX_SOURCE)):
+        for name, source in (
+            ("nvim", NVIM_SOURCE),
+            ("helix", HELIX_SOURCE),
+            ("zed", ZED_SOURCE),
+        ):
             self.sources.update(
                 (Path(".config") / name / path.relative_to(source), path)
                 for path in source.rglob("*")
@@ -181,6 +186,34 @@ class ChezmoiSourceTests(unittest.TestCase):
             (preserved / "config.toml").read_bytes(),
             (HELIX_SOURCE / "config.toml").read_bytes(),
         )
+
+    def test_zed_files_preserve_former_keymap_and_unmanaged_state(self) -> None:
+        old_keymap = self.former / "zed-keymap.json"
+        old_keymap.write_bytes(b"[]\n")
+        target = self.destination / ".config/zed"
+        target.mkdir(parents=True)
+        keymap = target / "keymap.json"
+        keymap.symlink_to(old_keymap)
+        settings = target / "settings.json"
+        settings.write_bytes(b'{"theme": "former"}\n')
+        state = target / "native-state"
+        state.write_bytes(b"unmanaged editor state")
+
+        self.assertTrue(self._chezmoi("diff").strip())
+        self.assertTrue(keymap.is_symlink())
+        self.assertEqual(settings.read_bytes(), b'{"theme": "former"}\n')
+        self._chezmoi("apply")
+        self.assertFalse(keymap.is_symlink())
+        for name in ("keymap.json", "settings.json"):
+            self.assertEqual(
+                (target / name).read_bytes(), (ZED_SOURCE / name).read_bytes()
+            )
+        self.assertEqual(old_keymap.read_bytes(), b"[]\n")
+        self.assertEqual(state.read_bytes(), b"unmanaged editor state")
+
+        self._chezmoi("apply")
+        self._chezmoi("verify")
+        self.assertEqual(state.read_bytes(), b"unmanaged editor state")
 
 
 if __name__ == "__main__":

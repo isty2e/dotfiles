@@ -111,9 +111,10 @@ operators, literal input, window cycles and NERDTree commands are tested by effe
 The repository's `.chezmoiroot` file selects `home/` as its source state. It manages
 `.vimrc` from plain `home/dot_vimrc` and the Neovim configuration files from
 `home/dot_config/nvim/` at `.config/nvim/`. Helix configuration, language settings
-and themes come from `home/dot_config/helix/` at `.config/helix/`. These editors
-keep separate native loaders; sharing a Git repository does not make one depend
-on another.
+and themes come from `home/dot_config/helix/` at `.config/helix/`. Zed settings
+and keymaps come from `home/dot_config/zed/` at `.config/zed/`. These editors keep
+separate native loaders; sharing a Git repository does not make one depend on
+another.
 Tests, docs, Lua tooling and `.vim/colors` stay outside that state. The color files are authored
 assets used by standalone recovery and its tests, not a runtime tree to symlink
 into a home directory. Do not symlink the repository's `.vim` directory as `~/.vim`.
@@ -127,6 +128,13 @@ environment. Apply places configuration only: it does not invoke `:VimSetup`,
 install plugins/language servers/parsers, or manage `~/.vim`, Neovim data/caches
 or Helix's generated `runtime/grammars` tree.
 
+Zed's source contains non-secret UI, language and provider preferences, not
+credentials, sessions or extension state. Existing keymap rules and settings
+values are preserved; placement does not switch language providers. Fonts, theme
+extensions and language tools are separate prerequisites for their corresponding
+features, and account login remains native to Zed. Stop Zed before replacing its
+linked keymap or settings, back up both files, and review their diff before applying.
+
 For a linked Helix configuration directory, preserve the original link and local
 runtime before replacing the link with a regular directory. Keep existing
 `runtime/grammars`, including its source cache, under the local `.config/helix/`;
@@ -139,8 +147,9 @@ and select the matching source checkout before applying again.
 The optional chezmoi tests run with an executable found on `PATH` or selected by
 `CHEZMOI`; otherwise they explicitly skip. They use isolated homes and exercise
 the actual `managed`, `diff`, `apply` and `verify` commands, including replacing
-synthetic Vim/Neovim entrypoint links and a linked Helix directory without
-changing their former sources, unmanaged runtime or repository metadata:
+synthetic Vim/Neovim entrypoint links, a linked Helix directory and a Zed keymap
+link without changing their former sources, unmanaged runtime/editor state or
+repository metadata:
 
 ```sh
 python -m unittest discover -s tests/chezmoi -v

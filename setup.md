@@ -129,6 +129,8 @@ to confirm the target list, review `diff`, then use `apply` in that same isolate
 environment. Apply places configuration only: it does not invoke `:VimSetup`,
 install plugins/language servers/parsers, or manage `~/.vim`, Neovim data/caches
 or Helix's generated `runtime/grammars` tree.
+The Pixi base manifest is also placed as described below; its environment is not
+installed by apply.
 
 Zed's source contains non-secret UI, language and provider preferences, not
 credentials, sessions or extension state. Existing keymap rules and settings
@@ -189,13 +191,50 @@ history untouched and does not authorize applying over it or deleting its metada
 
 See [Pi PaperColor themes](pi/README.md) for installation and palette details.
 
+## Pixi base environment
+
+`home/pixi-env/base/pixi.toml` is the plain source for
+`~/pixi-env/base/pixi.toml`. It requires Pixi 0.81 or newer, provisioned separately.
+Common requests are declared once; native target tables select the Mac ARM
+configuration with a macOS 14 baseline or the Linux x86-64 configuration with
+CUDA 12.8. This Linux target is not a generic CPU-only Linux profile. Both use the
+native `default` environment, without a new environment name or prefix.
+
+Target-specific additions reflect selected usage, not universal OS restrictions.
+The Mac CDPKit bound remains in place pending compatibility validation. Linux
+PyTorch uses the cu128 index directly; other requests keep the normal PyPI index.
+Access to Git-sourced dependencies is supplied outside this repository.
+
+Review the chezmoi diff before replacing an existing manifest. Apply places only
+the declaration; subsequent Pixi operations can reconcile the environment from
+it. To install explicitly after placement:
+
+```sh
+pixi install --manifest-path "$HOME/pixi-env/base/pixi.toml"
+```
+
+The `.pixi/` environment and `pixi.lock` are local generated state, excluded from
+Git and chezmoi source; they are not versioned or deployed.
+Use normal Pixi commands to change declarations, then review and re-add the TOML
+to chezmoi source; do not add the generated environment directory.
+
+The optional native parser check requires `PIXI` to be set to an absolute Pixi
+0.81+ executable path, not a version-manager shim. Otherwise it skips explicitly.
+It uses an isolated home and reads metadata without installing packages:
+
+```sh
+python -m unittest discover -s tests/pixi -v
+```
+
 ## brew
 
 ```bash
 brew install zsh vim neovim cmake git bazel fzf fd julia go crystal openssh pandoc nodejs ack the_silver_searcher r rstudio rbenv brave-browser visual-studio-code textmate xquartz brewsci/bio/pymol
 ```
 
-## conda
+## Legacy conda notes
+
+These historical commands are not part of the Pixi base setup above.
 
 [Mambaforge download](https://github.com/conda-forge/miniforge)
 

@@ -1,7 +1,6 @@
 # AGENTS.md
 
-<!-- BASE: Standigm/agent-commons@24a70f608aa37132c447c73aa1d6df8cd0ab7825 -->
-<!-- EARLY_ADOPTION: Standigm/agent-commons#58@170e62a028dfce349d52c715a9277fb0eaaa493c -->
+<!-- BASE: Standigm/agent-commons@9fe55fdbb2bc2a861fddd7ba7cdf89acd43c355c -->
 
 Repository-agnostic working rules for coding agents.
 
@@ -80,6 +79,11 @@ Repository-agnostic working rules for coding agents.
   that choice was already delegated. Report the blocker and proposed change instead of bypassing the constraint.
 - Selected skills honor existing approval and delegated decision scope; do not re-request them. Reopen approval only for
   new material facts invalidating it or choices outside that scope. Delegation never overrides governing approval rules.
+- Do not include personal or account identifiers, including identifying derivatives, in external requests (URLs, headers
+  such as User-Agent, payloads, or metadata) or externally shared content unless authorization covers the data,
+  recipient, and purpose. Availability in context or local sources, service policies, and error responses do not grant
+  that permission.
+- Omit unnecessary identifiers; if required disclosure is not already authorized, stop that transmission and ask.
 
 ## Execution Workflow
 

@@ -251,7 +251,7 @@ let g:ale_fixers = {
       \ 'sh': ['shfmt'], 'bash': ['shfmt'], 'zsh': ['shfmt'],
       \ 'bib': ['bibclean'], 'markdown': ['prettier'],
       \ }
-let g:ale_linters = {'python': ['ruff'], 'ruby': ['standardrb']}
+let g:ale_linters = {'python': ['ruff', 'pyrefly'], 'ruby': ['standardrb']}
 let g:ale_python_flake8_options = '--max-line-length=88 --ignore=E203,E266,E501,E741,W391,W503'
 let g:ale_python_isort_options = '--profile=black'
 let g:ale_python_black_options = '--preview'

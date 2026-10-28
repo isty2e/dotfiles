@@ -68,7 +68,7 @@ Mason or installing tools. A missing executable leaves its service disabled.
 
 | Language | Executable / role |
 | --- | --- |
-| Python | `zuban server` for types; `ruff server` for diagnostics and formatting |
+| Python | `pyrefly lsp` for types; `ruff server` for diagnostics and formatting |
 | Lua | `lua-language-server`, configured for LuaJIT and Neovim's `vim` global |
 | Shell | `bash-language-server start` |
 | C / C++ / Objective-C | `clangd` |
@@ -77,7 +77,7 @@ Mason or installing tools. A missing executable leaves its service disabled.
 | Markdown | `marksman server` |
 
 Use `:checkhealth vim.lsp` to inspect connections. Python formatting selects
-Ruff, and Ruff hover is disabled so it does not compete with Zuban. Formatting
+Ruff, and Ruff hover is disabled so it does not compete with Pyrefly. Formatting
 is explicit, not automatic on save; Lua server formatting remains disabled.
 Use each server's project configuration and check its runtime requirements.
 

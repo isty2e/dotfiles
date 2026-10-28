@@ -13,6 +13,7 @@ HELIX_SOURCE = REPO / "home/private_dot_config/helix"
 ZED_SOURCE = REPO / "home/private_dot_config/zed"
 PIXI_SOURCE = REPO / "home/pixi-env/base/pixi.toml"
 MISE_SOURCE = REPO / "home/private_dot_config/mise/config.toml"
+DAEM_SOURCE = REPO / "home/private_dot_config/daem/daem.toml"
 STARSHIP_SOURCE = REPO / "home/private_dot_config/starship.toml"
 SHELL_COMMON_SOURCE = REPO / "home/private_dot_config/dotfiles/shell/common.sh"
 SHELL_PLUGINS_SOURCE = REPO / "home/private_dot_config/dotfiles/shell/plugins.toml"
@@ -75,6 +76,7 @@ class ChezmoiSourceTests(unittest.TestCase):
             Path(".vimrc"): VIM_SOURCE,
             Path("pixi-env/base/pixi.toml"): PIXI_SOURCE,
             Path(".config/mise/config.toml"): MISE_SOURCE,
+            Path(".config/daem/daem.toml"): DAEM_SOURCE,
             Path(".config/starship.toml"): STARSHIP_SOURCE,
             Path(".config/dotfiles/shell/common.sh"): SHELL_COMMON_SOURCE,
             Path(".config/dotfiles/shell/plugins.toml"): SHELL_PLUGINS_SOURCE,
@@ -397,8 +399,6 @@ class ChezmoiSourceTests(unittest.TestCase):
 
         workspace = Path(".config/daem")
         declaration = self.source / "home/private_dot_config/daem/daem.toml"
-        declaration.parent.mkdir()
-        declaration.write_bytes(b"version = 1\ntargets = []\n")
         self.sources[workspace / "daem.toml"] = declaration
         artifacts = {
             Path("daem.lock.toml"): (Path("daem.lock.toml"), b"source lock"),
@@ -436,8 +436,10 @@ class ChezmoiSourceTests(unittest.TestCase):
                 (self.destination / workspace / ".daem/cache/source-only").exists()
             )
 
+        before_edit = declaration.read_bytes()
         edited = b'version = 1\ntargets = ["claude-code"]\n'
         (self.destination / workspace / "daem.toml").write_bytes(edited)
+        self.assertEqual(declaration.read_bytes(), before_edit)
         for target_path, _ in artifacts.values():
             (self.destination / workspace / target_path).write_bytes(
                 b"changed local state"

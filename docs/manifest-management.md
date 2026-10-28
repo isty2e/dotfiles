@@ -90,18 +90,17 @@ through shell settings does not make its manifest a chezmoi-managed target.
 Until that path is explicitly adopted, review and copy only its TOML to or from
 the repository source instead of expecting bulk `re-add` to capture it.
 
-Daem is not yet managed by chezmoi, so bulk capture does not include it. The
-planned source is `home/private_dot_config/daem/daem.toml`, replacing
-`daem/daem.toml` rather than adding a second copy. Until that move, synchronize the
-current manifest manually. Keep its lockfile, caches and installed state local.
-Placing the manifest and running daem lock/apply are separate operations.
+Daem's source is `home/private_dot_config/daem/daem.toml`, placed at
+`~/.config/daem/daem.toml`. It uses the same copy-and-capture workflow as mise.
+Review the existing user manifest before its first managed apply. Keep its
+lockfile, caches and installed state local. Placing the manifest does not run
+daem lock/apply or deploy agent instructions and settings.
 
 For the installed user configuration, select the manifest explicitly with
 `--manifest "${XDG_CONFIG_HOME:-$HOME/.config}/daem/daem.toml"`. Running from the
 source directory instead selects a project workspace and can create
-`daem.lock.toml` and `.daem/` there. Git and chezmoi exclude both at the planned
-source location. These rules neither enroll the manifest nor delete local state;
-check for already-tracked generated files before moving it.
+`daem.lock.toml` and `.daem/` there. Git and chezmoi exclude both at the source
+location. These rules do not delete existing local state.
 
 Pi themes use [manual installation](../pi/README.md#install) from `pi/themes/`.
 Agent instructions live under `agents/`. Chezmoi does not deploy Pi settings or

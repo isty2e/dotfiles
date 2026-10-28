@@ -1,8 +1,9 @@
 # Editing managed configuration
 
 Chezmoi copies managed configuration into your home. Edit those files normally,
-then use `re-add` to bring the changes back into the checkout. This workflow covers
-shell startup files, editor settings, mise and the managed Pixi manifest.
+then use `dotfiles-capture` to bring eligible edits back into the checkout. This
+workflow covers shell startup files, editor settings, mise, daem and the managed
+Pixi manifest.
 
 ## Capture local edits
 
@@ -11,11 +12,30 @@ files.** An existing startup file may contain credentials. Follow
 [first apply on an existing home](../setup.md#first-apply-on-an-existing-home)
 before enrolling it in this workflow.
 
-Before each capture, inspect the paths and their status:
+After adopting the command, preflight and collect local-only edits:
 
 ```sh
-chezmoi status
+dotfiles-capture --check
+dotfiles-capture
+chezmoi git -- diff
 ```
+
+The command compares native recorded state, desired source and live files before
+any capture. A blocked file stops the whole selected batch; unchanged files are
+skipped. Use `dotfiles-capture ~/.zshrc` to narrow the declared selection. It needs
+Python 3.9+ and the tested chezmoi 2.73.3 adapter; unsupported versions stop without
+capture. `home/.chezmoidata.toml` declares automatic-capture paths, with `.` meaning
+all eligible managed files. It never enrolls unmanaged files.
+
+The repository does not pin an existing Homebrew installation. A Homebrew upgrade
+or a fresh bootstrap that installs a newer chezmoi can therefore stop guarded
+capture until that version passes compatibility tests. During that interval,
+use native `chezmoi diff` and explicit-target `chezmoi re-add <target>` only after
+reviewing which version to keep; then review `chezmoi git -- diff`. This bypasses
+the guard, so do not replace it with unrestricted bulk `re-add`.
+
+For a blocked preflight, inspect `chezmoi status` and `chezmoi diff` locally.
+Diff output may contain private values.
 
 [The first status column compares live files with chezmoi's recorded state; the
 second shows what apply would change](https://www.chezmoi.io/reference/commands/status/).
@@ -23,31 +43,21 @@ The leading space in these examples matters:
 
 | Status | Meaning | Before capture |
 | --- | --- | --- |
-| ` M` | Apply would change a file with no recorded live edit; this can also be an existing file chezmoi has never written. | Review and apply the desired source, or capture only an explicitly chosen local edit. Do not bulk-capture this state. |
-| `MM` | The live file differs from both the recorded state and the desired output. This alone does not prove that the source was also edited. | Compare the versions and reconcile them before capture. |
+| ` M` | Apply would change a file with no recorded live edit; this can also be an existing file chezmoi has never written. | Review desired output and effective settings, then apply before guarded capture. |
+| `MM` | The live file differs from both the recorded state and the desired output. This alone does not prove that the source was also edited. | The guard can collect live-only edits; if the source also changed, reconcile the versions first. |
 | ` R` | Apply would run a script. | Review its installation effects; it is not a file to capture. |
 
-Review other additions and deletions too. Use `chezmoi diff` locally to inspect
-content; its output may contain private values. Reconcile changes manually or
-with `chezmoi merge ~/.zshrc`, using the configured merge tool. `re-add` is not a
+Review other additions and deletions too. Reconcile changes manually or with
+`chezmoi merge ~/.zshrc`, using the configured merge tool. Native `re-add` is not a
 merge: it copies live files into the source, including when only the source has
 changed. Avoid bulk capture into an ahead-of-deployment development checkout.
 
-Once differences are reviewed and the remaining edits are the ones you want to
-keep, capture them and review the repository diff:
-
-```sh
-chezmoi re-add
-chezmoi git -- diff
-```
-
 [Without targets, `re-add` captures all modified managed files](https://www.chezmoi.io/reference/commands/re-add/).
-Review the diff and commit with Git. Nothing commits or pushes automatically.
+Calling it directly bypasses the guard. Keep native `re-add` for deliberate manual
+reconciliation, with explicit targets. Review the captured diff and commit with
+Git. Nothing commits or pushes automatically.
 Keep credentials and machine-only state out of the source. Run `chezmoi managed`
 to list the files; a separate inventory is not needed.
-
-To capture only a reviewed, already-adopted file, use a target such as
-`chezmoi re-add ~/.zshrc` instead of bulk capture.
 
 Capture also updates chezmoi's comparison state. Save the captured source in Git
 before switching revisions, restoring files or stashing it. Applying a revision
@@ -66,16 +76,19 @@ chezmoi edit --apply ~/.zshrc
 For other repository edits, review `chezmoi diff` before `chezmoi apply`.
 
 For routine upstream updates after local edits are captured and committed, use
-`chezmoi update` rather than a separate pull followed later by apply. By default,
-it runs `git pull --autostash --rebase` and then applies, including installation
-actions. This is not atomic: if apply fails after the pull, inspect status and
-diff again before capture or retry.
+`chezmoi update --less-interactive --error-on-conflict` rather than a separate
+pull followed later by apply. This also protects existing targets newly enrolled
+by an update. By default, update runs `git pull --autostash --rebase` and then
+applies, including installation actions. This is not atomic: if apply fails after
+the pull, inspect status and diff again before capture or retry. For manual
+resolution, use `chezmoi apply --less-interactive` after reviewing differences.
 
 One checkout is sufficient for ordinary use. A separate development worktree is
 optional when preparing changes that must remain separate from live configuration.
 
-A [non-interactive capture guard](capture-guard.md) is designed but not installed.
-The native commands above do not yet perform that preflight automatically.
+See the [capture contract](capture-guard.md) for exclusions, exit statuses and
+partial-failure limits. It does not replace secret scanning or protect a later
+apply of an older revision.
 
 ## Manifests and local state
 

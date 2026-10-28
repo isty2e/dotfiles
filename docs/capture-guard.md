@@ -1,7 +1,8 @@
-# Non-interactive capture guard: design
+# Non-interactive capture guard
 
-Status: design only. The command and policy below are not installed. The current
-[editing workflow](manifest-management.md) still uses native chezmoi commands.
+The source includes the command and policy below. Real-home adoption is separate:
+review and apply the configuration before using the
+[guarded editing workflow](manifest-management.md).
 
 ## Responsibility
 
@@ -42,6 +43,7 @@ automatic-capture policy, not another inventory: chezmoi still determines which
 files are managed. The policy is source-side control data, like `.chezmoiignore`,
 not a copied application setting. Native data resolution owns any machine-local
 override. Missing or malformed policy stops the command without capture.
+`paths` is the only supported policy key; unknown keys are rejected.
 `paths` must be nonempty. An explicit selector that matches no eligible managed
 target is an error, never a fallback to the whole home directory.
 
@@ -120,12 +122,28 @@ Resolve one real chezmoi executable and retain the same invocation environment
 and working directory for all queries. Read its effective configuration rather
 than inferring a source checkout from the current directory. Check copy mode,
 source/destination roots, umask, Git automation and mutation hooks.
+The full effective configuration dump is retained and compared, including umask;
+the guard does not keep a separate history of the umask used by earlier applies.
+Desired permissions use the current effective umask. If it differs from the one
+used for the recorded apply, `SOURCE_CHANGED` can mean a desired-output permission
+change even when source bytes are untouched. Review effective settings as well
+as source edits; the diagnostic is not proof that a repository file was edited.
 
 The initial compatibility target is chezmoi **2.73.3**. A version outside the
 adapter's tested set, an unknown data shape or an inconsistent mapping blocks
 capture. Add versions through the native compatibility tests, not a force flag
 or a runtime download. This is an explicit maintenance cost of reading native
-recorded state; no separate state format is introduced to avoid it.
+recorded state; no separate state format is introduced to avoid it. Bootstrap
+still installs the latest release when chezmoi is missing and reuses an existing
+provider; there is no automatic Homebrew pin or downgrade. Upgrades can therefore
+temporarily disable capture. The explicit-target
+[manual capture fallback](manifest-management.md#capture-local-edits) remains
+available after review.
+
+When admitting a new version, update the supported set, native-test version
+selection and CI's installer tag in the same change. Run the native compatibility
+cases without skips; changing the CI tag alone does not validate a version that
+the fixture still skips. Do not widen the supported set without those results.
 
 Read only the capture policy through a fixed native template expression, and
 obtain the eligible mapping with:
@@ -156,7 +174,8 @@ Execution has five stages:
    Classify all eligible files. On a block, report paths/reasons and exit.
 3. Re-read the effective selection/context and relevant states immediately before
    capture. If inputs, bindings or observed files changed, stop without calling
-   `re-add`. Reject ambiguous source-file aliases rather than guessing an owner.
+   `re-add`. Reject hardlinked sources even when only one target is selected,
+   and reject duplicate observed source identities rather than guessing an owner.
 4. Invoke native `re-add` **only with the Capture target list**, using argument
    arrays, non-recursive operation and interactive prompting disabled. Never
    invoke unrestricted `re-add`, `apply`, `update`, `add` or Git from this phase.
@@ -167,10 +186,14 @@ Execution has five stages:
    rename the source entry, so refresh its native binding instead of retaining
    the former source filename.
 
-The capture invocation uses `--include=files`,
-`--exclude=externals,encrypted,templates`, `--recursive=false`,
+The capture invocation uses `--exclude=externals,encrypted,templates`, `--recursive=false`,
 `--interactive=false`, `--keep-going=false` and `--no-tty`, followed by `--` and
 the exact absolute targets. There is no pass-through force or initialization flag.
+Native subprocesses read stdin from `/dev/null` as well as using `--no-tty`;
+caller input is not forwarded through the guard.
+Do not override `re-add`'s include set: native permission-driven source renaming
+needs its removal actions to clean up the former source filename. Eligibility is
+enforced by preflight and the exact, non-recursive target list instead.
 
 Do not print file contents, archive data, hashes or raw subprocess output. Print
 escaped target paths, decisions and native exit status. A query failure is not an
@@ -202,8 +225,8 @@ can re-establish a stale baseline after review; the guard cannot do that silentl
 - Does not protect a later `apply` of an older revision. Save captured edits in
   Git before changing revisions. Native apply conflict options and private
   backups are separate protections.
-- Does not detect secrets in an otherwise legitimate local edit. Secret scanning
-  remains a separate, unadopted choice.
+- Does not detect secrets in an otherwise legitimate local edit. The
+  [Gitleaks commit check](../setup.md#commit-checks) is separate and bypassable.
 - Does not intercept direct native commands or other editors/Git operations.
   Using this command is the scope of the guard, not a system-wide safety boundary.
 
@@ -217,21 +240,25 @@ Checking every file regardless of the caller's requested subset would instead
 block unrelated work. Revisit a hook if chezmoi exposes structured arguments or
 the selected target set; its existence alone is not enough to choose it.
 
-## Planned implementation and acceptance
+## Implementation and acceptance
 
-- `home/dot_local/bin/executable_dotfiles-capture`: one Python 3.9+ stdlib-only
-  executable, matching the system Python on the target Mac without a new global
-  Python provider. It does not install an interpreter. Linux may use an existing
-  compatible Python, including its Pixi environment.
+- `home/dot_local/bin/executable_dotfiles_capture.py`: one Python 3.9+ stdlib-only
+  implementation, with the native `symlink_dotfiles-capture` command alias beside
+  it. The `.py` file supports direct imports and normal Python tooling; the alias
+  stays inside the installed binary directory, not linked to the source checkout.
+  This needs no new global Python provider and installs no interpreter. Linux may
+  use an existing compatible Python, including its Pixi environment.
 - `home/.chezmoidata.toml`: policy only, resolved by chezmoi rather than a second
   TOML parser in the executable.
+- Native ignore rules exclude Python bytecode caches; importing the source for
+  tests must not turn generated bytecode into deployed or captured configuration.
 - `tests/capture/`: pure comparison tests and optional native integration tests.
-  Keep CLI/native I/O apart from the pure `FileState`/decision function within
+  Keep CLI/native I/O apart from canonical file-state values and the pure decision function within
   the executable; do not create a generic synchronization package.
 
-Implement selection, native adaptation, comparison, execution and failure
-reporting together with their tests. Source-only delivery and real-home adoption
-remain separate. Native baseline tests must cover:
+Selection, native adaptation, comparison, execution and failure reporting are
+tested together. Source-only delivery and real-home adoption remain separate.
+Native baseline coverage includes:
 
 1. Live-only edits, source-only edits, both-side edits, missing/stale baselines,
    and matching-but-unrecorded files. Include committed and uncommitted source

@@ -1,3 +1,6 @@
+**/__pycache__
+**/__pycache__/**
+
 pixi-env/base/.pixi
 pixi-env/base/pixi.lock
 

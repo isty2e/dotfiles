@@ -22,7 +22,7 @@ sh bootstrap.sh
 
 - [Setup](setup.md): shell settings, tools, Pixi and tests.
 - [Edit and capture configuration](docs/manifest-management.md): bring local edits
-  back into Git with `chezmoi re-add`.
+  back into Git with the guarded `dotfiles-capture` command.
 - [Vim](docs/vim.md) and [Neovim](docs/neovim.md): explicit plugin setup and recovery.
 - [Colemak keymaps](docs/keymaps.md): shared keys and editor-specific bindings.
 - [Pi PaperColor themes](pi/README.md): optional theme installation.

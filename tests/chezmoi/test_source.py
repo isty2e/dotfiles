@@ -14,6 +14,7 @@ ZED_SOURCE = REPO / "home/private_dot_config/zed"
 PIXI_SOURCE = REPO / "home/pixi-env/base/pixi.toml"
 MISE_SOURCE = REPO / "home/private_dot_config/mise/config.toml"
 DAEM_SOURCE = REPO / "home/private_dot_config/daem/daem.toml"
+CAPTURE_SOURCE = REPO / "home/dot_local/bin/executable_dotfiles_capture.py"
 STARSHIP_SOURCE = REPO / "home/private_dot_config/starship.toml"
 SHELL_COMMON_SOURCE = REPO / "home/private_dot_config/dotfiles/shell/common.sh"
 SHELL_PLUGINS_SOURCE = REPO / "home/private_dot_config/dotfiles/shell/plugins.toml"
@@ -77,6 +78,7 @@ class ChezmoiSourceTests(unittest.TestCase):
             Path("pixi-env/base/pixi.toml"): PIXI_SOURCE,
             Path(".config/mise/config.toml"): MISE_SOURCE,
             Path(".config/daem/daem.toml"): DAEM_SOURCE,
+            Path(".local/bin/dotfiles_capture.py"): CAPTURE_SOURCE,
             Path(".config/starship.toml"): STARSHIP_SOURCE,
             Path(".config/dotfiles/shell/common.sh"): SHELL_COMMON_SOURCE,
             Path(".config/dotfiles/shell/plugins.toml"): SHELL_PLUGINS_SOURCE,
@@ -356,6 +358,29 @@ class ChezmoiSourceTests(unittest.TestCase):
         )
         self._chezmoi("apply")
         self.assertTrue((self.home / "mise-calls").is_file())
+
+    def test_python_bytecode_is_not_deployed_or_captured(self) -> None:
+        self.source = self.root / "source"
+        self.source.mkdir()
+        shutil.copyfile(REPO / ".chezmoiroot", self.source / ".chezmoiroot")
+        shutil.copytree(REPO / "home", self.source / "home")
+        source_cache = self.source / "home/dot_local/bin/__pycache__"
+        source_cache.mkdir(exist_ok=True)
+        (source_cache / "runtime.pyc").write_bytes(b"source bytecode")
+        (source_cache / "source-only.pyc").write_bytes(b"source-only bytecode")
+        target_cache = self.destination / ".local/bin/__pycache__"
+        target_cache.mkdir(parents=True)
+        (target_cache / "runtime.pyc").write_bytes(b"local bytecode")
+
+        self._chezmoi("apply", "--exclude=scripts")
+        self._chezmoi("verify", "--exclude=scripts")
+        self.assertEqual((target_cache / "runtime.pyc").read_bytes(), b"local bytecode")
+        self.assertFalse((target_cache / "source-only.pyc").exists())
+        (target_cache / "runtime.pyc").write_bytes(b"new local bytecode")
+        self._chezmoi("re-add", "--exclude=scripts")
+        self.assertEqual(
+            (source_cache / "runtime.pyc").read_bytes(), b"source bytecode"
+        )
 
     def test_pixi_generated_state_is_not_deployed(self) -> None:
         self.source = self.root / "source"

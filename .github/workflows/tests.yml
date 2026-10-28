@@ -37,7 +37,7 @@ jobs:
         run: |
           curl -fsSL --proto '=https' --proto-redir '=https' https://get.chezmoi.io -o "$RUNNER_TEMP/install-chezmoi.sh"
           mkdir -p "$HOME/.local/bin"
-          sh "$RUNNER_TEMP/install-chezmoi.sh" -b "$HOME/.local/bin"
+          sh "$RUNNER_TEMP/install-chezmoi.sh" -b "$HOME/.local/bin" -t v2.73.3
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           python -m pip install -r tests/keymaps/requirements.txt
       - name: Run offline tests

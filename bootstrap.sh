@@ -7,6 +7,7 @@ case ${1-} in
             'Prepare chezmoi and mise, bind this checkout, and apply its configuration.' \
             'Missing bootstrap tools use their official installers in ~/.local/bin.' \
             'A full apply also runs mise install when the tool declaration changes.' \
+            'Existing or changed targets stop apply for manual review; partial changes may remain.' \
             'Pixi environments, editor plugins, logins and shell changes remain manual.'
         exit 0
         ;;
@@ -50,6 +51,7 @@ chezmoi_bin=$(command -v chezmoi)
 mise --version >/dev/null
 config_file=$("$chezmoi_bin" execute-template '{{ .chezmoi.configFile }}')
 
+set -- --less-interactive --error-on-conflict
 if [ -e "$config_file" ] || [ -L "$config_file" ]; then
     active_source=$("$chezmoi_bin" source-path)
     expected_source=$("$chezmoi_bin" --source "$repo" source-path)
@@ -60,9 +62,27 @@ if [ -e "$config_file" ] || [ -L "$config_file" ]; then
             "Review $config_file and set sourceDir to $repo before retrying." >&2
         exit 1
     fi
-    "$chezmoi_bin" apply
+    set -- apply "$@"
 else
-    "$chezmoi_bin" --source "$repo" init --apply
+    if [ ! -e "$HOME/.config" ] && [ ! -L "$HOME/.config" ]; then
+        mkdir -m 700 "$HOME/.config"
+    fi
+    set -- --source "$repo" init --apply "$@"
+fi
+
+if "$chezmoi_bin" "$@"; then
+    :
+else
+    rc=$?
+    printf '%s\n' \
+        "chezmoi apply did not complete (exit $rc). Files or tools may already have changed." \
+        'No rollback or automatic backup was attempted.' \
+        'Back up affected files and link targets privately before resolving differences.' \
+        'If tools were just installed, add $HOME/.local/bin to PATH in this shell.' \
+        'Review: chezmoi diff' \
+        'Choose changes manually: chezmoi apply --less-interactive' \
+        'After resolving differences, rerun bootstrap to finish any pending setup.' >&2
+    exit "$rc"
 fi
 
 printf '%s\n' 'chezmoi apply completed. See setup.md for shell activation.' \

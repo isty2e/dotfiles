@@ -37,6 +37,8 @@ github-cli = "latest"
 just = "latest"
 
 # Shell and system utilities
+"conda:zstd" = "latest"
+sheldon = "latest"
 starship = "latest"
 hyperfine = "latest"
 

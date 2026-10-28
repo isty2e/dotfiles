@@ -1,8 +1,8 @@
 # Colemak keymap policy
 
-These tables define target bindings. Execution plans and verification procedures are tracked in Kata.
-
-Native editor files own bindings; chezmoi handles placement, not semantic repair. Keep rendering/placement separate from fetching defaults, installing packages, and handling secrets.
+These tables describe the shared keys and editor-specific cycles. Edit bindings
+in each editor's native configuration; chezmoi places those files but does not
+repair bindings when upstream defaults change.
 
 ## Shared contract
 
@@ -15,22 +15,35 @@ Native editor files own bindings; chezmoi handles placement, not semantic repair
 | Search / next result / previous result | `/ / k / K` | Query text remains literal |
 | Window focus | `Ctrl-w` then `h/n/e/i` | Distinct from tabs, buffers, and search results |
 
-Retain a separate logical-line route. Helix's `g n / g e` is not a universal prefix requirement.
+Keep a separate route for logical lines. Helix uses `g n / g e`; other editors
+need not use that prefix.
 
-Zed targets native `h/j/k/l` directional bindings by input role, regardless of their source file or whether they require Vim mode. Preserve specialized navigation operations rather than replacing them with generic cursor movement. Cycle tables describe configured overrides; editing, history, search, and literal-input rules remain scoped to their native input roles.
+In Zed, remap directional `h/j/k/l` actions by their input role, including bindings
+outside Vim mode. Keep specialized operations such as notebook-cell movement,
+rather than replacing them with cursor movement. Editing, history, search and
+literal input keep their native roles.
 
 ## Select bindings by intent
 
-1. Select by effective input role, action **and arguments**, operator/UI state, and native precedence—not by a key glyph or mode label alone.
-2. Preserve inserted text, queries, literal character arguments, and register/mark names. Do not lift a letter permutation into every modifier or input namespace.
-3. Close substitutions cyclically: each new key performs its source key's original operation, including displaced actions, aliases, complete subtrees, and known empty slots.
-4. Keep native editing models and deliberate editor-specific spellings. Old manual bindings are evidence, not exceptions to this policy. Leave unrelated native bindings unchanged; Helix keybinding overrides are limited to cycle slots and their prefix containers.
+1. Check the input role, action **and arguments**, operator/UI state and native
+   precedence. A letter or mode name alone does not identify an operation.
+2. Keep inserted text, queries, literal character arguments and register/mark
+   names unchanged. A letter cycle does not apply to every modifier or input role.
+3. Move every affected binding through its cycle, including displaced actions,
+   aliases, complete prefix branches and vacant slots.
+4. Keep native editing models and deliberate editor-specific spellings. Existing
+   manual bindings do not override these rules. Leave unrelated bindings alone;
+   Helix overrides only cycle slots and their prefix containers.
 
-Same-key examples include insertion versus inner-object selection and completion versus signature navigation. Even `vim::Down` changes meaning with `display_lines`. Different contexts must not be merged merely to shorten the file.
+For example, insertion and inner-object selection can use the same key in
+different roles. Even `vim::Down` changes meaning with `display_lines`. Keep those
+contexts separate rather than merging them to shorten the configuration.
 
 ## Cycle notation
 
-An arrow means **original action's key → its new key**. Every affected binding moves once; an inherited old action must not leak into a moved vacancy. Deliberate action removal is a separate explicit decision, not an unexplained test exception.
+An arrow means **original action's key → its new key**. Move each affected binding
+once and clear inherited actions from vacated slots. Removing an action entirely
+requires an explicit decision; it is not part of relocating a key.
 
 ### Helix 25.07.1
 
@@ -44,7 +57,7 @@ An arrow means **original action's key → its new key**. Every affected binding
 | Normal and Select `Ctrl-w` / `Space w` focus/menu | `j → n → k → e → j`; `l ↔ i` |
 | Normal and Select `Ctrl-w` / `Space w` swaps/vacancies | `J → N → K → E → J`; `L ↔ I` |
 
-Consequences of these cycles:
+These cycles have the following effects:
 - Root `E` receives `keep_selections`; long-word-end remains on `J`.
 - Both window prefixes use the same bindings: `n/e/i/h` focus down/up/right/left.
 - `Ctrl-w k` and `Space w k` receive the complete new-scratch-split subtree: `s/v/C-s/C-v`.
@@ -68,7 +81,9 @@ Baseline: [25.07.1 defaults](https://github.com/helix-editor/helix/blob/25.07.1/
 
 Keep native left/collapse bindings. Preserve each scope's native operation and arguments, including Vim menu actions and specialized Editor motions. Prompt retains its platform's native key-equivalent setting. Vacated bindings are disabled with `null`; unrelated aliases remain inherited. Rename/search/picker input is not translated.
 
-The Zed fixture checks configured bindings through selected overlapping source/user layers and candidate-rule collection; it does not reimplement Zed's context evaluator. Zed owns runtime key dispatch. Profile verification checks native contexts, action arguments and configured cycles, trusting the editor to execute its keymap contract. Manual GUI checks are optional troubleshooting for a concrete mismatch, not a completion prerequisite. Copied edit-prediction defaults are inherited from Zed rather than maintained here.
+Zed resolves contexts and key precedence at runtime. The version labels identify
+the reference defaults; this configuration does not watch or repair later
+upstream changes. Edit-prediction bindings inherit Zed's defaults.
 
 ### Zed Vim/Helix modal editing: source baseline 1.25.3
 
@@ -91,7 +106,11 @@ Normal history uses `l/L` for Undo/Redo; Vim Visual instead preserves native low
 
 Completion and signature navigation inherit native Ctrl-n, while Ctrl-k keeps digraph input. Helix hover inherits Space-k. The earlier manual case-conversion aliases are not retained: `g u` is implementation navigation in the configured cycle, and unchanged `g Shift-u` is native unstaging. The former Insert Ctrl-x Ctrl-i/Ctrl-x Ctrl-j aliases are not defined here; they are not redundant copies of current defaults.
 
-Native object selectors, literal character arguments, register names and mode-specific insert/waiting/replace control namespaces are not transposed. The generic movement scope excludes object-selection states; `u` selects the inner object before its native selector. Unrelated modal command-alphabet remaps are removed in favor of native bindings. Personal comma-tab and existing completion-popup gestures remain unchanged.
+Keep native object selectors, literal character arguments, register names and
+Insert/waiting/Replace control keys unchanged. Generic movement excludes
+object-selection states: `u` selects the inner object, then the native selector
+chooses it. Unrelated command letters use native bindings. Personal comma-tab
+and completion-popup gestures remain unchanged.
 
 Specialized notebook/sidebar Editors keep cell/sidebar motion on `n/e` and retain their native display-line `g j/g k` aliases. Ordinary Vim logical motion uses `g j/g k`; ordinary Helix logical motion uses `g n/g e`. This modal rewrite does not change menu-owned input or non-modal document editing.
 
@@ -119,9 +138,9 @@ Vacant Normal/Visual window slots are no-ops; vacant operator slots cancel the
 pending operator. Unrelated Ctrl shortcuts and native command spellings are not
 transposed. Existing personal tab, completion and terminal gestures stay separate.
 
-In `home/private_dot_config/nvim/`, `lua/config/keymaps.lua` owns general mode maps and
-`lua/config/lsp.lua` owns
-attached-buffer hover on `E` and search on `K`, and each plugin owns its local interaction. Neo-tree
+In `home/private_dot_config/nvim/`, edit general maps in `lua/config/keymaps.lua`
+and attached-buffer LSP maps in `lua/config/lsp.lua` (`E` for hover, `K` for
+previous search). Each plugin defines its local interaction. Neo-tree
 retains native parent/child handlers, moves file details to `u` in its filesystem,
 buffer and Git sources, and uses `n/e` in its normal-mode filter. Telescope uses
 `n/e` for normal-mode selection and `I` for its displaced list-bottom action.
@@ -133,10 +152,9 @@ Its preview split remains `g i` rather than being derived from the new split key
 
 ### Text-object spellings
 
-Use `u` for Vim, Neovim and Zed inner-object selection (`duw`) and retain Helix
-`m i`. Following selectors remain native. The Helix override-scope check protects
-`m i` by leaving its native bindings untouched. Zed source-data tests distinguish
-outer object selection from native selectors; Zed owns execution of those bindings.
+Use `u` for Vim, Neovim and Zed inner-object selection (`duw`), and keep Helix's
+native `m i`. Following selectors remain native. Inner/outer object selection
+and the subsequent selector are separate input roles.
 
 ## Deferred and out-of-scope choices
 
@@ -146,7 +164,9 @@ outer object selection from native selectors; Zed owns execution of those bindin
 | Identical object selectors across editors | Not required; user | Explicitly choose common spellings |
 | Universal transformer / key-generating template layer | Deferred; maintainer | Repeated native maintenance shows a stable useful abstraction |
 | Uniform command-alphabet translation | Not adopted; user | Explicitly accept its command-spelling changes |
-| chezmoi source-tree migration | Separate work; maintainer/user | Authorize filesystem handoff after independent keymap repair |
 | Zed version-mismatch test / update watcher | Not adopted; user | An automatic update-notification workflow is requested |
 | Scheduled repair / unattended apply / GUI automation | Not authorized; user | Approve the operating and verification model |
-| Neovim live deployment / old-repository archival | Separate work; user | Source consolidation does not authorize replacing home targets or archiving/deleting the old repository |
+
+For existing configuration links and repositories, follow the
+[editor migration guide](editor-migration.md). Moving files and deciding whether
+to archive an old checkout are separate from the bindings in this guide.

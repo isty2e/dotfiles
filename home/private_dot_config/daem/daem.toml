@@ -1,6 +1,5 @@
-# Managed in https://github.com/isty2e/dotfiles (daem/daem.toml).
-# Keep the tracked copy and ~/.config/daem/daem.toml in sync after edits.
-# Run daem lock/apply from the user manifest; keep lockfile and state local.
+# Chezmoi source for ~/.config/daem/daem.toml.
+# Run daem lock/apply explicitly from the user manifest; keep generated state local.
 
 version = 1
 targets = ["codex", "claude-code", "antigravity-cli"]

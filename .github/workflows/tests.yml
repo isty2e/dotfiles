@@ -1,0 +1,51 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+      - uses: rhysd/action-setup-vim@v1
+        with:
+          neovim: true
+      - name: Install test dependencies on Linux
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y zsh expect vim tmux
+      - name: Install test dependencies on macOS
+        if: runner.os == 'macOS'
+        run: |
+          brew list --versions bash >/dev/null || brew install bash
+          brew list --versions tmux >/dev/null || brew install tmux
+      - name: Install chezmoi and Python test dependencies
+        run: |
+          curl -fsSL --proto '=https' --proto-redir '=https' https://get.chezmoi.io -o "$RUNNER_TEMP/install-chezmoi.sh"
+          mkdir -p "$HOME/.local/bin"
+          sh "$RUNNER_TEMP/install-chezmoi.sh" -b "$HOME/.local/bin" -t v2.73.3
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          python -m pip install -r tests/keymaps/requirements.txt
+      - name: Run offline tests
+        run: |
+          command -v chezmoi
+          command -v zsh
+          command -v vim
+          command -v nvim
+          command -v expect
+          command -v tmux
+          sh tests/run.sh

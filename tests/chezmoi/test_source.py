@@ -13,6 +13,35 @@ HELIX_SOURCE = REPO / "home/private_dot_config/helix"
 ZED_SOURCE = REPO / "home/private_dot_config/zed"
 PIXI_SOURCE = REPO / "home/pixi-env/base/pixi.toml"
 MISE_SOURCE = REPO / "home/private_dot_config/mise/config.toml"
+DAEM_SOURCE = REPO / "home/private_dot_config/daem/daem.toml"
+CAPTURE_SOURCE = REPO / "home/dot_local/bin/executable_dotfiles_capture.py"
+STARSHIP_SOURCE = REPO / "home/private_dot_config/starship.toml"
+SHELL_COMMON_SOURCE = REPO / "home/private_dot_config/dotfiles/shell/common.sh"
+SHELL_PLUGINS_SOURCE = REPO / "home/private_dot_config/dotfiles/shell/plugins.toml"
+SHELL_PLUGIN_PATHS_SOURCE = (
+    REPO / "home/private_dot_config/dotfiles/shell/plugin-paths.sh"
+)
+SHELL_LOCAL_SOURCE = REPO / "home/private_dot_config/dotfiles/shell/local-loader.sh"
+SHELL_HANDOFF_SOURCE = REPO / "home/private_dot_config/dotfiles/shell/bash-handoff.sh"
+SHELL_BASH_COMPLETION_SOURCE = (
+    REPO / "home/private_dot_config/dotfiles/shell/bash-completion.sh"
+)
+SHELL_ENVIRONMENT_SOURCE = (
+    REPO / "home/private_dot_config/dotfiles/shell/environment.sh"
+)
+SHELL_ZSH_PLUGINS_SOURCE = (
+    REPO / "home/private_dot_config/dotfiles/shell/zsh-plugins.zsh"
+)
+SHELL_BASH_HISTORY_SOURCE = (
+    REPO / "home/private_dot_config/dotfiles/shell/bash-history.sh"
+)
+SHELL_ZSH_OPTIONS_SOURCE = (
+    REPO / "home/private_dot_config/dotfiles/shell/zsh-options.zsh"
+)
+SHELL_PROMPT_SOURCE = REPO / "home/private_dot_config/dotfiles/shell/prompt.sh"
+SHELL_PLATFORM_SOURCE = REPO / "home/private_dot_config/dotfiles/shell/platform.sh"
+SHELL_BASHRC_SOURCE = REPO / "home/dot_bashrc"
+SHELL_ZSHRC_SOURCE = REPO / "home/dot_zshrc"
 _configured_chezmoi = os.environ.get("CHEZMOI")
 _selected_chezmoi = (
     shutil.which(_configured_chezmoi or "chezmoi") or _configured_chezmoi
@@ -20,6 +49,7 @@ _selected_chezmoi = (
 CHEZMOI = (
     str(Path(_selected_chezmoi).expanduser().resolve()) if _selected_chezmoi else None
 )
+GIT = shutil.which("git")
 
 
 @unittest.skipUnless(CHEZMOI, "chezmoi is required; set CHEZMOI to its executable")
@@ -47,6 +77,25 @@ class ChezmoiSourceTests(unittest.TestCase):
             Path(".vimrc"): VIM_SOURCE,
             Path("pixi-env/base/pixi.toml"): PIXI_SOURCE,
             Path(".config/mise/config.toml"): MISE_SOURCE,
+            Path(".config/daem/daem.toml"): DAEM_SOURCE,
+            Path(".local/bin/dotfiles_capture.py"): CAPTURE_SOURCE,
+            Path(".config/starship.toml"): STARSHIP_SOURCE,
+            Path(".config/dotfiles/shell/common.sh"): SHELL_COMMON_SOURCE,
+            Path(".config/dotfiles/shell/plugins.toml"): SHELL_PLUGINS_SOURCE,
+            Path(".config/dotfiles/shell/plugin-paths.sh"): SHELL_PLUGIN_PATHS_SOURCE,
+            Path(".config/dotfiles/shell/local-loader.sh"): SHELL_LOCAL_SOURCE,
+            Path(".config/dotfiles/shell/bash-handoff.sh"): SHELL_HANDOFF_SOURCE,
+            Path(
+                ".config/dotfiles/shell/bash-completion.sh"
+            ): SHELL_BASH_COMPLETION_SOURCE,
+            Path(".config/dotfiles/shell/environment.sh"): SHELL_ENVIRONMENT_SOURCE,
+            Path(".config/dotfiles/shell/zsh-plugins.zsh"): SHELL_ZSH_PLUGINS_SOURCE,
+            Path(".config/dotfiles/shell/bash-history.sh"): SHELL_BASH_HISTORY_SOURCE,
+            Path(".config/dotfiles/shell/zsh-options.zsh"): SHELL_ZSH_OPTIONS_SOURCE,
+            Path(".config/dotfiles/shell/prompt.sh"): SHELL_PROMPT_SOURCE,
+            Path(".config/dotfiles/shell/platform.sh"): SHELL_PLATFORM_SOURCE,
+            Path(".bashrc"): SHELL_BASHRC_SOURCE,
+            Path(".zshrc"): SHELL_ZSHRC_SOURCE,
         }
         for name, source in (
             ("nvim", NVIM_SOURCE),
@@ -77,10 +126,29 @@ class ChezmoiSourceTests(unittest.TestCase):
         mise.write_text(
             "#!/bin/sh\nset -eu\n"
             '[ -f "$MISE_GLOBAL_CONFIG_FILE" ]\n'
+            'if [ "${3:-}" = which ]; then\n'
+            '  printf "%s\\n" "$HOME/.local/bin/sheldon"\n'
+            "  exit 0\n"
+            "fi\n"
             'printf "%s\\n" "$MISE_GLOBAL_CONFIG_FILE" "$@" >> "$HOME/mise-calls"\n'
             '[ ! -f "$HOME/fail-mise" ]\n'
         )
         mise.chmod(0o755)
+
+        sheldon = self.home / ".local/bin/sheldon"
+        sheldon.write_text(
+            "#!/bin/sh\nset -eu\n"
+            'if [ "$5" = lock ]; then\n'
+            '  printf "%s\\n" "$2" >> "$HOME/sheldon-calls"\n'
+            '  mkdir -p "$4/repos/github.com/zsh-users/zsh-completions"\n'
+            '  printf "%s\\n" attempt > "$4/repos/github.com/zsh-users/zsh-completions/marker"\n'
+            '  [ ! -f "$HOME/fail-sheldon" ]\n'
+            "  exit 0\n"
+            "fi\n"
+            '[ "$5" = --quiet ] && [ "$6" = source ]\n'
+            'printf "%s\\n" "prepared loader"\n'
+        )
+        sheldon.chmod(0o755)
 
     def _chezmoi(self, *arguments: str) -> str:
         assert CHEZMOI is not None
@@ -109,6 +177,28 @@ class ChezmoiSourceTests(unittest.TestCase):
         managed = self._chezmoi("managed", "--include=files", "--path-style=relative")
         expected = {path.as_posix() for path in self.sources}
         self.assertEqual(set(managed.splitlines()), expected)
+
+    def test_shell_plugins_retry_after_failed_preparation(self) -> None:
+        failure = self.home / "fail-sheldon"
+        failure.touch()
+
+        with self.assertRaises(AssertionError):
+            self._chezmoi("apply")
+
+        state = self.destination / ".local/share/dotfiles/sheldon"
+        self.assertFalse((state / "current").exists())
+
+        failure.unlink()
+        self._chezmoi("apply")
+        generation = (state / "current").read_text().strip()
+        self.assertTrue(
+            (state / "generations" / generation / "zsh-plugins.zsh").is_file()
+        )
+
+        calls = (self.home / "sheldon-calls").read_text()
+        self._chezmoi("apply")
+        self._chezmoi("verify")
+        self.assertEqual((self.home / "sheldon-calls").read_text(), calls)
 
     def test_full_apply_installs_tools_after_configuration_and_skips_repeats(
         self,
@@ -148,6 +238,97 @@ class ChezmoiSourceTests(unittest.TestCase):
         self._chezmoi("apply")
         self.assertEqual(calls.read_bytes(), repeated)
 
+    def test_plugin_declaration_change_preserves_previous_generation(self) -> None:
+        self.source = self.root / "source"
+        self.source.mkdir()
+        shutil.copyfile(REPO / ".chezmoiroot", self.source / ".chezmoiroot")
+        shutil.copytree(REPO / "home", self.source / "home")
+        self._chezmoi("apply")
+
+        calls = self.home / "sheldon-calls"
+        initial = calls.read_text()
+        state = self.destination / ".local/share/dotfiles/sheldon"
+        old_generation = (state / "current").read_text().strip()
+        old_loader = state / "generations" / old_generation / "zsh-plugins.zsh"
+        old_content = old_loader.read_bytes()
+        declaration = self.source / SHELL_PLUGINS_SOURCE.relative_to(REPO)
+        with declaration.open("a") as output:
+            output.write('\n[plugins.example]\ngithub = "example/example"\n')
+
+        self._chezmoi("apply")
+        self.assertEqual(calls.read_text(), initial * 2)
+        new_generation = (state / "current").read_text().strip()
+        self.assertNotEqual(new_generation, old_generation)
+        self.assertEqual(old_loader.read_bytes(), old_content)
+        self.assertTrue(
+            (state / "generations" / new_generation / "zsh-plugins.zsh").is_file()
+        )
+
+    def test_failed_repreparation_keeps_active_generation(self) -> None:
+        self.source = self.root / "source"
+        self.source.mkdir()
+        shutil.copyfile(REPO / ".chezmoiroot", self.source / ".chezmoiroot")
+        shutil.copytree(REPO / "home", self.source / "home")
+        self._chezmoi("apply")
+
+        state = self.destination / ".local/share/dotfiles/sheldon"
+        pointer = state / "current"
+        active = pointer.read_text().strip()
+        marker = (
+            state
+            / "generations"
+            / active
+            / "repos/github.com/zsh-users/zsh-completions/marker"
+        )
+        marker.write_text("preserved checkout")
+        declaration = self.source / SHELL_PLUGINS_SOURCE.relative_to(REPO)
+        with declaration.open("a") as output:
+            output.write('\n[plugins.example]\ngithub = "example/example"\n')
+
+        failure = self.home / "fail-sheldon"
+        failure.touch()
+        with self.assertRaises(AssertionError):
+            self._chezmoi("apply")
+
+        self.assertEqual(pointer.read_text().strip(), active)
+        self.assertEqual(marker.read_text(), "preserved checkout")
+
+        failure.unlink()
+        self._chezmoi("apply")
+        self.assertNotEqual(pointer.read_text().strip(), active)
+        self.assertEqual(marker.read_text(), "preserved checkout")
+
+    def test_migration_preserves_legacy_plugin_checkout(self) -> None:
+        self.source = self.root / "source"
+        self.source.mkdir()
+        shutil.copyfile(REPO / ".chezmoiroot", self.source / ".chezmoiroot")
+        shutil.copytree(REPO / "home", self.source / "home")
+        shell_source = self.source / "home/private_dot_config/dotfiles/shell"
+        (shell_source / "plugins.toml").unlink()
+        (shell_source / "plugin-paths.sh").unlink()
+        (shell_source / "plugins.list").write_text("legacy example.invalid/legacy\n")
+        action = self.source / "home/run_onchange_after_install-shell-plugins.sh.tmpl"
+        action.write_text(
+            "#!/bin/sh\nset -eu\n"
+            'mkdir -p "$CHEZMOI_DEST_DIR/.local/share/dotfiles/plugins/legacy"\n'
+            'printf "%s\\n" "legacy checkout" > '
+            '"$CHEZMOI_DEST_DIR/.local/share/dotfiles/plugins/legacy/marker"\n'
+        )
+        self._chezmoi("apply")
+
+        legacy = self.destination / ".local/share/dotfiles/plugins/legacy/marker"
+        self.assertEqual(legacy.read_text(), "legacy checkout\n")
+        (shell_source / "plugins.list").unlink()
+        shutil.copyfile(SHELL_PLUGINS_SOURCE, shell_source / "plugins.toml")
+        shutil.copyfile(SHELL_PLUGIN_PATHS_SOURCE, shell_source / "plugin-paths.sh")
+        shutil.copyfile(REPO / action.relative_to(self.source), action)
+
+        self._chezmoi("apply")
+        self.assertEqual(legacy.read_text(), "legacy checkout\n")
+        self.assertTrue(
+            (self.destination / ".local/share/dotfiles/sheldon/current").is_file()
+        )
+
     def test_failed_install_is_retried_without_rolling_back_configuration(self) -> None:
         failure = self.home / "fail-mise"
         failure.touch()
@@ -170,12 +351,36 @@ class ChezmoiSourceTests(unittest.TestCase):
     def test_placement_only_apply_defers_installation_until_full_apply(self) -> None:
         self._chezmoi("apply", "--exclude=scripts")
         self.assertFalse((self.home / "mise-calls").exists())
+        self.assertFalse((self.home / "sheldon-calls").exists())
         self.assertEqual(
             (self.destination / ".config/mise/config.toml").read_bytes(),
             MISE_SOURCE.read_bytes(),
         )
         self._chezmoi("apply")
         self.assertTrue((self.home / "mise-calls").is_file())
+
+    def test_python_bytecode_is_not_deployed_or_captured(self) -> None:
+        self.source = self.root / "source"
+        self.source.mkdir()
+        shutil.copyfile(REPO / ".chezmoiroot", self.source / ".chezmoiroot")
+        shutil.copytree(REPO / "home", self.source / "home")
+        source_cache = self.source / "home/dot_local/bin/__pycache__"
+        source_cache.mkdir(exist_ok=True)
+        (source_cache / "runtime.pyc").write_bytes(b"source bytecode")
+        (source_cache / "source-only.pyc").write_bytes(b"source-only bytecode")
+        target_cache = self.destination / ".local/bin/__pycache__"
+        target_cache.mkdir(parents=True)
+        (target_cache / "runtime.pyc").write_bytes(b"local bytecode")
+
+        self._chezmoi("apply", "--exclude=scripts")
+        self._chezmoi("verify", "--exclude=scripts")
+        self.assertEqual((target_cache / "runtime.pyc").read_bytes(), b"local bytecode")
+        self.assertFalse((target_cache / "source-only.pyc").exists())
+        (target_cache / "runtime.pyc").write_bytes(b"new local bytecode")
+        self._chezmoi("re-add", "--exclude=scripts")
+        self.assertEqual(
+            (source_cache / "runtime.pyc").read_bytes(), b"source bytecode"
+        )
 
     def test_pixi_generated_state_is_not_deployed(self) -> None:
         self.source = self.root / "source"
@@ -210,6 +415,116 @@ class ChezmoiSourceTests(unittest.TestCase):
             )
             self.assertEqual(existing.read_bytes(), b"existing installed environment")
             self.assertEqual(local_state.read_bytes(), b"local solver state")
+
+    def test_daem_generated_state_is_not_deployed_or_captured(self) -> None:
+        self.source = self.root / "source"
+        self.source.mkdir()
+        shutil.copyfile(REPO / ".chezmoiroot", self.source / ".chezmoiroot")
+        shutil.copytree(REPO / "home", self.source / "home")
+
+        workspace = Path(".config/daem")
+        declaration = self.source / "home/private_dot_config/daem/daem.toml"
+        self.sources[workspace / "daem.toml"] = declaration
+        artifacts = {
+            Path("daem.lock.toml"): (Path("daem.lock.toml"), b"source lock"),
+            Path("dot_daem/state.json"): (Path(".daem/state.json"), b"source state"),
+            Path("dot_daem/cache/entry"): (Path(".daem/cache/entry"), b"source cache"),
+        }
+        for source_path, (target_path, content) in artifacts.items():
+            source = declaration.parent / source_path
+            source.parent.mkdir(parents=True, exist_ok=True)
+            source.write_bytes(content)
+            destination = self.destination / workspace / target_path
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes(b"local " + content)
+
+        source_only = Path("dot_daem/cache/source-only")
+        (declaration.parent / source_only).write_bytes(b"source-only artifact")
+        managed = self._chezmoi("managed", "--include=files", "--path-style=relative")
+        self.assertEqual(
+            set(managed.splitlines()), {path.as_posix() for path in self.sources}
+        )
+
+        for _ in range(2):
+            self._chezmoi("apply", "--exclude=scripts")
+            self._chezmoi("verify", "--exclude=scripts")
+            self.assertEqual(
+                (self.destination / workspace / "daem.toml").read_bytes(),
+                declaration.read_bytes(),
+            )
+            for target_path, content in artifacts.values():
+                self.assertEqual(
+                    (self.destination / workspace / target_path).read_bytes(),
+                    b"local " + content,
+                )
+            self.assertFalse(
+                (self.destination / workspace / ".daem/cache/source-only").exists()
+            )
+
+        before_edit = declaration.read_bytes()
+        edited = b'version = 1\ntargets = ["claude-code"]\n'
+        (self.destination / workspace / "daem.toml").write_bytes(edited)
+        self.assertEqual(declaration.read_bytes(), before_edit)
+        for target_path, _ in artifacts.values():
+            (self.destination / workspace / target_path).write_bytes(
+                b"changed local state"
+            )
+        self._chezmoi("re-add")
+
+        self.assertEqual(declaration.read_bytes(), edited)
+        for source_path, (_, content) in artifacts.items():
+            self.assertEqual((declaration.parent / source_path).read_bytes(), content)
+        self.assertEqual(
+            (declaration.parent / source_only).read_bytes(), b"source-only artifact"
+        )
+        self._chezmoi("apply", "--exclude=scripts")
+        self._chezmoi("verify", "--exclude=scripts")
+        for target_path, _ in artifacts.values():
+            self.assertEqual(
+                (self.destination / workspace / target_path).read_bytes(),
+                b"changed local state",
+            )
+
+    @unittest.skipUnless(GIT, "Git is required")
+    def test_git_excludes_daem_generated_state_but_tracks_manifest(self) -> None:
+        assert GIT is not None
+        repository = self.root / "git checkout"
+        repository.mkdir()
+        shutil.copyfile(REPO / ".gitignore", repository / ".gitignore")
+        workspace = Path("home/private_dot_config/daem")
+        for path in (
+            Path("daem.toml"),
+            Path("daem.lock.toml"),
+            Path(".daem/state.json"),
+            Path(".daem/cache/entry"),
+        ):
+            generated = repository / workspace / path
+            generated.parent.mkdir(parents=True, exist_ok=True)
+            generated.write_bytes(b"fixture")
+
+        for arguments in (("init", "--quiet"), ("add", "--all")):
+            subprocess.run(
+                [GIT, *arguments],
+                cwd=repository,
+                env=self.environment,
+                capture_output=True,
+                text=True,
+                check=True,
+                timeout=30,
+            )
+        tracked = subprocess.run(
+            [GIT, "ls-files"],
+            cwd=repository,
+            env=self.environment,
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=30,
+        )
+        self.assertEqual(
+            set(tracked.stdout.splitlines()),
+            {".gitignore", (workspace / "daem.toml").as_posix()},
+        )
 
     def test_apply_replaces_config_links_and_preserves_unmanaged_state(self) -> None:
         old_config = self.former / "vimrc"

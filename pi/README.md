@@ -1,7 +1,7 @@
 # Pi PaperColor themes
 
-Five static JSON themes for [Pi](https://pi.dev), adapted from PaperColor's Vim,
-Zed and VS Code Redux variants. No package installation or build step is needed.
+Five JSON themes for [Pi](https://pi.dev), adapted from PaperColor's Vim, Zed and
+VS Code Redux variants. Copy or link the files; no build or package is needed.
 
 | Theme | Terminal background | Terminal foreground |
 | --- | --- | --- |
@@ -13,8 +13,17 @@ Zed and VS Code Redux variants. No package installation or build step is needed.
 
 ## Install
 
-From the root of this dotfiles checkout, link the theme files into Pi's user theme
-directory:
+From the checkout root, copy the themes into Pi's user theme directory.
+
+If a destination is already a symlink, keep it or move it aside before making an
+independent copy. `cp -i` asks before overwriting existing files.
+
+```sh
+mkdir -p "$HOME/.pi/agent/themes"
+cp -i pi/themes/*.json "$HOME/.pi/agent/themes/"
+```
+
+To edit themes directly in the checkout, use links instead:
 
 ```sh
 mkdir -p "$HOME/.pi/agent/themes"
@@ -23,19 +32,11 @@ for theme in "$PWD"/pi/themes/*.json; do
 done
 ```
 
-Keep the checkout in place. Existing destination files are not replaced: `ln`
-reports a conflict. If you already copied a theme there, keep that copy or move it
-aside before linking the same name.
+Keep the checkout in place while using links. `ln` reports a conflict rather
+than replacing an existing destination. Keep that file or move it aside first.
 
-To use copies instead:
-
-```sh
-mkdir -p "$HOME/.pi/agent/themes"
-cp -i pi/themes/*.json "$HOME/.pi/agent/themes/"
-```
-
-Run `/reload` in Pi, then choose a theme in `/settings`. To select the initial
-theme for one invocation without changing the saved setting:
+Run `/reload` in Pi, then choose a theme in `/settings`. To set the initial theme
+for one invocation without changing the saved setting:
 
 ```sh
 pi --use-theme papercolor-original-light
@@ -47,10 +48,10 @@ Pi also supports light/dark pairing:
 pi --use-theme papercolor-original-light/papercolor-original-dark
 ```
 
-Set your terminal's background and foreground to the values in the table. Pi
-colors text and individual panels, not the whole terminal canvas. Automatic
-light/dark selection does not recolor the terminal. Use truecolor for the intended
-palette; 256-color terminals receive approximations.
+Set the terminal background and foreground to the table's values. Pi colors text
+and panels, not the whole terminal canvas; light/dark selection does not recolor
+the terminal. Use truecolor for this palette. Pi approximates it on 256-color
+terminals.
 
 ## Variants and adaptations
 
@@ -59,14 +60,14 @@ palette; 256-color terminals receive approximations.
 - **Zed** shares Original's base palette and code colors. It uses Zed's elevated
   surfaces, softer selection/search colors, gray headings and blue links.
 - **Redux Light** uses a brighter base, navy types, neutral variables and
-  punctuation, pale-blue selection and purple links. There is no Redux Dark
-  upstream, so no speculative Dark variant is included here.
+  punctuation, pale-blue selection and purple links. Upstream has no Redux Dark
+  palette, so this set contains only Redux Light.
 
-Pending and successful tool panels share a neutral surface: ordinary command,
-code and diff output is not tinted green on success. Error panels retain an 8%
-negative-color blend. Custom panels use a 6% purple blend, except Redux's native
-quote background. Dark error and removed-line text use the brighter upstream
-pink `#ff5faf` instead of `#af005f`.
+Pending and successful tool panels share a neutral background, rather than
+tinting successful output green. Error panels use an 8% negative-color blend.
+Custom panels use a 6% purple blend, except for Redux's native quote background.
+Dark error and removed-line text use upstream's brighter pink `#ff5faf` instead
+of `#af005f`.
 
 Selection and search overlays are flattened to opaque RGB. Pi has no selected-text
 foreground token; Original uses the popup-menu surface, Zed uses composited
@@ -74,10 +75,11 @@ selected-element/search colors, and Redux uses its list-focus background.
 Unhighlighted code and quote bodies use the main foreground. Explicit HTML export
 backgrounds are included.
 
-Pi has fewer syntax roles than the source editors. Language-specific overrides,
-font styles and exact editor rendering parity are out of scope. Muted and accent
-colors retain upstream values; not every token meets WCAG text contrast thresholds.
-The JSON files in [`themes/`](themes/) are directly editable; there is no generator.
+Pi has fewer syntax roles than the source editors. These themes do not reproduce
+language-specific overrides, font styles or exact editor rendering. Muted and
+accent colors retain upstream values; some do not meet WCAG text contrast
+thresholds. Edit the JSON files in [`themes/`](themes/) directly; there is no
+generator.
 
 ## Sources and licenses
 

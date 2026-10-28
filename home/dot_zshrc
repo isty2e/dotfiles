@@ -1,0 +1,19 @@
+# Do not transition child Bash sessions back to Zsh.
+[[ -o interactive ]] || return 0
+export DOTFILES_ZSH_ACTIVE=1
+
+# Bootstrap tools may be installed before mise is active.
+case :$PATH: in
+    *:"$HOME/.local/bin":*) ;;
+    *) export PATH="$HOME/.local/bin:$PATH" ;;
+esac
+
+# Machine settings precede tool activation and interactive features.
+_dotfiles_shell_dir="$HOME/.config/dotfiles/shell"
+for _dotfiles_file in local-loader.sh plugin-paths.sh platform.sh common.sh environment.sh \
+    zsh-options.zsh zsh-plugins.zsh prompt.sh; do
+    if [[ -r "$_dotfiles_shell_dir/$_dotfiles_file" ]]; then
+        source "$_dotfiles_shell_dir/$_dotfiles_file"
+    fi
+done
+unset _dotfiles_file _dotfiles_shell_dir

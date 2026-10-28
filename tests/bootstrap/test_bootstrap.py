@@ -185,6 +185,68 @@ class BootstrapAcquisitionTests(_BootstrapTests):
         self.assertEqual(list((self.root / "tmp").iterdir()), [])
 
 
+class BootstrapInvocationTests(_BootstrapTests):
+    def setUp(self) -> None:
+        super().setUp()
+        source = shlex.quote(str(self.repo / "home"))
+        self.chezmoi.write_text(
+            "#!/bin/sh\nset -eu\n"
+            '[ "${1-}" != --version ] || exit 0\n'
+            'if [ "$1" = execute-template ]; then\n'
+            '  printf "%s\\n" "$HOME/.config/chezmoi/chezmoi.toml"\n'
+            'elif [ "$1" = source-path ] || { [ "$1" = --source ] && '
+            '[ "${3-}" = source-path ]; }; then\n'
+            f'  printf "%s\\n" {source}\n'
+            "else\n"
+            '  printf "%s\\n" "$@" > "$HOME/apply-arguments"\n'
+            '  : > "$HOME/partial-placement"\n'
+            '  exit "${BOOTSTRAP_FAKE_STATUS:-0}"\n'
+            "fi\n"
+        )
+
+    def test_unconfigured_handoff_uses_guarded_init(self) -> None:
+        result = self._run_bootstrap()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(
+            (self.home / "apply-arguments").read_text().splitlines(),
+            [
+                "--source",
+                str(self.repo),
+                "init",
+                "--apply",
+                "--less-interactive",
+                "--error-on-conflict",
+            ],
+        )
+
+    def test_configured_handoff_uses_guarded_apply(self) -> None:
+        config = self.home / ".config/chezmoi/chezmoi.toml"
+        config.parent.mkdir(parents=True)
+        config.touch()
+
+        result = self._run_bootstrap()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(
+            (self.home / "apply-arguments").read_text().splitlines(),
+            ["apply", "--less-interactive", "--error-on-conflict"],
+        )
+
+    def test_failed_apply_preserves_status_and_reports_manual_recovery(self) -> None:
+        config = self.home / ".config/chezmoi/chezmoi.toml"
+        self.environment["BOOTSTRAP_FAKE_STATUS"] = "29"
+        for configured in (False, True):
+            with self.subTest(configured=configured):
+                if configured:
+                    config.parent.mkdir(parents=True)
+                    config.touch()
+                result = self._run_bootstrap()
+                self.assertEqual(result.returncode, 29)
+                self.assertTrue((self.home / "partial-placement").is_file())
+                self.assertNotIn("chezmoi apply completed.", result.stdout)
+                self.assertIn("chezmoi diff", result.stderr)
+                self.assertIn("chezmoi apply --less-interactive", result.stderr)
+
+
 @unittest.skipUnless(CHEZMOI and GIT, "chezmoi and git are required for native setup")
 class BootstrapNativeTests(_BootstrapTests):
     def setUp(self) -> None:
@@ -297,6 +359,55 @@ class BootstrapNativeTests(_BootstrapTests):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(config.read_bytes(), original)
         self.assertEqual((self.home / "mise-calls").read_bytes(), calls * 2)
+
+    def test_existing_file_is_preserved_during_init_and_bound_retry(self) -> None:
+        target = self.home / ".zshrc"
+        original = b"existing private startup configuration\n"
+        target.write_bytes(original)
+
+        for _ in range(2):
+            result = self._run_bootstrap()
+            self.assertNotEqual(result.returncode, 0)
+            self.assertEqual(target.read_bytes(), original)
+            self.assertNotIn("chezmoi apply completed.", result.stdout)
+            self.assertFalse((self.home / "mise-calls").exists())
+            self.assertFalse((self.home / "sheldon-calls").exists())
+            self.assertTrue((self.home / ".config/chezmoi/chezmoi.toml").is_file())
+
+    def test_existing_config_directory_permissions_require_review(self) -> None:
+        config_directory = self.home / ".config"
+        config_directory.mkdir(mode=0o755)
+        config_directory.chmod(0o755)
+
+        result = self._run_bootstrap()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(config_directory.stat().st_mode & 0o777, 0o755)
+        self.assertFalse((self.home / "mise-calls").exists())
+
+    def test_adopted_live_edit_is_preserved(self) -> None:
+        result = self._run_bootstrap()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        target = self.home / ".zshrc"
+        target.write_bytes(b"uncaptured local edit\n")
+        calls = (self.home / "mise-calls").read_bytes()
+
+        result = self._run_bootstrap()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(target.read_bytes(), b"uncaptured local edit\n")
+        self.assertEqual((self.home / "mise-calls").read_bytes(), calls)
+
+    def test_newly_managed_existing_file_is_preserved(self) -> None:
+        result = self._run_bootstrap()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        source = self.repo / "home/dot_existing"
+        source.write_bytes(b"new repository declaration\n")
+        target = self.home / ".existing"
+        target.write_bytes(b"existing local value\n")
+
+        result = self._run_bootstrap()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(target.read_bytes(), b"existing local value\n")
+        self.assertEqual(source.read_bytes(), b"new repository declaration\n")
 
 
 if __name__ == "__main__":

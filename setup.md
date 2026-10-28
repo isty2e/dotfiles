@@ -12,8 +12,33 @@ have [separate](docs/vim.md) [setup guides](docs/neovim.md).
    Git and arrange their private loading before replacing startup files. On Linux,
    use `~/.config/dotfiles/credentials.sh` with owner-only permissions; `local.sh`
    can load existing trusted private shell code on other hosts.
-3. Review the intended source and apply it. A first apply can overwrite an
-   existing, never-written file without asking, even without `--force`.
+3. Review the intended source and existing configuration before applying it.
+   In particular, keep any wanted changes made with `daem add`: the managed
+   manifest may be older than `~/.config/daem/daem.toml`.
+
+Bootstrap uses `--less-interactive --error-on-conflict` for both `apply` and
+`init --apply`. Differing existing or changed targets stop it for manual review.
+Unchanged repeat applies and targets that do not exist can proceed. This does not
+make apply atomic: initialization and earlier placements may already have
+happened. After-install actions may not have run or finished, so do not infer that
+tools and plugins are ready from the presence of configuration files.
+Before first initialization, bootstrap creates `~/.config` with owner-only
+permissions only if it is absent. An existing directory with different permissions
+still requires review; bootstrap does not silently tighten it.
+
+On a stop, back up affected files and link targets privately. Once chezmoi is
+bound to this checkout, review and choose changes interactively:
+
+```sh
+chezmoi diff
+chezmoi diff ~/.config/daem/daem.toml
+chezmoi apply --less-interactive
+```
+
+If bootstrap just installed chezmoi, first add `~/.local/bin` to your shell's
+`PATH`. Rerun bootstrap after resolving differences to finish pending setup.
+Direct native apply without these options can overwrite an existing,
+never-written file without asking; neither path creates automatic backups.
 
 Do not bulk `re-add` before this first reviewed apply, or when a later update adds
 new managed files. It can replace the new source with old live content, including
@@ -54,8 +79,10 @@ execute third-party installation code. The installation actions run on first
 apply and when their declarations change; unchanged repeat applies skip them.
 
 If installation fails, files already placed and tools already installed remain.
-Fix the cause and rerun bootstrap or `chezmoi apply`. For configuration only, use
-`chezmoi apply --exclude=scripts`. Applying a single file does not necessarily run
+Fix the cause and rerun bootstrap, or review differences with
+`chezmoi apply --less-interactive`. For non-interactive configuration-only
+placement, use `chezmoi apply --exclude=scripts --less-interactive --error-on-conflict`.
+Applying a single file does not necessarily run
 the installation actions. Use native mise commands to repair or update tools;
 chezmoi's successful-run record does not check installed-tool health.
 

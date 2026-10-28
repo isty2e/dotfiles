@@ -1,0 +1,13 @@
+#!/bin/sh
+
+index=1
+while [ -f "slurm_${index}.sh" ]; do
+    file="slurm_${index}.sh"
+    if ! sbatch "$file"; then
+        printf 'Failed to submit %s; earlier submissions were not rolled back.\n' "$file" >&2
+        exit 1
+    fi
+
+    sleep 1
+    index=$((index + 1))
+done

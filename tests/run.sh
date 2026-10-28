@@ -56,7 +56,7 @@ done
 printf '\n== Vim recovery tests (offline) ==\n'
 "$python" tests/vim/test_recovery.py VimRecoveryTests -v
 
-for test in tests/shell/test_*.sh; do
+for test in tests/shell/test_*.sh tests/slurm/test_*.sh; do
     printf '\n== %s ==\n' "$test"
     sh "$test"
 done

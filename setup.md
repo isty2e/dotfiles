@@ -306,6 +306,22 @@ Network-backed Vim recovery and plugin-loaded editor checks run separately:
 see [Vim tests](docs/vim.md#tests) and [Neovim tests](docs/neovim.md#verify-without-deployment).
 The offline runner does not imply that these optional checks ran.
 
+## Slurm commands
+
+Chezmoi places `sbatchall` and `slurm-cancel` in `~/.local/bin`. They use Slurm on
+`PATH` only when invoked.
+
+`sbatchall` submits `slurm_1.sh`, `slurm_2.sh`, and so on from the current
+directory, pausing one second after each success. It stops at the first missing
+file or failed submission. Earlier jobs stay submitted; rerunning starts at the
+first file and can create duplicates.
+
+`slurm-cancel` cancels the current user's queued jobs. `-n NAME` selects a job
+name. `-r START END` sends every ID in that inclusive range directly to Slurm,
+without a current-user filter; Slurm checks authorization. A failed queue query
+makes no cancellation attempts. Test the helpers without real jobs using
+`sh tests/slurm/test_helpers.sh`.
+
 ## Vim recovery
 
 See [Vim setup and recovery](docs/vim.md). Use the

@@ -41,9 +41,11 @@ function M.setup()
   })
 
   local servers = {
-    zuban = {
-      cmd = { "zuban", "server" }, filetypes = { "python" },
-      root_markers = { "pyproject.toml", "setup.cfg", ".git" },
+    pyrefly = {
+      cmd = { "pyrefly", "lsp" }, filetypes = { "python" },
+      root_markers = {
+        "pyrefly.toml", "pyproject.toml", "setup.py", "setup.cfg", "requirements.txt", "Pipfile", ".git",
+      },
     },
     ruff = {
       cmd = { "ruff", "server" }, filetypes = { "python" },

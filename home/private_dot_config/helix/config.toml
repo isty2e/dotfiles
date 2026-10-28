@@ -3,6 +3,9 @@ theme = "papercolor-light"
 [editor]
 true-color = true
 
+[editor.soft-wrap]
+enable = true
+
 # Cycles and native baseline: docs/keymaps.md.
 [keys.normal]
 h = "move_char_left"

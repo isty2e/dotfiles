@@ -16,6 +16,7 @@ MISE_SOURCE = REPO / "home/private_dot_config/mise/config.toml"
 DAEM_SOURCE = REPO / "home/private_dot_config/daem/daem.toml"
 CAPTURE_SOURCE = REPO / "home/dot_local/bin/executable_dotfiles_capture.py"
 STARSHIP_SOURCE = REPO / "home/private_dot_config/starship.toml"
+SLURM_SOURCE = REPO / "home/dot_local/bin"
 SHELL_COMMON_SOURCE = REPO / "home/private_dot_config/dotfiles/shell/common.sh"
 SHELL_PLUGINS_SOURCE = REPO / "home/private_dot_config/dotfiles/shell/plugins.toml"
 SHELL_PLUGIN_PATHS_SOURCE = (
@@ -96,6 +97,8 @@ class ChezmoiSourceTests(unittest.TestCase):
             Path(".config/dotfiles/shell/platform.sh"): SHELL_PLATFORM_SOURCE,
             Path(".bashrc"): SHELL_BASHRC_SOURCE,
             Path(".zshrc"): SHELL_ZSHRC_SOURCE,
+            Path(".local/bin/sbatchall"): SLURM_SOURCE / "executable_sbatchall",
+            Path(".local/bin/slurm-cancel"): SLURM_SOURCE / "executable_slurm-cancel",
         }
         for name, source in (
             ("nvim", NVIM_SOURCE),
@@ -177,6 +180,18 @@ class ChezmoiSourceTests(unittest.TestCase):
         managed = self._chezmoi("managed", "--include=files", "--path-style=relative")
         expected = {path.as_posix() for path in self.sources}
         self.assertEqual(set(managed.splitlines()), expected)
+
+    def test_slurm_commands_are_placed_as_executables(self) -> None:
+        self._chezmoi("apply", "--exclude=scripts")
+
+        for command in ("sbatchall", "slurm-cancel"):
+            path = self.destination / ".local/bin" / command
+            self.assertTrue(path.is_file())
+            self.assertTrue(path.stat().st_mode & stat.S_IXUSR)
+            self.assertEqual(
+                path.read_bytes(),
+                self.sources[path.relative_to(self.destination)].read_bytes(),
+            )
 
     def test_shell_plugins_retry_after_failed_preparation(self) -> None:
         failure = self.home / "fail-sheldon"

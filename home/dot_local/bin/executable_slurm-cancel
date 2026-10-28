@@ -1,0 +1,104 @@
+#!/bin/sh
+
+name=
+has_name=false
+has_range=false
+
+while [ "$#" -gt 0 ]; do
+    case $1 in
+        -n|--name)
+            if [ "$#" -lt 2 ]; then
+                printf 'Expected a job name after %s.\n' "$1" >&2
+                exit 2
+            fi
+            name=$2
+            has_name=true
+            shift 2
+            ;;
+        --name=*)
+            name=${1#*=}
+            has_name=true
+            shift
+            ;;
+        -r|--range)
+            if [ "$#" -lt 3 ]; then
+                printf 'Expected two job IDs after %s.\n' "$1" >&2
+                exit 2
+            fi
+            start=$2
+            end=$3
+            has_range=true
+            shift 3
+            ;;
+        *)
+            printf 'Unknown argument: %s\n' "$1" >&2
+            exit 2
+            ;;
+    esac
+done
+
+if "$has_name"; then
+    if [ -z "$name" ]; then
+        printf 'Job name must not be empty.\n' >&2
+        exit 2
+    fi
+
+    if ! jobs=$(squeue --me -h -o '%i' -n "$name"); then
+        printf 'Could not query jobs; no cancellations were attempted.\n' >&2
+        exit 1
+    fi
+elif "$has_range"; then
+    for bound in "$start" "$end"; do
+        case $bound in
+            ''|*[!0-9]*)
+                printf 'Job ID bounds must be non-negative integers.\n' >&2
+                exit 2
+                ;;
+        esac
+    done
+
+    while [ "${#start}" -gt 1 ] && [ "${start#0}" != "$start" ]; do
+        start=${start#0}
+    done
+    while [ "${#end}" -gt 1 ] && [ "${end#0}" != "$end" ]; do
+        end=${end#0}
+    done
+
+    [ "$start" -le "$end" ]
+    status=$?
+    if [ "$status" -gt 1 ]; then
+        printf 'Job ID bounds exceed the shell integer range.\n' >&2
+        exit 2
+    fi
+    if [ "$status" -eq 1 ]; then
+        exit 0
+    fi
+
+    result=0
+    while :; do
+        printf '%s\n' "$start"
+        if ! scancel --quiet "$start"; then
+            result=1
+        fi
+        [ "$start" -ne "$end" ] || break
+        start=$((start + 1))
+    done
+    exit "$result"
+else
+    if ! jobs=$(squeue --me -h -o '%i'); then
+        printf 'Could not query jobs; no cancellations were attempted.\n' >&2
+        exit 1
+    fi
+fi
+
+set -f
+IFS=$(printf ' \t\n_')
+IFS=${IFS%_}
+result=0
+for job in $jobs; do
+    printf '%s\n' "$job"
+    if ! scancel --quiet "$job"; then
+        result=1
+    fi
+done
+exit "$result"

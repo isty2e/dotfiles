@@ -21,18 +21,33 @@ env -i HOME="$tmp/home" PATH=/usr/bin:/bin TERM=xterm ZSH_OPTIONS="$options" zsh
 if command -v expect >/dev/null 2>&1; then
     printf '%s\n' '. "$ZSH_OPTIONS"' 'PROMPT="TEST_PROMPT> "' > "$tmp/zdotdir/.zshrc"
     cat > "$tmp/history.exp" <<'EOF'
-set timeout 5
-spawn -noecho /bin/zsh -i
-expect "TEST_PROMPT> "
-send "echo dotfiles_shared_history\r"
-expect "TEST_PROMPT> "
-spawn -noecho /bin/zsh -i
-expect "TEST_PROMPT> "
-send "fc -l 1\r"
-expect {
-    "echo dotfiles_shared_history" {}
-    timeout { exit 1 }
-    eof { exit 1 }
+proc expect_zsh_output {session output stage} {
+    expect -i $session -timeout 5 \
+        -exact $output {} \
+        timeout { puts stderr "Timed out waiting for $stage"; exit 1 } \
+        eof { puts stderr "Zsh exited while waiting for $stage"; exit 1 }
+}
+
+spawn -noecho /bin/zsh -d -i
+set writer $spawn_id
+expect_zsh_output $writer "TEST_PROMPT> " "writer startup"
+send -i $writer "echo dotfiles_shared_history\r"
+expect_zsh_output $writer "\r\ndotfiles_shared_history\r\n" "writer command output"
+expect_zsh_output $writer "TEST_PROMPT> " "writer command completion"
+
+spawn -noecho /bin/zsh -d -i
+set reader $spawn_id
+expect_zsh_output $reader "TEST_PROMPT> " "reader startup"
+send -i $reader "fc -l 1\r"
+expect_zsh_output $reader "echo dotfiles_shared_history" "shared history"
+
+foreach session [list $writer $reader] {
+    send -i $session "exit\r"
+    expect -i $session -timeout 5 {
+        eof {}
+        timeout { puts stderr "Zsh did not exit"; exit 1 }
+    }
+    wait -i $session
 }
 EOF
     env -i HOME="$tmp/home" ZDOTDIR="$tmp/zdotdir" PATH=/usr/bin:/bin TERM=xterm \

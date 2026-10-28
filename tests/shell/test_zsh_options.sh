@@ -36,7 +36,10 @@ expect {
 }
 EOF
     env -i HOME="$tmp/home" ZDOTDIR="$tmp/zdotdir" PATH=/usr/bin:/bin TERM=xterm \
-        ZSH_OPTIONS="$options" expect "$tmp/history.exp" > /dev/null
+        ZSH_OPTIONS="$options" expect "$tmp/history.exp" > "$tmp/history.log" 2>&1 || {
+        cat "$tmp/history.log" >&2
+        exit 1
+    }
 else
     printf 'Skipping interactive history test: expect is not installed\n' >&2
 fi

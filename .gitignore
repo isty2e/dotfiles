@@ -1,3 +1,6 @@
 __pycache__/
 /home/pixi-env/base/.pixi/
 /home/pixi-env/base/pixi.lock
+
+/home/private_dot_config/daem/daem.lock.toml
+/home/private_dot_config/daem/.daem/

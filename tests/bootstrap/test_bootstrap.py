@@ -1,5 +1,6 @@
 import json
 import os
+import shlex
 import shutil
 import subprocess
 import tempfile
@@ -27,7 +28,18 @@ class _BootstrapTests(unittest.TestCase):
         shutil.copytree(REPO / "home", self.repo / "home")
         self.utilities = self.root / "utilities"
         self.utilities.mkdir()
-        for name in ("dirname", "mktemp", "rm", "mkdir", "sh", "cp", "ln"):
+        for name in (
+            "dirname",
+            "mktemp",
+            "rm",
+            "mkdir",
+            "sh",
+            "cp",
+            "ln",
+            "mv",
+            "rmdir",
+            "cat",
+        ):
             executable = shutil.which(name)
             assert executable is not None
             (self.utilities / name).symlink_to(executable)
@@ -55,10 +67,28 @@ class _BootstrapTests(unittest.TestCase):
             "#!/bin/sh\nset -eu\n"
             '[ "${1-}" != --version ] || exit 0\n'
             '[ -f "$MISE_GLOBAL_CONFIG_FILE" ]\n'
+            'if [ "${3-}" = which ] && [ "${4-}" = sheldon ]; then\n'
+            '  [ "$1" = --cd ] && [ "$2" = "$HOME" ]\n'
+            '  [ "$MISE_NOT_FOUND_AUTO_INSTALL" = false ]\n'
+            '  [ "$MISE_AUTO_INSTALL" = false ]\n'
+            '  printf "%s\\n" "$HOME/sheldon-executable"\n'
+            "  exit 0\n"
+            "fi\n"
             'printf "%s\\n" "$MISE_GLOBAL_CONFIG_FILE" "$@" >> "$HOME/mise-calls"\n'
             '[ ! -f "$HOME/fail-mise" ]\n'
         )
         mise.chmod(0o755)
+        sheldon = self.home / "sheldon-executable"
+        sheldon.write_text(
+            "#!/bin/sh\nset -eu\n"
+            '[ "$1" = --config-file ] && [ -f "$2" ]\n'
+            '[ "$3" = --data-dir ] && [ -d "$4" ]\n'
+            "shift 4\n"
+            '[ "${1-}" != --quiet ] || shift\n'
+            'printf "%s\\n" "$1" >> "$HOME/sheldon-calls"\n'
+            'case $1 in lock) ;; source) printf "%s\\n" "# prepared" ;; *) exit 1 ;; esac\n'
+        )
+        sheldon.chmod(0o755)
         (self.home / "install-chezmoi.sh").write_text(
             "set -eu\n"
             'printf "%s\\n" chezmoi >> "$HOME/installers"\n'
@@ -169,6 +199,21 @@ class BootstrapNativeTests(_BootstrapTests):
             capture_output=True,
             timeout=30,
         )
+        git = self.utilities / "git"
+        git.write_text(
+            "#!/bin/sh\nset -eu\n"
+            'if [ "$1" = clone ]; then\n'
+            '  printf "%s\\n" "$3" >> "$HOME/git-clones"\n'
+            '  mkdir -p "$4/.git"\n'
+            '  printf "%s\\n" "$3" > "$4/.git/origin"\n'
+            'elif [ "$1" = -C ] && [ "${3:-}" = config ] && '
+            '[ "${4:-}" = --get ] && [ "${5:-}" = remote.origin.url ]; then\n'
+            '  cat "$2/.git/origin"\n'
+            "else\n"
+            f'  exec {shlex.quote(GIT)} "$@"\n'
+            "fi\n"
+        )
+        git.chmod(0o755)
 
     def test_fresh_setup_persists_checkout_and_invokes_native_apply(self) -> None:
         result = self._run_bootstrap()
@@ -188,6 +233,14 @@ class BootstrapNativeTests(_BootstrapTests):
             ["--cd", str(self.home), "install"],
         )
         self.assertFalse((self.home / ".local/share/chezmoi/.git").exists())
+        self.assertEqual(
+            (self.home / "sheldon-calls").read_text().splitlines(), ["lock", "source"]
+        )
+        state = self.home / ".local/share/dotfiles/sheldon"
+        generation = (state / "current").read_text().strip()
+        self.assertTrue(
+            (state / "generations" / generation / "zsh-plugins.zsh").is_file()
+        )
 
     def test_same_checkout_reuses_config_without_dropping_existing_settings(
         self,
@@ -226,7 +279,8 @@ class BootstrapNativeTests(_BootstrapTests):
         result = self._run_bootstrap()
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertFalse((self.home / "downloads").exists())
-        self.assertFalse((self.home / ".local/bin").exists())
+        self.assertFalse((self.home / ".local/bin/chezmoi").exists())
+        self.assertFalse((self.home / ".local/bin/mise").exists())
         self.assertTrue((self.home / "mise-calls").is_file())
 
     def test_failed_first_apply_resumes_with_the_persisted_binding(self) -> None:

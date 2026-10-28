@@ -1,2 +1,6 @@
 pixi-env/base/.pixi
 pixi-env/base/pixi.lock
+
+.config/daem/daem.lock.toml
+.config/daem/.daem
+.config/daem/.daem/**

@@ -1,15 +1,33 @@
-# Settings
+# Setup
 
-See [Colemak keymap policy](docs/keymaps.md). Execution and migration are tracked in Kata.
+This guide covers bootstrap, shell settings, tools and tests. For everyday edits,
+see [Editing managed configuration](docs/manifest-management.md). Vim and Neovim
+have [separate](docs/vim.md) [setup guides](docs/neovim.md).
+
+## First apply on an existing home
+
+1. Back up affected files and link targets outside the checkout. Keep those
+   backups private: old shell startup files may contain credentials.
+2. Move machine settings to `~/.config/dotfiles/local.sh`. Keep credentials outside
+   Git and arrange their private loading before replacing startup files. On Linux,
+   use `~/.config/dotfiles/credentials.sh` with owner-only permissions; `local.sh`
+   can load existing trusted private shell code on other hosts.
+3. Review the intended source and apply it. A first apply can overwrite an
+   existing, never-written file without asking, even without `--force`.
+
+Do not bulk `re-add` before this first reviewed apply, or when a later update adds
+new managed files. It can replace the new source with old live content, including
+secrets. After placement, use the
+[status and capture procedure](docs/manifest-management.md#capture-local-edits).
 
 ## Bootstrap a checkout
 
-Start with Git, a POSIX shell and HTTPS-capable curl. Existing homes need a
-configuration diff and backup first; follow the editor handoff instructions below
-before replacing linked configuration. Bootstrap does not migrate editor runtimes.
-
-For an existing home, also review the [binary-provider handoff boundaries](#mise-global-tools)
-for tmux and editor runtimes before installing the newly declared binaries.
+You need Git, a POSIX shell and curl with HTTPS support. Before applying to an
+existing home, follow the first-apply steps above. Apply replaces managed
+`.bashrc` and `.zshrc` files. If an editor uses linked settings or
+a shared runtime, follow [the migration guide](docs/editor-migration.md) first.
+Also review [existing binary providers](#mise-global-tools) before installing
+replacement editor or tmux binaries.
 
 ```sh
 git clone https://github.com/isty2e/dotfiles.git "$HOME/dotfiles"
@@ -17,363 +35,262 @@ cd "$HOME/dotfiles"
 sh bootstrap.sh
 ```
 
-Bootstrap reuses chezmoi and mise found on `PATH`, including existing package-manager
-installations. Missing tools are installed into `~/.local/bin` by downloading and
-executing their official installers from [get.chezmoi.io](https://get.chezmoi.io)
-and [mise.run](https://mise.run). The bootstrap itself does not invoke sudo,
-Homebrew or `chsh`; native tool backends retain their own platform prerequisites.
-For manual provisioning, install those two executables using their official
-instructions, then rerun bootstrap; it will skip their acquisition. No Python,
-Node or Pixi environment is needed to run bootstrap itself.
+Bootstrap reuses chezmoi and mise on `PATH`. It installs missing copies in
+`~/.local/bin` by downloading and running their official installers from
+[get.chezmoi.io](https://get.chezmoi.io) and [mise.run](https://mise.run).
+Bootstrap itself needs no Python, Node or Pixi environment and does not call
+sudo, Homebrew or `chsh`. Tool backends may have their own platform requirements.
+You can install chezmoi and mise yourself before running bootstrap.
 
-On first initialization, `home/.chezmoi.toml.tmpl` records this checkout as
-chezmoi's `sourceDir`; there is no second source clone. An existing configuration
-bound to this checkout is reused without regenerating its settings. If it points
-elsewhere, bootstrap stops: review the reported configuration file and reconcile
-`sourceDir` explicitly before retrying. Bootstrap can run from outside the checkout.
+On first use, `home/.chezmoi.toml.tmpl` binds chezmoi to this checkout; it does not
+create another clone. Bootstrap reuses an existing configuration bound here.
+If it points elsewhere, bootstrap stops. Review the reported config file and
+correct its `sourceDir` before retrying. You can invoke bootstrap from another
+directory.
 
-A full chezmoi apply places the authored configuration, then runs `mise install`
-using the managed global TOML. This can download tools and execute third-party
-installation code. The native `run_onchange_after` action runs on first application
-and when its rendered contents change; the mise TOML fingerprint is part of those
-contents. Unchanged repeat applies skip the action. Successful run state is not
-installed-tool health: use native mise commands for repair or updates.
+A full apply places configuration, runs `mise install` with the managed global
+TOML, and prepares the shell plugins. These steps download tools and plugins and
+execute third-party installation code. The installation actions run on first
+apply and when their declarations change; unchanged repeat applies skip them.
 
-After an installation failure, files already applied and completed native tool
-installs are not rolled back. Fix the reported cause and rerun bootstrap or a full
-`chezmoi apply`. For configuration-only placement, use `chezmoi apply --exclude=scripts`.
-Applying an individual file does not promise to run the installation action.
+If installation fails, files already placed and tools already installed remain.
+Fix the cause and rerun bootstrap or `chezmoi apply`. For configuration only, use
+`chezmoi apply --exclude=scripts`. Applying a single file does not necessarily run
+the installation actions. Use native mise commands to repair or update tools;
+chezmoi's successful-run record does not check installed-tool health.
 
-Bootstrap changes `PATH` only in its child process. Shell configuration is not
-currently deployed by this source. Make the bootstrap executables available in
-your current shell, then configure [mise activation](https://mise.jdx.dev/getting-started.html)
-for the shell you use; opening another terminal alone does not add that integration:
+Bootstrap changes `PATH` only in its child process. Start a new interactive shell
+to load the installed settings, or expose the bootstrap executables now:
 
 ```sh
 export PATH="$HOME/.local/bin:$PATH"
 mise ls
 ```
 
-Logins, credentials and login-shell selection remain separate. Pixi base environment
-installation and `:VimSetup`/`:NvimSetup` remain explicit operations described below.
+### Repair or update shell plugins
 
-The bootstrap tests use offline installer/executable doubles. Native chezmoi
-integration additionally checks source binding and configuration preservation when
-chezmoi and Git are available; it still uses a mise double, not real tool acquisition:
-
-```sh
-python -m unittest discover -s tests/bootstrap -v
-```
-
-## Legacy shell notes
-
-These historical shell files are not applied by bootstrap or chezmoi. Review them
-separately rather than treating these commands as the current environment restore path.
-
-```bash
-git clone https://github.com/tarjoilija/zgen
-ln -s dotfiles/.zshrc ~/.zshrc
-ln -s dotfiles/.zshrc_linux ~/.zshrc
-```
-
-## Vim recovery
-
-`home/dot_vimrc` is the standalone recovery entrypoint; an existing `.vim`
-directory is not required. It declares vim-plug, plugins, three personal
-colorschemes, and the HTML/Python/Ruby/Rust/Swift indentation settings. This vimrc does not start
-downloads or installation during ordinary startup. A missing manager or plugin
-directory produces a warning. If codedark is unavailable, Vim uses the default
-colorscheme while keeping core editing available.
-
-Recovery requires Vim 8.2+ with `+eval` for the declared plugins, Git, curl with
-HTTPS support, and network access to GitHub and plugin download hosts. It needs
-no administrator rights.
-Every `:VimSetup` fetches the latest vim-plug from its official `master` branch
-and updates the installed manager when the content differs. It acquires
-missing personal color files into `~/.vim`, reloads the refreshed manager, then
-runs vim-plug's synchronous installation under `~/.vim/plugged`. This executes
-third-party plugin code and the fzf binary installer. The fzf hook uses `--bin`,
-not shell integration; setup does not edit shell startup files.
-
-Setup writes to `~/.vim`, including a symlink's destination. Do not run it against
-an existing shared or cloud-synced tree before settling that tree's migration.
-
-Use the actual Vim executable, not a shell alias for Neovim. In a new account,
-run from this checkout:
+Sheldon prepares plugins in a new directory and activates it only after
+preparation succeeds. Apply leaves existing plugin checkouts unchanged. To
+restore missing plugins without changing the declaration, run:
 
 ```sh
-cp -n home/dot_vimrc "$HOME/.vimrc"
-vim
+CHEZMOI_DEST_DIR="$HOME" sh "$(chezmoi source-path)/run_onchange_after_install-shell-plugins.sh.tmpl"
 ```
 
-Then run `:VimSetup`, review its output and `:PlugStatus`, and restart Vim.
-To try the entrypoint without replacing an existing vimrc, use `vim -u "$PWD/home/dot_vimrc"`.
-That only selects the entrypoint; use a separate home directory for an isolated
-trial. Existing personal color files are kept; empty or unreadable color assets
-stop setup rather than being overwritten. A failed or empty manager download
-preserves the installed manager and stops setup instead of continuing with the
-old version. Downloads are staged beside their targets, so failed transfers do
-not publish partial files. Plugin state is owned by vim-plug: setup does not run
-`PlugUpdate` or `PlugClean`. Plugin hook failures may require vim-plug's explicit
-forced-install retry after fixing the cause; repository status alone is not a
-feature-health check.
+Append `--update` to that command to fetch updates in a new directory. Existing
+shells continue using their previous plugin set. Old and interrupted preparations
+remain under `~/.local/share/dotfiles/sheldon/generations`; the adjacent `current`
+file identifies the active one. Remove an old directory only after all shells
+using it have exited. Run one preparation at a time on a shared home.
 
-Before replacing a different manager, setup saves its exact previous contents
-to `~/.vim/autoload/plug.vim.old`. Identical downloads leave this backup intact;
-first installation creates no backup. A backup-write failure stops replacement.
-Missing or zero-byte manager files are treated as uninstalled: they are neither
-sourced nor copied over an existing backup.
-The backup is published before the manager, not as a two-file transaction: if
-the final replacement fails, the active manager remains and `.old` may equal it.
-The copy is a previous version, not a verified known-good version. There is no
-automatic rollback. To restore it manually, close Vim, copy it back, and restart:
+## Chezmoi placement
 
-```sh
-cp "$HOME/.vim/autoload/plug.vim.old" "$HOME/.vim/autoload/plug.vim"
-```
+`.chezmoiroot` selects `home/` as the source. Chezmoi removes source attributes
+such as `dot_` and `private_` when constructing target paths:
 
-The next `:VimSetup` attempts the latest upstream manager again.
+| Source | Destination |
+| --- | --- |
+| `home/dot_bashrc`, `home/dot_zshrc` | `~/.bashrc`, `~/.zshrc` |
+| `home/dot_vimrc` | `~/.vimrc` |
+| `home/private_dot_config/nvim/` | `~/.config/nvim/` |
+| `home/private_dot_config/helix/` | `~/.config/helix/` |
+| `home/private_dot_config/zed/` | `~/.config/zed/` |
+| `home/private_dot_config/mise/config.toml` | `~/.config/mise/config.toml` |
+| `home/private_dot_config/starship.toml` | `~/.config/starship.toml` |
+| `home/pixi-env/base/pixi.toml` | `~/pixi-env/base/pixi.toml` |
 
-Only personal color sources are pinned. The manager follows upstream `master`;
-this does not guarantee compatibility with every future upstream change. Exact
-plugin-version replay, editing history/caches, and external tools such as Ruff,
-isort, language runtimes and other ALE executables are outside this recovery
-scope. Fixed Colemak mappings follow [the keymap policy](docs/keymaps.md), while
-recovery and deployment remain separate. Neovim has an independent configuration.
+`private_dot_config` gives `.config` mode `0700`. Each editor keeps its own loader.
+Tests, docs, Lua tooling and the repository's `.vim/colors` assets stay outside
+the managed home tree. Use [Vim setup](docs/vim.md) to acquire those color assets;
+do not link the repository's `.vim` directory as your runtime.
 
-The full suite fetches the same latest vim-plug URL once for its real-manager
-checks; network or upstream compatibility failures are test failures:
+Apply places configuration, not editor plugins, language servers, Tree-sitter
+parsers or the Pixi environment. It leaves `~/.vim`, Neovim data/caches and Helix's
+generated `runtime/grammars` tree unmanaged. For an existing home or an isolated
+rehearsal, see [Editor migration](docs/editor-migration.md).
 
-```sh
-python -m unittest discover -s tests/vim -v
-```
+## Shell settings
 
-Workflow and failure tests use real Vim with download/installation doubles and
-can run without network access:
+### Machine settings and credentials
 
-```sh
-python tests/vim/test_recovery.py VimRecoveryTests -v
-```
+Bash and Zsh read `~/.config/dotfiles/local.sh` before tool activation. Put
+machine-specific paths and cluster settings there. For example, set
+`BREW_LOCATION` to the Homebrew executable if startup cannot find it in `PATH` or
+a standard location. This local file is outside Git.
 
-Neither tier installs the declared plugins or establishes their runtime compatibility.
+Keep machine locations independent of OS and CPU selection. Export
+`DK_VAULT_PATH` from `local.sh` with this machine's existing knowledge-vault path;
+do not infer it from Linux, macOS or a CPU architecture. Shared policy stays in
+the common shell configuration, while native platform/package conditions select
+OS-specific behavior and supported binaries. Machine inputs load before those
+initializers so they can select existing tools and data locations.
 
-The native keymap integration suite needs actual Vim and an already installed
-vim-plug/NERDTree runtime. Run it in a terminal after plugin startup:
+On Linux, startup also reads `~/.config/dotfiles/credentials.sh` and exports its
+assignments. The file must belong to the current user and have no group or world
+permissions. Startup skips an insecure or unreadable file with a warning. Keep
+credentials outside Git and restrict the file before use. Both files contain
+shell code: source only trusted content.
 
-```sh
-sh tests/keymaps/run-vim.sh
-```
+### Bash, Zsh and completion
 
-`VIM_TEST_BINARY` can select an actual Vim executable, and `VIM_TEST_RUNTIME` can
-select an existing runtime directory. The runner uses a temporary home and XDG
-state, borrows cached plugin code, and does not run `VimSetup`. Missing prerequisites
-or a non-terminal invocation produce exit code 77. Normal terminal Vim lets startup
-and UI commands execute in their native context; Ex-only runs are not treated as
-full-profile coverage. Core movement, native
-operators, literal input, window cycles and NERDTree commands are tested by effects.
+An interactive Linux SSH Bash session replaces itself with Zsh when available.
+Set `DOTFILES_KEEP_BASH=1` before starting Bash to keep it. Non-interactive
+commands are unchanged. The account's login shell remains Bash, and its login
+profile must source `.bashrc`; this repository does not replace that profile.
 
-## chezmoi placement
+The new Zsh exports its executable path as `SHELL` for child programs. An existing
+tmux server keeps its configured default shell. Programs started on another node
+need that Zsh executable at the same path.
 
-The repository's `.chezmoiroot` file selects `home/` as its source state.
-`private_dot_config/` keeps the native `.config` directory private (`0700`);
-the `private_` prefix is a chezmoi attribute, not part of the target path. It manages
-`.vimrc` from plain `home/dot_vimrc` and the Neovim configuration files from
-`home/private_dot_config/nvim/` at `.config/nvim/`. Helix configuration, language settings
-and themes come from `home/private_dot_config/helix/` at `.config/helix/`. Zed settings
-and keymaps come from `home/private_dot_config/zed/` at `.config/zed/`. These editors keep
-separate native loaders; sharing a Git repository does not make one depend on
-another.
-Tests, docs, Lua tooling and `.vim/colors` stay outside that state. The color files are authored
-assets used by standalone recovery and its tests, not a runtime tree to symlink
-into a home directory. Do not symlink the repository's `.vim` directory as `~/.vim`.
+Zsh loads prepared plugins without downloading them. Bash needs version 4.2 or
+newer for bash-completion and fuzzy Tab completion. Fuzzy Tab also needs `fzf`
+and `tac`; on macOS it needs an awk with GNU awk's interactive option. If a
+dependency is missing, startup leaves the available native completion in place.
+Bash's `extract` command uses the prepared Zsh plugin and needs Zsh.
 
-For this checkout, pass `--source "$PWD"` explicitly. Rehearsals must use a
-temporary `HOME`, `TMPDIR`, all four `XDG_CONFIG_HOME`, `XDG_CACHE_HOME`,
-`XDG_DATA_HOME`, `XDG_STATE_HOME` paths, and a temporary `--destination`.
-Changing only `--destination` does not isolate chezmoi's own state. Run `managed`
-to confirm the target list, review `diff`, then use `apply` in that same isolated
-environment. Exclude scripts for a placement-only rehearsal; a full apply can install
-mise tools as described above. It does not invoke `:VimSetup`/`:NvimSetup`, install
-editor plugins/language servers/parsers, or manage `~/.vim`, Neovim data/caches
-or Helix's generated `runtime/grammars` tree.
-The Pixi base manifest is also placed as described below; its environment is not
-installed by apply.
+Full apply installs the declared Zstandard command-line tools. Transfer aliases
+need rsync with `--info=progress2`, which the macOS system version may lack.
+`rsmv` removes transferred source files; `rssync` uses `--delete` on the
+destination. Review the command before using either on data. `cpv` defaults to
+`/home/$USER/rsync` for backups. Override `DOTFILES_RSYNC_BACKUP_DIR` in `local.sh`
+if needed; create the chosen backup directory yourself.
 
-Zed's source contains non-secret UI, language and provider preferences, not
-credentials, sessions or extension state. Existing keymap rules and settings
-values are preserved; placement does not switch language providers. Fonts, theme
-extensions and language tools are separate prerequisites for their corresponding
-features, and account login remains native to Zed. Stop Zed before replacing its
-linked keymap or settings, back up both files, and review their diff before applying.
+### History, prompt and environments
 
-For a linked Helix configuration directory, preserve the original link and local
-runtime before replacing the link with a regular directory. Keep existing
-`runtime/grammars`, including its source cache, under the local `.config/helix/`;
-do not copy it into the chezmoi source tree or add a persistent removal rule.
-Stop Helix for the handoff so an existing process cannot retain obsolete runtime
-paths. After placement, ordinary apply preserves that unmanaged runtime. Rollback
-must preserve newer configuration, restore runtime custody and the original link,
-and select the matching source checkout before applying again.
+Zsh uses shared history. Bash adds prompt-by-prompt history sharing on macOS,
+but keeps native persistence on Linux. These settings can still lose concurrent
+history on NFS: Bash can truncate to `HISTFILESIZE`, and Zsh rewrites shared
+history periodically. On macOS Bash 3.2, `history -a` may not append if a session
+starts with an empty or absent history file. The fzf Bash history picker's
+Shift-Delete action can also rewrite history.
 
-The optional chezmoi tests run with an executable found on `PATH` or selected by
-`CHEZMOI`; otherwise they explicitly skip. They use isolated homes and exercise
-the actual `managed`, `diff`, `apply` and `verify` commands, including replacing
-synthetic Vim/Neovim entrypoint links, a linked Helix directory and a Zed keymap
-link without changing their former sources, unmanaged runtime/editor state or
-repository metadata:
+Startup uses installed mise tools and activates an installed Pixi base unless
+another environment is active. Mise's normal precedence can still change which
+executable a command selects. Pixi activation uses `shell-hook --as-is`, without
+installing packages or updating the lockfile. An existing `~/pixi_envs/base`
+environment takes precedence over `~/pixi-env/base`. Set
+`DOTFILES_PIXI_BASE_MANIFEST` or `PIXI_ENVS_HOME` in `local.sh` to select another
+base without moving it. See [manifest paths and local state](docs/manifest-management.md#manifests-and-local-state).
 
-```sh
-python -m unittest discover -s tests/chezmoi -v
-```
+Starship uses its installed executable. If it is unavailable, startup keeps the
+existing prompt. Logins, environment installation and editor plugin setup remain
+explicit operations.
 
-Before an approved live migration, record both existing Vim link targets. If
-`~/.vim` is the expected link to a shared runtime, remove only the link and create
-a local directory before running `:VimSetup`. Stop on an unexpected target type;
-never recursively remove the shared directory. There is no persistent chezmoi
-removal rule for this generated runtime. The fresh-machine bootstrap is not a
-replacement for this existing-home migration or its runtime handoff.
-
-To roll back that migration, preserve the new local runtime under another name
-and restore both recorded links. Stop running `chezmoi apply` until deciding
-whether to retry or withdraw the Vim source: restoring the links does not remove
-the desired vimrc from chezmoi, and a later apply would replace it again.
-
-## Neovim
-
-See [Neovim configuration](docs/neovim.md) for selected plugins, language tools,
-native keymap ownership and installation. The runtime source is
-`home/private_dot_config/nvim/`; `tests/nvim/` and this repository's Lua tooling are not
-deployed. The native integration runner uses an existing plugin cache without
-installing dependencies:
-
-```sh
-sh tests/nvim/run-keymaps.sh
-```
-
-Before actual-home adoption, preserve an existing `~/.config/nvim` Git working
-tree outside the target path. Source consolidation leaves that repository and its
-history untouched and does not authorize applying over it or deleting its metadata.
-
-## Pi themes
-
-See [Pi PaperColor themes](pi/README.md) for installation and palette details.
+Both shells export `PI_CLIPBOARD_OSC52=1` for Pi's OSC52 clipboard handling.
 
 ## Mise global tools
 
-`home/private_dot_config/mise/config.toml` is the plain source for
-`~/.config/mise/config.toml`. Native `[tools]` declarations are grouped with
-comment headings and blank lines: runtimes/environments, editors/typesetting,
-agent/terminal tools, repository search/navigation, delivery/task execution,
-shell/system utilities, and JavaScript/TypeScript quality. Provider-specific
-options use native tool subtables rather than another manifest or installer.
+The full tool list is in `home/private_dot_config/mise/config.toml`. Node uses
+`lts`; other tool versions use `latest`. Plain names use mise's registry defaults.
+Pi and zvec-grep use explicit npm backends with the declared Node runtime.
+Chezmoi and mise itself remain bootstrap tools outside this manifest.
 
-Node uses `lts`; tool version selectors otherwise use `latest`. CodeGraph uses
-the registry alias instead of an explicit npm key. Pi and zvec-grep retain explicit
-npm keys, backed by the declared Node runtime. Neovim, Vim, Helix and the other
-plain keys use their registry defaults rather than pinning a backend here.
-Chezmoi and mise itself remain independent bootstrap tools, not entries in this list.
-Ruby can fall back to a source build when a precompiled runtime is unavailable;
-its build dependencies must already be available on a no-admin host.
+Rust uses rustup-backed management and reads `rust-toolchain.toml` for project
+selection. Mise 2026.10.12 does not recognize the extensionless `rust-toolchain`
+file; check legacy projects before changing their provider. Project mise files
+keep their normal precedence. Ruby may need a source build and preinstalled
+build dependencies when no binary is available, including on no-admin hosts.
 
-Rust uses mise's rustup-backed toolchain management. Native idiomatic Rust file
-reading is enabled so `rust-toolchain.toml` can select the project toolchain
-instead of the global default. The mise 2026.10.12 registry does not recognize
-extensionless `rust-toolchain` files; do not assume a legacy file overrides the
-global default. Check that boundary before enabling mise's Rust in an existing
-project. Other project-scoped mise
-declarations retain their normal precedence. uv is a CLI default, not a replacement
-for the Pixi base environment or project-owned Python environments.
+pre-commit uses the PyPI backend with uv and a private Python 3.13 interpreter.
+It does not depend on Pixi or provide a global Python command. Pixi retains its
+own pre-commit dependency. Inspect or reinstall hooks that refer to an old
+interpreter when changing providers. uv remains a CLI tool; scientific libraries
+and project Python environments stay with their respective environment managers.
 
-pre-commit uses the PyPI backend with uv and a private Python 3.13 interpreter;
-it does not require the Pixi base or introduce a global mise Python. The Pixi
-manifest's pre-commit dependency is retained for that separate environment.
-Existing installed hooks may reference an older interpreter; inspect or reinstall
-affected hooks when actually changing their CLI/interpreter provider.
+The gdu GitHub adapter installs `gdu-go`, avoiding a collision with GNU coreutils'
+`gdu`. Kata uses its existing installer and update procedure, which also manages
+its daemon. It is not a mise tool in this configuration.
 
-The explicit gdu GitHub adapter selects ordinary Mac/Linux release archives.
-Dundee's gdu is exposed as `gdu-go` so it does not shadow GNU coreutils' `gdu`.
-Kata stays outside this manifest: keep its existing installer/package manager and
-corresponding update procedure, which owns its daemon lifecycle. Revisit mise
-ownership only when deliberately changing that installation/update boundary.
-An editor binary change still needs runtime/plugin/grammar compatibility
-checks at adoption; tmux server/session lifetime and Starship prompt activation
-remain separate from binary acquisition.
-
-Chezmoi places the declaration and its after-action invokes native mise installation
-as described in the bootstrap section. The action explicitly selects the projected
-global TOML, including in isolated destinations or with a custom XDG configuration
-directory; native mise project/default precedence still applies. This file does not
-configure shell activation, authentication, search indexes or model caches.
-Scientific libraries remain in the Pixi manifest. Existing executable providers
-are not removed; any provider retirement is separate. Mise retains its native
-version-cleanup behavior.
-
-Set `MISE` to the actual mise executable to run the optional native metadata
-checks. They load the copied declaration and verify project Rust selection without
-installation, using isolated home/config/data/cache/state paths and offline mode;
-otherwise they skip explicitly:
-
-```sh
-python -m unittest discover -s tests/mise -v
-```
-
+Installing new binaries leaves other providers in place. Before switching an
+editor, check its runtime, plugins and grammars. Plan an existing tmux server's
+session lifecycle separately from installing its binary. Mise retains its native
+version-cleanup behavior. Shell activation, logins, search indexes and model
+caches are separate from tool installation.
 
 ## Pixi base environment
 
-`home/pixi-env/base/pixi.toml` is the plain source for
-`~/pixi-env/base/pixi.toml`. It requires Pixi 0.81 or newer, provisioned separately.
-Common requests are declared once; native target tables select the Mac ARM
-configuration with a macOS 14 baseline or the Linux x86-64 configuration with
-CUDA 12.8. This Linux target is not a generic CPU-only Linux profile. Both use the
-native `default` environment, without a new environment name or prefix.
+`home/pixi-env/base/pixi.toml` requires Pixi 0.81 or newer. It supports macOS ARM
+with a macOS 14 baseline and Linux x86-64 with CUDA 12.8. The Linux target is not
+a CPU-only profile. Both use the `default` environment and its existing prefix.
 
-Target-specific additions reflect selected usage, not universal OS restrictions.
-The Mac CDPKit bound remains in place pending compatibility validation. Linux
-PyTorch uses the cu128 index directly; other requests keep the normal PyPI index.
-Access to Git-sourced dependencies is supplied outside this repository.
+Target tables hold the platform-specific additions. The Mac CDPKit bound remains
+until compatibility has been checked. Linux PyTorch uses the cu128 index; other
+packages use the normal PyPI index. Supply access to Git dependencies outside
+this repository.
 
-Review the chezmoi diff before replacing an existing manifest. Apply places only
-the declaration; subsequent Pixi operations can reconcile the environment from
-it. To install explicitly after placement:
+Review the manifest diff before replacing an existing file. Apply copies the
+declaration; install the environment separately:
 
 ```sh
 pixi install --manifest-path "$HOME/pixi-env/base/pixi.toml"
 ```
 
-The `.pixi/` environment and `pixi.lock` are local generated state, excluded from
-Git and chezmoi source; they are not versioned or deployed.
-Use normal Pixi commands to change declarations, then review and re-add the TOML
-to chezmoi source; do not add the generated environment directory.
+Pixi can change installed packages when it reconciles the declaration. Keep
+`.pixi/` and `pixi.lock` local; Git and chezmoi exclude them. Capture TOML edits
+through [the normal editing workflow](docs/manifest-management.md).
 
-The optional native parser check requires `PIXI` to be set to an absolute Pixi
-0.81+ executable path, not a version-manager shim. Otherwise it skips explicitly.
-It uses an isolated home and reads metadata without installing packages:
+## Commit checks
+
+`.pre-commit-config.yaml` pins the official Gitleaks hook. With the declared Go
+and pre-commit tools available, install it from the checkout:
 
 ```sh
-python -m unittest discover -s tests/pixi -v
+pre-commit install --install-hooks
 ```
 
-## brew
+The first installation downloads and builds Gitleaks in pre-commit's user cache.
+It needs no administrator privileges. Later commits reuse that environment.
+The hook checks staged changes and redacts detected secrets in its output.
+A finding or an unavailable scanner stops the commit; it does not remove the
+suspected value for you.
 
-```bash
-brew install zsh vim neovim cmake git bazel fzf fd julia go crystal openssh pandoc nodejs ack the_silver_searcher r rstudio rbenv brave-browser visual-studio-code textmate xquartz brewsci/bio/pymol
+Installation is separate from chezmoi apply. Linked worktrees share the installed
+Git hook, but each checked-out revision must contain `.pre-commit-config.yaml`.
+A revision without that file cannot commit until the configuration is present;
+do not enable missing-config skipping to work around this.
+
+Default rules cannot recognize every secret, and Git allows hooks to be bypassed.
+Keep credentials outside Git and review staged changes. If a real false positive
+needs an exception, scope it narrowly rather than excluding an entire shell
+configuration. CI after a public push is not a pre-publication barrier.
+
+## Tests
+
+The offline runner needs Python 3.11+, the packages in
+`tests/keymaps/requirements.txt`, Bash, Zsh, Vim and Git:
+
+```sh
+sh tests/run.sh
 ```
 
-## Legacy conda notes
+Set `PYTHON` to choose the interpreter. Chezmoi tests skip if chezmoi is missing.
+The runner detects mise and Pixi; override `MISE`, `PIXI` or `CHEZMOI` with actual
+executable paths, not shell functions or version-manager shims. Pixi must be
+0.81 or newer. Interactive checks use `expect` when available; the tmux test skips
+without tmux.
 
-These historical commands are not part of the Pixi base setup above.
+Bootstrap tests use offline installer and executable doubles. Native chezmoi
+tests exercise source binding, apply and preservation with isolated homes, but
+still use a mise double. Native mise checks read metadata and project Rust
+selection without installation. Native Pixi checks read manifest metadata
+without installing packages. These checks skip when their tools are unavailable.
 
-[Mambaforge download](https://github.com/conda-forge/miniforge)
+Network-backed Vim recovery and plugin-loaded editor checks run separately:
+see [Vim tests](docs/vim.md#tests) and [Neovim tests](docs/neovim.md#verify-without-deployment).
+The offline runner does not imply that these optional checks ran.
 
-```bash
-# general
-mamba install altair plotnine black cython flake8 isort parmap pynvim pyarrow
-# science
-mamba install openmm mdtraj parmed oddt rdkit molvs mordred deepchem cmcrameri colorcet ambertools
-mamba install -c omnia openforcefield openforcefields
-# ML, cuda dependent
-mamba install -c pytorch pytorch torchvision
-mamba install -c pyg pytorch-scatter pytorch-sparse pytorch-cluster pytorch-spline-conv pyg
-mamba install -c rapidsai cudf cuml
-mamba install einops opt_einsum scikit-learn pytorch-lightning optuna
-```
+## Vim recovery
+
+See [Vim setup and recovery](docs/vim.md). Use the
+[migration guide](docs/editor-migration.md) before replacing existing links or a
+shared runtime.
+
+## Neovim
+
+See [Neovim configuration](docs/neovim.md) for installation, plugins, language
+tools and tests. Preserve an existing configuration Git checkout before applying;
+the [migration guide](docs/editor-migration.md#neovim) explains how.
+
+## Pi themes
+
+See [Pi PaperColor themes](pi/README.md) for optional installation and palettes.

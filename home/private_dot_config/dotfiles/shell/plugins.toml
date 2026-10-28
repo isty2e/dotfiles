@@ -1,0 +1,75 @@
+shell = "zsh"
+
+[templates]
+source = '''
+if [[ -r "$_dotfiles_generation_dir/{{ hooks.path }}" ]]; then
+    source "$_dotfiles_generation_dir/{{ hooks.path }}" || :
+fi
+'''
+fzf_tab = '''
+if [[ $_dotfiles_fzf_ready = yes && -r "$_dotfiles_generation_dir/{{ hooks.path }}" ]]; then
+    source "$_dotfiles_generation_dir/{{ hooks.path }}" || :
+fi
+'''
+prepare_only = ""
+
+[plugins.zsh_completions]
+github = "zsh-users/zsh-completions"
+use = ["src/_*"]
+apply = ["prepare_only"]
+
+[plugins.fzf_tab]
+github = "Aloxaf/fzf-tab"
+use = ["fzf-tab.plugin.zsh"]
+apply = ["fzf_tab"]
+hooks.path = "repos/github.com/Aloxaf/fzf-tab/fzf-tab.plugin.zsh"
+
+[plugins.zsh_256color]
+github = "chrissicool/zsh-256color"
+use = ["zsh-256color.plugin.zsh"]
+hooks.path = "repos/github.com/chrissicool/zsh-256color/zsh-256color.plugin.zsh"
+
+[plugins.zsh_command_not_found]
+github = "Tarrasch/zsh-command-not-found"
+use = ["command-not-found.plugin.zsh"]
+hooks.path = "repos/github.com/Tarrasch/zsh-command-not-found/command-not-found.plugin.zsh"
+
+[plugins.extract]
+github = "ohmyzsh/ohmyzsh"
+use = ["plugins/extract/extract.plugin.zsh"]
+hooks.path = "repos/github.com/ohmyzsh/ohmyzsh/plugins/extract/extract.plugin.zsh"
+
+[plugins.rsync]
+github = "ohmyzsh/ohmyzsh"
+use = ["plugins/rsync/rsync.plugin.zsh"]
+hooks.path = "repos/github.com/ohmyzsh/ohmyzsh/plugins/rsync/rsync.plugin.zsh"
+
+[plugins.dirhistory]
+github = "ohmyzsh/ohmyzsh"
+use = ["plugins/dirhistory/dirhistory.plugin.zsh"]
+hooks.path = "repos/github.com/ohmyzsh/ohmyzsh/plugins/dirhistory/dirhistory.plugin.zsh"
+
+[plugins.zsh_autosuggestions]
+github = "zsh-users/zsh-autosuggestions"
+use = ["zsh-autosuggestions.zsh"]
+hooks.path = "repos/github.com/zsh-users/zsh-autosuggestions/zsh-autosuggestions.zsh"
+
+[plugins.zsh_syntax_highlighting]
+github = "zsh-users/zsh-syntax-highlighting"
+use = ["zsh-syntax-highlighting.zsh"]
+hooks.path = "repos/github.com/zsh-users/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+
+[plugins.zsh_history_substring_search]
+github = "zsh-users/zsh-history-substring-search"
+use = ["zsh-history-substring-search.zsh"]
+hooks.path = "repos/github.com/zsh-users/zsh-history-substring-search/zsh-history-substring-search.zsh"
+
+[plugins.bash_completion]
+github = "scop/bash-completion"
+use = ["bash_completion"]
+apply = ["prepare_only"]
+
+[plugins.fzf_bash_completion]
+github = "lincheney/fzf-tab-completion"
+use = ["bash/fzf-bash-completion.sh"]
+apply = ["prepare_only"]

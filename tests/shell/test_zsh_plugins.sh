@@ -65,8 +65,21 @@ EOF
 fragment="$repo/home/private_dot_config/dotfiles/shell/zsh-plugins.zsh"
 export HOME="$tmp/home" PATH="$tmp/bin:/usr/bin:/bin" TEST_LOG="$tmp/log" FRAGMENT="$fragment" TERM=xterm
 export _dotfiles_generation_dir="$generation"
+
+# shellcheck disable=SC2016
+completion_fpath=$(env -i HOME="$HOME" PATH=/usr/bin:/bin zsh -fc '
+    for directory in $fpath; do
+        if [[ -r $directory/compinit ]]; then
+            print -r -- "$directory"
+            exit 0
+        fi
+    done
+    exit 1
+')
+export FPATH="$completion_fpath"
+
 : > "$TEST_LOG"
-zsh -fic '. "$FRAGMENT"; bindkey "^I"; bindkey "^[[A"; bindkey "^[[B"; bindkey "$terminfo[kcuu1]"; bindkey "$terminfo[kcud1]"' > "$tmp/bindings" 2>/dev/null
+zsh -fic '. "$FRAGMENT"; bindkey "^I"; bindkey "^[[A"; bindkey "^[[B"; bindkey "$terminfo[kcuu1]"; bindkey "$terminfo[kcud1]"' > "$tmp/bindings"
 printf '%s\n' fzf-init fzf-tab color command-not-found extract rsync dirhistory autosuggestions highlighting history > "$tmp/expected"
 diff -u "$tmp/expected" "$TEST_LOG"
 grep -q 'fzf_tab_select' "$tmp/bindings"
@@ -76,18 +89,18 @@ grep -q 'history-substring-search-down' "$tmp/bindings"
 [ "$(grep -c 'history-substring-search-down' "$tmp/bindings")" -eq 2 ]
 
 : > "$TEST_LOG"
-zsh -fc '. "$FRAGMENT"' 2>/dev/null
+zsh -fc '. "$FRAGMENT"'
 [ ! -s "$TEST_LOG" ]
 
 unset _dotfiles_generation_dir
 : > "$TEST_LOG"
-zsh -fic '. "$FRAGMENT"; (( $+functions[compdef] ))' 2>/dev/null
+zsh -fic '. "$FRAGMENT"; (( $+functions[compdef] ))'
 [ "$(cat "$TEST_LOG")" = fzf-init ]
 export _dotfiles_generation_dir="$generation"
 
 rm "$tmp/bin/fzf"
 : > "$TEST_LOG"
-zsh -fic '. "$FRAGMENT"' 2>/dev/null
+zsh -fic '. "$FRAGMENT"'
 if grep -q '^fzf-tab$' "$TEST_LOG"; then
     printf 'fzf-tab loaded without fzf\n' >&2
     exit 1

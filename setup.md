@@ -26,6 +26,10 @@ Before first initialization, bootstrap creates `~/.config` with owner-only
 permissions only if it is absent. An existing directory with different permissions
 still requires review; bootstrap does not silently tighten it.
 
+The managed `.config`, `.config/daem` and `.config/dotfiles` directories use
+`0700`; `.config/daem/daem.toml` uses `0600`. These are declared target modes,
+not a rule that retains any stricter existing mode.
+
 On a stop, back up affected files and link targets privately. Once chezmoi is
 bound to this checkout, review and choose changes interactively:
 

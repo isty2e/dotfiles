@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-# shell plugin declaration: {{ include "private_dot_config/dotfiles/shell/plugins.toml" | sha256sum }}
+# shell plugin declaration: {{ include "private_dot_config/private_dotfiles/shell/plugins.toml" | sha256sum }}
 config="$CHEZMOI_DEST_DIR/.config/dotfiles/shell/plugins.toml"
 state="$CHEZMOI_DEST_DIR/.local/share/dotfiles/sheldon"
 generations="$state/generations"

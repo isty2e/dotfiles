@@ -11,10 +11,12 @@ Back up startup files, managed settings, symlink targets and native workspaces t
 a private location outside Git. Inspect `chezmoi diff` before applying. Keep
 machine values and secrets in the existing local files, not the shared sources:
 
-- `~/.config/dotfiles/local.sh`: machine-specific paths and shell settings.
-- `~/.config/dotfiles/credentials.sh` or `~/.config/shell/credentials.sh`:
-  trusted shell code containing credentials. Only readable, user-owned files
-  with no group/other permissions are loaded; use 0600.
+- `~/.config/dotfiles/device/local.sh`: machine-specific paths and shell settings;
+  the existing `local.sh` remains a fallback when this file is absent.
+- `~/.config/dotfiles/device/credentials.sh`: trusted shell code containing
+  credentials. Only readable, user-owned files with no group/other permissions
+  are loaded; use 0600. The old `~/.config/dotfiles/credentials.sh` remains a
+  Linux-only fallback.
 
 The managed `.config` and `.config/dotfiles` directories use 0700. This can remove
 access previously granted to other users; review shared-home requirements first.
@@ -93,13 +95,45 @@ source editing, updates, drift handling and local-state exclusions.
 
 ## Shell settings
 
-Interactive Bash and Zsh share fragments under `~/.config/dotfiles/shell`.
-Noninteractive shells do not activate environments. Local settings load before
-platform and environment setup. Zsh options include `autocd`; Colemak bindings
-are intentional. Bash keeps its own history and completion behavior.
+Interactive Bash and Zsh use the following ownership boundaries under
+`~/.config/dotfiles/`. Noninteractive shells do not initialize this profile.
+
+| Location | Responsibility |
+| --- | --- |
+| `shell/platforms/macos.sh`, `linux.sh` | OS defaults: listing flags, SDK/locale, historical profile defaults |
+| `device/local.sh` (unmanaged) | This device's paths and overrides; loaded after OS defaults, before tools |
+| `shell/preferences.sh` | Shared editor, clipboard, aliases and command preferences |
+| `shell/integrations/` | Optional Homebrew, mise/Pixi, Slurm and prompt integration on either OS |
+| `shell/bash/`, `shell/zsh/` | Shell-native handoff, completion, history and plugin mechanics |
+
+The entrypoints show these stages explicitly. Ordinary Zsh options live directly
+in `.zshrc`. Device settings can override platform defaults and shared editor
+choices. For example, put `BREW_LOCATION`, `DOTFILES_PIXI_BASE_MANIFEST`,
+`DOTFILES_RSYNC_BACKUP_DIR` or `DK_VAULT_PATH` in `device/local.sh` rather than
+creating a hostname profile in Git. `DOTFILES_ZSH_HISTORY_SIZE` controls retention;
+`DOTFILES_BASH_HISTORY_SYNC=0` disables prompt-time history writes on an NFS device,
+regardless of OS. Existing defaults remain macOS on/Linux off for the latter.
+
+Create the device directory privately (`mkdir -m 700 ~/.config/dotfiles/device`).
+If `device/local.sh` is absent, the existing `local.sh` is still loaded; the two
+are never merged or both executed. No automatic move is performed. These files
+are trusted shell code and must remain outside Git.
+
+Private `device/credentials.sh` is an opt-in path on either OS. It must be
+user-owned, readable and have no group/other access, normally 0600. An unsafe
+canonical file is skipped with a warning, not replaced by a lower-priority file.
+The old `credentials.sh` location retains its Linux-only execution scope when
+the canonical file is absent. Existing macOS legacy credential files are not
+newly executed. Credential loading preserves the caller's export setting.
+
+Zsh options include `autocd`; Colemak bindings are intentional. Bash retains its
+own history and completion behavior. Homebrew availability and Slurm commands do
+not identify a device as a particular operating system or cluster.
 
 SSH interactive Bash hands off to an available Zsh unless `DOTFILES_KEEP_BASH=1`
-or a handoff guard is active. Set machine-specific options in `local.sh`.
+or a handoff guard is active. This happens before profile/device code to avoid
+executing it twice; pass a handoff guard in the invoking environment, not only in
+the device file.
 Starship supplies the prompt when installed. Existing tmux sessions keep their
 current environments; new shells read the deployed settings.
 

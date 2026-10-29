@@ -62,7 +62,7 @@ for plugin in \
 done
 EOF
 
-fragment="$repo/home/private_dot_config/private_dotfiles/shell/zsh-plugins.zsh"
+fragment="$repo/home/private_dot_config/private_dotfiles/shell/zsh/plugins.zsh"
 export HOME="$tmp/home" PATH="$tmp/bin:/usr/bin:/bin" TEST_LOG="$tmp/log" FRAGMENT="$fragment" TERM=xterm
 export _dotfiles_generation_dir="$generation"
 

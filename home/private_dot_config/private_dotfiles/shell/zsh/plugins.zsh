@@ -1,5 +1,11 @@
-# Plugin setup belongs to chezmoi apply, never to interactive shell startup.
+# Bootstrap prepares plugins; interactive startup only loads a ready generation.
 [[ -o interactive ]] || return 0
+
+# Homebrew completion must be prepared before compinit, on either OS.
+if [[ -n ${HOMEBREW_PREFIX:-} && -n ${_dotfiles_generation_dir:-} &&
+      -r $_dotfiles_generation_dir/repos/github.com/ohmyzsh/ohmyzsh/plugins/brew/brew.plugin.zsh ]]; then
+    source "$_dotfiles_generation_dir/repos/github.com/ohmyzsh/ohmyzsh/plugins/brew/brew.plugin.zsh" || :
+fi
 
 # Completion definitions must be on fpath before compinit.
 if [[ -n ${_dotfiles_generation_dir:-} &&

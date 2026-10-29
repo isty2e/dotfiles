@@ -1,4 +1,5 @@
 __pycache__/
+/home/private_dot_config/private_dotfiles/device/
 /workspaces/pixi-base/*
 !/workspaces/pixi-base/pixi.toml
 /workspaces/daem/*

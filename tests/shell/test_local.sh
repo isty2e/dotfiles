@@ -16,13 +16,13 @@ if [ "$2" = %u ] && [ "${TEST_OTHER_OWNER:-}" = yes ]; then
     printf '999999\n'
     exit
 fi
-if /usr/bin/stat -c "$2" "$4" 2>/dev/null; then
-    exit
+if [ "$1" = -f ]; then
+    target=$3
+else
+    target=$4
 fi
-case $2 in
-    %a) /usr/bin/stat -f '%Lp' "$4" ;;
-    %u) /usr/bin/stat -f '%u' "$4" ;;
-esac
+case $2 in %a|%Lp) gnu=%a; bsd=%Lp ;; %u) gnu=%u; bsd=%u ;; esac
+/usr/bin/stat -c "$gnu" "$target" 2>/dev/null || /usr/bin/stat -f "$bsd" "$target"
 EOF
 chmod +x "$tmp/bin/"*
 
@@ -65,7 +65,7 @@ EOF
 printf '%s\n' "TEST_FAKE_KEY='fake value with spaces'" "mode='fake mode'" "file='fake file'" > "$credential_file"
 chmod 600 "$credential_file"
 export HOME="$tmp/home" PATH="$tmp/bin:/usr/bin:/bin"
-export TEST_LOADER="$repo/home/private_dot_config/private_dotfiles/shell/local-loader.sh"
+export TEST_LOADER="$repo/home/private_dot_config/private_dotfiles/shell/device.sh"
 
 for shell in bash zsh; do
     executable=$(command -v "$shell")
@@ -105,5 +105,35 @@ bash --noprofile --norc "$tmp/check.sh"
 rm "$local_file"
 TEST_EXPECT_LOCAL=no; export TEST_EXPECT_LOCAL
 zsh -f "$tmp/check.sh"
+
+# Canonical device files work on either OS and are selected instead of legacy files.
+mkdir "$tmp/home/.config/dotfiles/device"
+cat > "$tmp/home/.config/dotfiles/device/local.sh" <<'EOF'
+TEST_LOCATION='local value with spaces'
+export DK_VAULT_PATH="$TEST_VAULT_LOCATION"
+EOF
+printf 'TEST_LOCATION=wrong-legacy-value\n' > "$local_file"
+printf '%s\n' "TEST_FAKE_KEY='fake value with spaces'" "mode='fake mode'" "file='fake file'" \
+    > "$tmp/home/.config/dotfiles/device/credentials.sh"
+printf 'TEST_FAKE_KEY=wrong-legacy-value\n' > "$credential_file"
+chmod 600 "$credential_file" "$tmp/home/.config/dotfiles/device/credentials.sh"
+TEST_EXPECT_LOCAL=yes; export TEST_EXPECT_LOCAL
+for TEST_PLATFORM in Linux Darwin; do
+    export TEST_PLATFORM
+    for shell in /bin/bash /bin/zsh; do
+        TEST_EXPECT_KEY=yes; export TEST_EXPECT_KEY
+        for TEST_ALLEXPORT in yes no; do
+            export TEST_ALLEXPORT
+            "$shell" "$tmp/check.sh"
+        done
+        chmod 644 "$tmp/home/.config/dotfiles/device/credentials.sh"
+        TEST_EXPECT_KEY=no; export TEST_EXPECT_KEY
+        "$shell" "$tmp/check.sh" 2> "$tmp/warning"
+        [ -s "$tmp/warning" ]
+        chmod 600 "$tmp/home/.config/dotfiles/device/credentials.sh"
+        TEST_OTHER_OWNER=yes "$shell" "$tmp/check.sh" 2> "$tmp/warning"
+        [ -s "$tmp/warning" ]
+    done
+done
 
 printf 'Local shell configuration tests passed\n'

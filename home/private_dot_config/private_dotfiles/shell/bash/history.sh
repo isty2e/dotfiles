@@ -4,9 +4,8 @@ HISTSIZE=1000
 HISTFILESIZE=2000
 shopt -s histappend checkwinsize
 
-# On macOS, share new Bash entries at each prompt. Do not add this extra writer
-# on Linux, where the cluster home uses NFS.
-if [ "$(uname -s)" = Darwin ]; then
+# A device with NFS may disable prompt-time writes regardless of its OS.
+if [ "${DOTFILES_BASH_HISTORY_SYNC:-0}" = 1 ]; then
     _dotfiles_history_sync() {
         local _dotfiles_status=$?
         history -a

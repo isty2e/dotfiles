@@ -1,4 +1,3 @@
-# Do not transition child Bash sessions back to Zsh.
 [[ -o interactive ]] || return 0
 export DOTFILES_ZSH_ACTIVE=1
 
@@ -8,12 +7,28 @@ case :$PATH: in
     *) export PATH="$HOME/.local/bin:$PATH" ;;
 esac
 
-# Machine settings precede tool activation and interactive features.
 _dotfiles_shell_dir="$HOME/.config/dotfiles/shell"
-for _dotfiles_file in local-loader.sh plugin-paths.sh platform.sh common.sh environment.sh \
-    zsh-options.zsh zsh-plugins.zsh prompt.sh; do
-    if [[ -r "$_dotfiles_shell_dir/$_dotfiles_file" ]]; then
-        source "$_dotfiles_shell_dir/$_dotfiles_file"
-    fi
-done
-unset _dotfiles_file _dotfiles_shell_dir
+
+# OS defaults, then this device's overrides.
+[[ ! -r $_dotfiles_shell_dir/platform.sh ]] || source "$_dotfiles_shell_dir/platform.sh"
+[[ ! -r $_dotfiles_shell_dir/device.sh ]] || source "$_dotfiles_shell_dir/device.sh"
+
+# Shared preferences and existing tools; none of these installs software.
+[[ ! -r $_dotfiles_shell_dir/generation.sh ]] || source "$_dotfiles_shell_dir/generation.sh"
+[[ ! -r $_dotfiles_shell_dir/integrations/homebrew.sh ]] || source "$_dotfiles_shell_dir/integrations/homebrew.sh"
+[[ ! -r $_dotfiles_shell_dir/preferences.sh ]] || source "$_dotfiles_shell_dir/preferences.sh"
+[[ ! -r $_dotfiles_shell_dir/integrations/slurm.sh ]] || source "$_dotfiles_shell_dir/integrations/slurm.sh"
+[[ ! -r $_dotfiles_shell_dir/integrations/environment.sh ]] || source "$_dotfiles_shell_dir/integrations/environment.sh"
+
+# Ordinary Zsh preferences live here, not behind another loader.
+HISTSIZE=${DOTFILES_ZSH_HISTORY_SIZE:-${HISTSIZE:-1024}}
+SAVEHIST=$HISTSIZE
+HISTFILE="${HISTFILE:-$HOME/.zsh_history}"
+setopt append_history hist_ignore_all_dups hist_expire_dups_first share_history
+setopt always_to_end complete_in_word extendedglob glob_complete
+setopt auto_cd auto_remove_slash chase_links list_rows_first
+unsetopt correct
+
+[[ ! -r $_dotfiles_shell_dir/zsh/plugins.zsh ]] || source "$_dotfiles_shell_dir/zsh/plugins.zsh"
+[[ ! -r $_dotfiles_shell_dir/integrations/prompt.sh ]] || source "$_dotfiles_shell_dir/integrations/prompt.sh"
+unset _dotfiles_shell_dir

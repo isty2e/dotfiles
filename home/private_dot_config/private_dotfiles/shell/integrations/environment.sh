@@ -35,8 +35,9 @@ if [ -z "${PIXI_PROJECT_MANIFEST:-}" ] && [ -z "${CONDA_PREFIX:-}" ] &&
     elif [ -n "${PIXI_ENVS_HOME:-}" ]; then
         _dotfiles_manifest="$PIXI_ENVS_HOME/base/pixi.toml"
     elif [ -r "$HOME/.config/dotfiles/shell/workspaces.sh" ]; then
+        # shellcheck source=/dev/null
         . "$HOME/.config/dotfiles/shell/workspaces.sh"
-        _dotfiles_manifest=$_dotfiles_repository_manifest
+        _dotfiles_manifest=${_dotfiles_repository_manifest:-}
     elif [ -d "$HOME/pixi_envs/base/.pixi/envs/default" ]; then
         _dotfiles_manifest="$HOME/pixi_envs/base/pixi.toml"
     else

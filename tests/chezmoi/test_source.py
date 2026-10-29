@@ -259,6 +259,8 @@ class ChezmoiSourceTests(unittest.TestCase):
             self.source / "workspaces/pixi-base/.pixi/envs/default/bin/python",
             self.destination / "pixi-env/base/.pixi/envs/default/bin/python",
             self.destination / ".config/dotfiles/local.sh",
+            self.destination / ".config/dotfiles/device/local.sh",
+            self.destination / ".config/dotfiles/device/credentials.sh",
         )
         for path in fixtures:
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -310,6 +312,8 @@ class ChezmoiSourceTests(unittest.TestCase):
             "workspaces/daem/daem.lock.toml",
             "workspaces/daem/.daem/state.json",
             "home/private_dot_config/nvim/lazy-lock.json",
+            "home/private_dot_config/private_dotfiles/device/local.sh",
+            "home/private_dot_config/private_dotfiles/device/credentials.sh",
         )
         for relative in fixtures:
             path = self.source / relative

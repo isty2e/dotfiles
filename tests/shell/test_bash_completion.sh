@@ -57,7 +57,7 @@ expect {
 }
 EOF
 
-fragment="$repo/home/private_dot_config/private_dotfiles/shell/bash-completion.sh"
+fragment="$repo/home/private_dot_config/private_dotfiles/shell/bash/completion.sh"
 for shell in /bin/bash /opt/homebrew/bin/bash; do
     [ -x "$shell" ] || continue
     : > "$tmp/log"

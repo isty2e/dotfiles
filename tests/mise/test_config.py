@@ -3,15 +3,12 @@ import os
 import shutil
 import subprocess
 import tempfile
+import tomllib
 import unittest
 from pathlib import Path
 from typing import TypedDict, cast
 
-import tomllib
-
-SOURCE = (
-    Path(__file__).resolve().parents[2] / "home/private_dot_config/mise/config.toml"
-)
+SOURCE = Path(__file__).resolve().parents[2] / "workspaces/mise/config.toml"
 MISE = os.environ.get("MISE")
 
 
@@ -94,6 +91,28 @@ class MiseConfigTests(unittest.TestCase):
         self.assertEqual(selected[0]["requested_version"], "1.85.0")
         self.assertFalse(selected[0]["installed"])
         self.assertEqual(self.target.read_bytes(), SOURCE.read_bytes())
+
+    def test_native_global_edit_writes_through_directory_binding(self) -> None:
+        assert MISE is not None
+        workspace = self.root / "checkout/workspaces/mise"
+        workspace.parent.mkdir(parents=True)
+        self.target.parent.rename(workspace)
+        self.target.parent.symlink_to(workspace, target_is_directory=True)
+        result = subprocess.run(
+            [MISE, "use", "--global", "--remove", "node"],
+            env=self.environment,
+            cwd=self.home,
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertNotIn(
+            "node", tomllib.loads((workspace / "config.toml").read_text())["tools"]
+        )
+        self.assertTrue(self.target.parent.is_symlink())
+        self.assertFalse((self.home / ".local/share/mise/installs").exists())
 
 
 if __name__ == "__main__":

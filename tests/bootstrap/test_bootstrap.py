@@ -4,10 +4,9 @@ import shlex
 import shutil
 import subprocess
 import tempfile
+import tomllib
 import unittest
 from pathlib import Path
-
-import tomllib
 
 REPO = Path(__file__).resolve().parents[2]
 CHEZMOI = shutil.which(os.environ.get("CHEZMOI", "chezmoi"))
@@ -26,6 +25,20 @@ class _BootstrapTests(unittest.TestCase):
         shutil.copyfile(REPO / "bootstrap.sh", self.repo / "bootstrap.sh")
         shutil.copyfile(REPO / ".chezmoiroot", self.repo / ".chezmoiroot")
         shutil.copytree(REPO / "home", self.repo / "home")
+        for workspace, filename in (
+            ("mise", "config.toml"),
+            ("daem", "daem.toml"),
+            ("pixi-base", "pixi.toml"),
+            ("sheldon", "plugins.toml"),
+        ):
+            target = self.repo / "workspaces" / workspace / filename
+            target.parent.mkdir(parents=True)
+            shutil.copyfile(REPO / "workspaces" / workspace / filename, target)
+        (self.repo / "scripts").mkdir()
+        shutil.copyfile(
+            REPO / "scripts/install-shell-plugins.sh",
+            self.repo / "scripts/install-shell-plugins.sh",
+        )
         self.utilities = self.root / "utilities"
         self.utilities.mkdir()
         for name in (
@@ -39,6 +52,7 @@ class _BootstrapTests(unittest.TestCase):
             "mv",
             "rmdir",
             "cat",
+            "chmod",
         ):
             executable = shutil.which(name)
             assert executable is not None
@@ -284,11 +298,11 @@ class BootstrapNativeTests(_BootstrapTests):
         self.assertEqual(tomllib.loads(config.read_text())["sourceDir"], str(self.repo))
         self.assertEqual(
             (self.home / ".config/mise/config.toml").read_bytes(),
-            (REPO / "home/private_dot_config/mise/config.toml").read_bytes(),
+            (REPO / "workspaces/mise/config.toml").read_bytes(),
         )
         self.assertEqual(
             (self.home / "mise-calls").read_text().splitlines()[0],
-            str(self.home / ".config/mise/config.toml"),
+            str(self.repo / "workspaces/mise/config.toml"),
         )
         self.assertCountEqual(
             (self.home / "mise-calls").read_text().splitlines()[1:],
@@ -317,7 +331,7 @@ class BootstrapNativeTests(_BootstrapTests):
         result = self._run_bootstrap()
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(config.read_bytes(), original)
-        self.assertEqual((self.home / "mise-calls").read_bytes(), calls)
+        self.assertEqual((self.home / "mise-calls").read_bytes(), calls * 2)
 
     def test_conflicting_binding_preserves_config_and_does_not_apply(self) -> None:
         other = self.root / "another checkout"

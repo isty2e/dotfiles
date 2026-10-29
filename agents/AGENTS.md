@@ -293,6 +293,13 @@ reporting or the next authorized delivery step.
 
 ### Execution
 
+- Before editing a home configuration, find its canonical source. For these
+  dotfiles, edit ordinary settings in the chezmoi source and native tool manifests
+  in their workspace; see `docs/manifest-management.md` in the dotfiles checkout.
+  Do not overwrite live differences, bulk-import home files, commit generated
+  locks/state, or deploy a source edit without authorization. Installed agent
+  resources remain owned by daem, not by direct edits to their generated copies.
+
 - Do not test documentation by asserting that it contains specific prose, or API surfaces by asserting symbol
   presence/absence. Test behavior and contracts through executable examples, imports/calls, type/interface checks, or
   generated artifacts. If literal output is itself a contract, test its producer, not its documentation.

@@ -1,132 +1,85 @@
 # Editing managed configuration
 
-Chezmoi copies managed configuration into your home. Edit those files normally,
-then use `dotfiles-capture` to bring eligible edits back into the checkout. This
-workflow covers shell startup files, editor settings, mise, daem and the managed
-Pixi manifest.
-
-## Capture local edits
-
-**Do not bulk-capture before the first reviewed apply, including for newly managed
-files.** An existing startup file may contain credentials. Follow
-[first apply on an existing home](../setup.md#first-apply-on-an-existing-home)
-before enrolling it in this workflow.
-
-After adopting the command, preflight and collect local-only edits:
+Edit ordinary settings in `home/`, review the Git diff, then apply them with
+chezmoi. `chezmoi source-path <target>` locates a managed file's source;
+`chezmoi edit <target>` opens it. Agents can edit the source files directly.
+Do not treat an edit request as permission to deploy it to the current home.
 
 ```sh
-dotfiles-capture --check
-dotfiles-capture
-chezmoi git -- diff
+chezmoi edit ~/.config/helix/config.toml
+chezmoi diff ~/.config/helix/config.toml
+chezmoi apply --less-interactive --error-on-conflict ~/.config/helix/config.toml
 ```
 
-The command compares native recorded state, desired source and live files before
-any capture. A blocked file stops the whole selected batch; unchanged files are
-skipped. Use `dotfiles-capture ~/.zshrc` to narrow the declared selection. It needs
-Python 3.9+ and the tested chezmoi 2.73.3 adapter; unsupported versions stop without
-capture. `home/.chezmoidata.toml` declares automatic-capture paths, with `.` meaning
-all eligible managed files. It never enrolls unmanaged files.
+Generated chezmoi configuration sets `lessInteractive = true`. Existing users
+must add that setting to their local chezmoi configuration or review and run
+`chezmoi init` to regenerate it. Bootstrap and the update example below also pass
+the conflict flags explicitly. A conflict can leave earlier entries applied;
+chezmoi does not create a backup or roll back the operation.
 
-The repository does not pin an existing Homebrew installation. A Homebrew upgrade
-or a fresh bootstrap that installs a newer chezmoi can therefore stop guarded
-capture until that version passes compatibility tests. During that interval,
-use native `chezmoi diff` and explicit-target `chezmoi re-add <target>` only after
-reviewing which version to keep; then review `chezmoi git -- diff`. This bypasses
-the guard, so do not replace it with unrestricted bulk `re-add`.
+## Tool declarations
 
-For a blocked preflight, inspect `chezmoi status` and `chezmoi diff` locally.
-Diff output may contain private values.
-
-[The first status column compares live files with chezmoi's recorded state; the
-second shows what apply would change](https://www.chezmoi.io/reference/commands/status/).
-The leading space in these examples matters:
-
-| Status | Meaning | Before capture |
+| Declaration | Source | Native editing path |
 | --- | --- | --- |
-| ` M` | Apply would change a file with no recorded live edit; this can also be an existing file chezmoi has never written. | Review desired output and effective settings, then apply before guarded capture. |
-| `MM` | The live file differs from both the recorded state and the desired output. This alone does not prove that the source was also edited. | The guard can collect live-only edits; if the source also changed, reconcile the versions first. |
-| ` R` | Apply would run a script. | Review its installation effects; it is not a file to capture. |
+| CLI tools | `workspaces/mise/config.toml` | `mise use --global …` |
+| Agent environment | `workspaces/daem/daem.toml` | `daem add …`, then review and use native lock/apply |
+| Python environment | `workspaces/pixi-base/pixi.toml` | Run Pixi in that directory or use `--manifest-path` |
+| Shell plugins | `workspaces/sheldon/plugins.toml` | Edit, then run `sh scripts/install-shell-plugins.sh` |
+| Neovim plugins | `home/private_dot_config/nvim/lua/plugins/` | Edit declarations, apply, then use `:NvimSetup` or `:Lazy` |
 
-Review other additions and deletions too. Reconcile changes manually or with
-`chezmoi merge ~/.zshrc`, using the configured merge tool. Native `re-add` is not a
-merge: it copies live files into the source, including when only the source has
-changed. Avoid bulk capture into an ahead-of-deployment development checkout.
+Chezmoi links the **directories** `~/.config/mise` and `~/.config/daem` to their
+workspaces. Native commands and atomic file replacement therefore reach the same
+source, rather than detached copies. Do not replace these with individual-file
+links. The daem workspace is protected as 0700 and its initial manifest as 0600
+before its binding is installed. Preserve private permissions when editing it.
 
-[Without targets, `re-add` captures all modified managed files](https://www.chezmoi.io/reference/commands/re-add/).
-Calling it directly bypasses the guard. Keep native `re-add` for deliberate manual
-reconciliation, with explicit targets. Review the captured diff and commit with
-Git. Nothing commits or pushes automatically.
-Keep credentials and machine-only state out of the source. Run `chezmoi managed`
-to list the files; a separate inventory is not needed.
+Git tracks authored settings and dependency declarations, not installation
+results. Pixi's `.pixi/` and `pixi.lock`, daem's `.daem/` and `daem.lock.toml`,
+and Neovim's live `lazy-lock.json` stay local. Required locks and ownership state
+are **not disposable** just because Git ignores them. Do not use `git clean -fdx`
+on the operational checkout or delete it as a rollback strategy.
 
-Capture also updates chezmoi's comparison state. Save the captured source in Git
-before switching revisions, restoring files or stashing it. Applying a revision
-without those edits can overwrite the live files without a conflict prompt.
+Exact dependency resolution from a Git commit is a **NON-GOAL**. Preserve explicit
+compatibility constraints in declarations, including the Tree-sitter legacy-API
+pin. A local lock may support native restore on that machine, but it is not a
+shared installation snapshot.
 
-`re-add` leaves templates unchanged and ignores external and non-file entries.
-Edit template sources with `chezmoi edit`, then apply their targets. Add new files
-explicitly after reviewing them; bulk capture does not enroll unmanaged files.
+## Apply, install and update
 
-You can also edit from the source side. For example:
+Ordinary `chezmoi apply` places configuration and bindings; it does not run mise,
+Pixi, daem, editor setup or Sheldon installation. Its only setup script protects
+the daem workspace's private permissions. `sh bootstrap.sh` explicitly installs
+mise tools and prepares shell plugins after successful configuration placement.
+Other installation and update operations remain with their native tools.
+
+Keep the operational checkout at a stable path. Use separate worktrees for
+speculative changes: `workspaces/` files are live inputs to native commands, even
+before another chezmoi apply. Git rollback does not roll back installed packages.
+
+Before pulling, commit or deliberately set aside declaration edits, and inspect
+any differences in deployed ordinary files. Then, from the operational checkout:
 
 ```sh
-chezmoi edit --apply ~/.zshrc
+git pull --ff-only
+chezmoi diff
+chezmoi apply --less-interactive --error-on-conflict
 ```
 
-For other repository edits, review `chezmoi diff` before `chezmoi apply`.
+Run the relevant native install/update only when intended. No update-all wrapper
+or exact chezmoi runtime-version allowlist is used. CI's chosen chezmoi version is
+a test input, not a restriction on users' installed versions.
 
-For routine upstream updates after local edits are captured and committed, use
-`chezmoi update --less-interactive --error-on-conflict` rather than a separate
-pull followed later by apply. This also protects existing targets newly enrolled
-by an update. By default, update runs `git pull --autostash --rebase` and then
-applies, including installation actions. This is not atomic: if apply fails after
-the pull, inspect status and diff again before capture or retry. For manual
-resolution, use `chezmoi apply --less-interactive` after reviewing differences.
+## Unexpected live edits
 
-One checkout is sufficient for ordinary use. A separate development worktree is
-optional when preparing changes that must remain separate from live configuration.
+If a person or program changed a deployed ordinary file, compare it with its
+source. Preserve the wanted changes in the source and review the result before
+applying. For an ordinary non-template file, a deliberately selected
+`chezmoi re-add <target>` is also available after confirming the source has no
+independent changes. Do not bulk import the home: private and unrelated changes
+must not enter Git. There is no custom reverse-capture command.
 
-See the [capture contract](capture-guard.md) for exclusions, exit statuses and
-partial-failure limits. It does not replace secret scanning or protect a later
-apply of an older revision.
-
-## Manifests and local state
-
-Mise's source is `home/private_dot_config/mise/config.toml`. The default Pixi
-source, `home/pixi-env/base/pixi.toml`, becomes `~/pixi-env/base/pixi.toml`. Under
-normal Pixi settings, its lockfile and `.pixi/` environment live beside that file.
-Keep them out of the managed source. Copying the manifest does not install or move
-an environment; native Pixi commands keep their usual installation behavior.
-
-An existing `~/pixi_envs/base` or custom base path stays where it is. Selecting it
-through shell settings does not make its manifest a chezmoi-managed target.
-Until that path is explicitly adopted, review and copy only its TOML to or from
-the repository source instead of expecting bulk `re-add` to capture it.
-
-Daem's source is `home/private_dot_config/private_daem/private_daem.toml`, placed at
-`~/.config/daem/daem.toml`. It uses the same copy-and-capture workflow as mise.
-Review the existing user manifest before its first managed apply. Keep its
-lockfile, caches and installed state local. Placing the manifest does not run
-daem lock/apply or deploy agent instructions and settings.
-
-For the installed user configuration, select the manifest explicitly with
-`--manifest "${XDG_CONFIG_HOME:-$HOME/.config}/daem/daem.toml"`. Running from the
-source directory instead selects a project workspace and can create
-`daem.lock.toml` and `.daem/` there. Git and chezmoi exclude both at the source
-location. These rules do not delete existing local state.
-
-Pi themes use [manual installation](../pi/README.md#install) from `pi/themes/`.
-Agent instructions live under `agents/`. Chezmoi does not deploy Pi settings or
-agent instructions, and their installed copies are outside bulk capture.
-
-## Why not mix copies and links?
-
-One copy-and-capture workflow avoids having to remember which edits reach Git
-immediately. It also keeps checkout updates separate from installed configuration
-until apply. Use a symlink only for a concrete application need or a deliberate
-change to that workflow.
-
-Pixi additionally [resolves the manifest's real path during workspace discovery](https://github.com/prefix-dev/pixi/blob/v0.83.0/crates/pixi_manifest/src/discovery.rs),
-so linking its manifest into the repository changes its workspace address.
-Regular-file placement keeps the manifest and environment together without extra
-environment links.
+Secrets, machine-specific `local.sh`, credentials and installed agent resources
+remain with their existing owners. Native daem commands own installed skills and
+instructions; do not edit generated installations to bypass their manifest.
+See [setup and migration](../setup.md) before adopting this layout on an existing
+home. Pi themes retain their [manual installation](../pi/README.md#install).

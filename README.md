@@ -21,8 +21,9 @@ sh bootstrap.sh
 ```
 
 - [Setup](setup.md): shell settings, tools, Pixi and tests.
-- [Edit and capture configuration](docs/manifest-management.md): bring local edits
-  back into Git with the guarded `dotfiles-capture` command.
+- [Editing configuration](docs/manifest-management.md): edit ordinary settings
+  in their source; native tool commands edit shared manifests directly. Generated
+  lockfiles and installed environments remain local.
 - [Vim](docs/vim.md) and [Neovim](docs/neovim.md): explicit plugin setup and recovery.
 - [Colemak keymaps](docs/keymaps.md): shared keys and editor-specific bindings.
 - [Pi PaperColor themes](pi/README.md): optional theme installation.

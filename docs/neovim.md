@@ -20,7 +20,8 @@ state and caches are separate; selecting another config does not isolate them.
 
 Start Neovim, run `:NvimSetup`, inspect `:Lazy`, then restart. Setup downloads a
 missing lazy.nvim manager from its `stable` branch and installs missing plugins
-and unfinished builds at lockfile revisions. It reuses existing managers and
+and unfinished builds using a local lockfile when present, otherwise the plugin
+declarations. It reuses existing managers and
 healthy checkouts without running update, sync, clean or restore.
 
 Setup uses the network and executes third-party plugin code. Run it explicitly:
@@ -33,7 +34,8 @@ incomplete manager directory already exists, setup leaves it alone; move it asid
 before retrying. Inspect plugin failures and retries in `:Lazy`.
 
 Use `:Lazy restore` to return plugins to `lazy-lock.json` revisions. After an
-intentional `:Lazy update`, review and commit the lockfile. The Tree-sitter
+intentional `:Lazy update`, keep the generated lockfile local; it is not tracked
+or deployed by chezmoi. Plugin declarations are the shared source. The Tree-sitter
 declaration pins its legacy API; a newer API needs configuration changes.
 
 For the native Telescope sorter, run `make` in the installed

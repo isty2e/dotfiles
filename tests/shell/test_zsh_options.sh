@@ -8,7 +8,7 @@ tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT HUP INT TERM
 mkdir -p "$tmp/home" "$tmp/zdotdir"
 
-options="$repo/home/private_dot_config/dotfiles/shell/zsh-options.zsh"
+options="$repo/home/private_dot_config/private_dotfiles/shell/zsh-options.zsh"
 env -i HOME="$tmp/home" PATH=/usr/bin:/bin TERM=xterm ZSH_OPTIONS="$options" zsh -fic '
     . "$ZSH_OPTIONS"
     [[ $HISTFILE == "$HOME/.zsh_history" && $SAVEHIST == $HISTSIZE ]] || exit 1

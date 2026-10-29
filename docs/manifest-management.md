@@ -103,7 +103,7 @@ through shell settings does not make its manifest a chezmoi-managed target.
 Until that path is explicitly adopted, review and copy only its TOML to or from
 the repository source instead of expecting bulk `re-add` to capture it.
 
-Daem's source is `home/private_dot_config/daem/daem.toml`, placed at
+Daem's source is `home/private_dot_config/private_daem/private_daem.toml`, placed at
 `~/.config/daem/daem.toml`. It uses the same copy-and-capture workflow as mise.
 Review the existing user manifest before its first managed apply. Keep its
 lockfile, caches and installed state local. Placing the manifest does not run

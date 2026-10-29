@@ -36,7 +36,7 @@ env -i HOME="$home" PATH=/usr/bin:/bin TEST_LOG="$tmp/log" RC="$repo/home/dot_zs
 [ ! -s "$tmp/log" ]
 
 # Exercise the actual handoff without starting a real Zsh or touching a login account.
-cp "$repo/home/private_dot_config/dotfiles/shell/bash-handoff.sh" "$fragments/bash-handoff.sh"
+cp "$repo/home/private_dot_config/private_dotfiles/shell/bash-handoff.sh" "$fragments/bash-handoff.sh"
 cat > "$tmp/bin/uname" <<'EOF'
 #!/bin/sh
 printf 'Linux\n'
@@ -60,7 +60,7 @@ for guard in DOTFILES_KEEP_BASH DOTFILES_ZSH_ACTIVE; do
 done
 
 # Load the actual fragments together with isolated, non-installing tool doubles.
-for path in "$repo"/home/private_dot_config/dotfiles/shell/*; do
+for path in "$repo"/home/private_dot_config/private_dotfiles/shell/*; do
     [ -f "$path" ] && cp "$path" "$fragments/"
 done
 mkdir -p "$home/pixi-env/base/.pixi/envs/default"

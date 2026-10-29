@@ -13,34 +13,42 @@ HELIX_SOURCE = REPO / "home/private_dot_config/helix"
 ZED_SOURCE = REPO / "home/private_dot_config/zed"
 PIXI_SOURCE = REPO / "home/pixi-env/base/pixi.toml"
 MISE_SOURCE = REPO / "home/private_dot_config/mise/config.toml"
-DAEM_SOURCE = REPO / "home/private_dot_config/daem/daem.toml"
+DAEM_SOURCE = REPO / "home/private_dot_config/private_daem/private_daem.toml"
 CAPTURE_SOURCE = REPO / "home/dot_local/bin/executable_dotfiles_capture.py"
 STARSHIP_SOURCE = REPO / "home/private_dot_config/starship.toml"
 SLURM_SOURCE = REPO / "home/dot_local/bin"
-SHELL_COMMON_SOURCE = REPO / "home/private_dot_config/dotfiles/shell/common.sh"
-SHELL_PLUGINS_SOURCE = REPO / "home/private_dot_config/dotfiles/shell/plugins.toml"
-SHELL_PLUGIN_PATHS_SOURCE = (
-    REPO / "home/private_dot_config/dotfiles/shell/plugin-paths.sh"
+SHELL_COMMON_SOURCE = REPO / "home/private_dot_config/private_dotfiles/shell/common.sh"
+SHELL_PLUGINS_SOURCE = (
+    REPO / "home/private_dot_config/private_dotfiles/shell/plugins.toml"
 )
-SHELL_LOCAL_SOURCE = REPO / "home/private_dot_config/dotfiles/shell/local-loader.sh"
-SHELL_HANDOFF_SOURCE = REPO / "home/private_dot_config/dotfiles/shell/bash-handoff.sh"
+SHELL_PLUGIN_PATHS_SOURCE = (
+    REPO / "home/private_dot_config/private_dotfiles/shell/plugin-paths.sh"
+)
+SHELL_LOCAL_SOURCE = (
+    REPO / "home/private_dot_config/private_dotfiles/shell/local-loader.sh"
+)
+SHELL_HANDOFF_SOURCE = (
+    REPO / "home/private_dot_config/private_dotfiles/shell/bash-handoff.sh"
+)
 SHELL_BASH_COMPLETION_SOURCE = (
-    REPO / "home/private_dot_config/dotfiles/shell/bash-completion.sh"
+    REPO / "home/private_dot_config/private_dotfiles/shell/bash-completion.sh"
 )
 SHELL_ENVIRONMENT_SOURCE = (
-    REPO / "home/private_dot_config/dotfiles/shell/environment.sh"
+    REPO / "home/private_dot_config/private_dotfiles/shell/environment.sh"
 )
 SHELL_ZSH_PLUGINS_SOURCE = (
-    REPO / "home/private_dot_config/dotfiles/shell/zsh-plugins.zsh"
+    REPO / "home/private_dot_config/private_dotfiles/shell/zsh-plugins.zsh"
 )
 SHELL_BASH_HISTORY_SOURCE = (
-    REPO / "home/private_dot_config/dotfiles/shell/bash-history.sh"
+    REPO / "home/private_dot_config/private_dotfiles/shell/bash-history.sh"
 )
 SHELL_ZSH_OPTIONS_SOURCE = (
-    REPO / "home/private_dot_config/dotfiles/shell/zsh-options.zsh"
+    REPO / "home/private_dot_config/private_dotfiles/shell/zsh-options.zsh"
 )
-SHELL_PROMPT_SOURCE = REPO / "home/private_dot_config/dotfiles/shell/prompt.sh"
-SHELL_PLATFORM_SOURCE = REPO / "home/private_dot_config/dotfiles/shell/platform.sh"
+SHELL_PROMPT_SOURCE = REPO / "home/private_dot_config/private_dotfiles/shell/prompt.sh"
+SHELL_PLATFORM_SOURCE = (
+    REPO / "home/private_dot_config/private_dotfiles/shell/platform.sh"
+)
 SHELL_BASHRC_SOURCE = REPO / "home/dot_bashrc"
 SHELL_ZSHRC_SOURCE = REPO / "home/dot_zshrc"
 _configured_chezmoi = os.environ.get("CHEZMOI")
@@ -55,14 +63,52 @@ GIT = shutil.which("git")
 
 @unittest.skipUnless(CHEZMOI, "chezmoi is required; set CHEZMOI to its executable")
 class ChezmoiSourceTests(unittest.TestCase):
-    def test_private_config_mode_survives_repeated_apply(self) -> None:
-        self._chezmoi("apply")
-        config = self.destination / ".config"
-        self.assertEqual(stat.S_IMODE(config.stat().st_mode), 0o700)
+    destination: Path
 
-        self._chezmoi("apply")
-        self._chezmoi("verify")
-        self.assertEqual(stat.S_IMODE(config.stat().st_mode), 0o700)
+    def test_private_config_mode_survives_repeated_apply(self) -> None:
+        private_modes = {
+            Path(".config"): 0o700,
+            Path(".config/daem"): 0o700,
+            Path(".config/daem/daem.toml"): 0o600,
+            Path(".config/dotfiles"): 0o700,
+        }
+        local_content = b"machine-local settings\n"
+
+        for existing in (False, True):
+            with self.subTest(existing=existing):
+                self.destination = self.root / ("existing" if existing else "fresh")
+                self.destination.mkdir()
+                local = self.destination / ".config/dotfiles/local.sh"
+                if existing:
+                    for directory in (".config", ".config/daem", ".config/dotfiles"):
+                        path = self.destination / directory
+                        path.mkdir(parents=True, exist_ok=True)
+                        path.chmod(0o700)
+
+                    declaration = self.destination / ".config/daem/daem.toml"
+                    declaration.write_bytes(DAEM_SOURCE.read_bytes())
+                    declaration.chmod(0o600)
+                    local.write_bytes(local_content)
+                    local.chmod(0o600)
+
+                for phase in ("first", "repeat", "repair"):
+                    with self.subTest(phase=phase):
+                        arguments = ["apply", "--exclude=scripts"]
+                        if phase == "repair":
+                            for relative in private_modes:
+                                path = self.destination / relative
+                                path.chmod(0o755 if path.is_dir() else 0o644)
+                            arguments.append("--force")
+
+                        self._chezmoi(*arguments)
+                        self._chezmoi("verify", "--exclude=scripts")
+                        for relative, mode in private_modes.items():
+                            path = self.destination / relative
+                            self.assertEqual(stat.S_IMODE(path.stat().st_mode), mode)
+
+                        if existing:
+                            self.assertEqual(local.read_bytes(), local_content)
+                            self.assertEqual(stat.S_IMODE(local.stat().st_mode), 0o600)
 
     def setUp(self) -> None:
         temporary = tempfile.TemporaryDirectory(prefix="chezmoi vim ")
@@ -318,7 +364,7 @@ class ChezmoiSourceTests(unittest.TestCase):
         self.source.mkdir()
         shutil.copyfile(REPO / ".chezmoiroot", self.source / ".chezmoiroot")
         shutil.copytree(REPO / "home", self.source / "home")
-        shell_source = self.source / "home/private_dot_config/dotfiles/shell"
+        shell_source = self.source / "home/private_dot_config/private_dotfiles/shell"
         (shell_source / "plugins.toml").unlink()
         (shell_source / "plugin-paths.sh").unlink()
         (shell_source / "plugins.list").write_text("legacy example.invalid/legacy\n")
@@ -438,7 +484,9 @@ class ChezmoiSourceTests(unittest.TestCase):
         shutil.copytree(REPO / "home", self.source / "home")
 
         workspace = Path(".config/daem")
-        declaration = self.source / "home/private_dot_config/daem/daem.toml"
+        declaration = (
+            self.source / "home/private_dot_config/private_daem/private_daem.toml"
+        )
         self.sources[workspace / "daem.toml"] = declaration
         artifacts = {
             Path("daem.lock.toml"): (Path("daem.lock.toml"), b"source lock"),
@@ -506,9 +554,9 @@ class ChezmoiSourceTests(unittest.TestCase):
         repository = self.root / "git checkout"
         repository.mkdir()
         shutil.copyfile(REPO / ".gitignore", repository / ".gitignore")
-        workspace = Path("home/private_dot_config/daem")
+        workspace = Path("home/private_dot_config/private_daem")
         for path in (
-            Path("daem.toml"),
+            Path(DAEM_SOURCE.name),
             Path("daem.lock.toml"),
             Path(".daem/state.json"),
             Path(".daem/cache/entry"),
@@ -538,7 +586,7 @@ class ChezmoiSourceTests(unittest.TestCase):
         )
         self.assertEqual(
             set(tracked.stdout.splitlines()),
-            {".gitignore", (workspace / "daem.toml").as_posix()},
+            {".gitignore", (workspace / DAEM_SOURCE.name).as_posix()},
         )
 
     def test_apply_replaces_config_links_and_preserves_unmanaged_state(self) -> None:

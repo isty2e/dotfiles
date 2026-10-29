@@ -65,7 +65,7 @@ EOF
 printf '%s\n' "TEST_FAKE_KEY='fake value with spaces'" "mode='fake mode'" "file='fake file'" > "$credential_file"
 chmod 600 "$credential_file"
 export HOME="$tmp/home" PATH="$tmp/bin:/usr/bin:/bin"
-export TEST_LOADER="$repo/home/private_dot_config/dotfiles/shell/local-loader.sh"
+export TEST_LOADER="$repo/home/private_dot_config/private_dotfiles/shell/local-loader.sh"
 
 for shell in bash zsh; do
     executable=$(command -v "$shell")

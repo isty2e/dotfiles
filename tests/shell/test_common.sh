@@ -64,7 +64,7 @@ eval 'rsmv source destination'
 eval 'rssync source destination'
 EOF
 
-export HOME="$tmp/home" USER=testuser TEST_WORK="$tmp/work" TEST_COMMON="$repo/home/private_dot_config/dotfiles/shell/common.sh"
+export HOME="$tmp/home" USER=testuser TEST_WORK="$tmp/work" TEST_COMMON="$repo/home/private_dot_config/private_dotfiles/shell/common.sh"
 export PATH="$tmp/bin:/usr/bin:/bin" TEST_LOG="$tmp/log"
 
 for shell in bash zsh; do

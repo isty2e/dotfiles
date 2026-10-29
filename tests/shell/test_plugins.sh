@@ -5,6 +5,7 @@ repo=$(CDPATH='' cd -- "$(dirname "$0")/../.." && pwd)
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT HUP INT TERM
 export CHEZMOI_DEST_DIR="$tmp/destination"
+export HOME="$CHEZMOI_DEST_DIR"
 export TEST_LOG="$tmp/sheldon.log"
 export PATH="$tmp/bin:/usr/bin:/bin"
 mkdir -p "$tmp/bin" "$CHEZMOI_DEST_DIR/.config/dotfiles/shell"
@@ -41,7 +42,7 @@ mkdir -p "$legacy"
 printf '%s\n' 'existing checkout' > "$legacy/marker"
 
 prepare() {
-    sh "$repo/home/run_onchange_after_install-shell-plugins.sh.tmpl" "$@"
+    sh "$repo/scripts/install-shell-plugins.sh" "$@"
 }
 
 state="$CHEZMOI_DEST_DIR/.local/share/dotfiles/sheldon"

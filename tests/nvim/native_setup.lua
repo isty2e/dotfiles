@@ -38,6 +38,7 @@ local function origin(name)
 end
 local existing_origin, existing_lock = origin "existing-origin"
 local missing_origin, missing_lock = origin "missing-origin"
+local unlocked_origin, declared_commit = origin "unlocked-origin"
 local mirror = root .. "/manager-mirror"
 vim.fn.mkdir(mirror, "p")
 for _, directory in ipairs { "lua", "plugin", "doc" } do
@@ -82,6 +83,7 @@ package.preload["lazy_setup"] = function()
     require("lazy").setup({
       { name = "existing", url = "file://" .. existing_origin },
       { name = "missing", url = "file://" .. missing_origin },
+      { name = "unlocked", url = "file://" .. unlocked_origin, commit = declared_commit },
     }, {
       root = data,
       lockfile = lockfile,
@@ -102,6 +104,8 @@ assert(not vim.uv.fs_stat(data .. "/lazy.nvim"), "startup installed the manager"
 vim.cmd "NvimSetup"
 assert(vim.fn.filereadable(data .. "/lazy.nvim/lua/lazy/init.lua") == 1)
 assert(git(data .. "/missing", "rev-parse", "HEAD") == missing_lock, "missing plugin did not use the lockfile")
+assert(git(data .. "/unlocked", "rev-parse", "HEAD") == declared_commit, "unlocked plugin ignored its declaration")
+assert(vim.json.decode(table.concat(vim.fn.readfile(lockfile), "\n")).unlocked.commit == declared_commit)
 assert(git(existing, "rev-parse", "HEAD") == existing_head, "existing plugin was restored or updated")
 assert(vim.fn.readfile(existing .. "/value")[1] == "local modification", "existing local work changed")
 vim.cmd "NvimSetup"

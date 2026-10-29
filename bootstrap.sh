@@ -6,7 +6,7 @@ case ${1-} in
         printf '%s\n' 'Usage: sh bootstrap.sh' \
             'Prepare chezmoi and mise, bind this checkout, and apply its configuration.' \
             'Missing bootstrap tools use their official installers in ~/.local/bin.' \
-            'A full apply also runs mise install when the tool declaration changes.' \
+            'Bootstrap explicitly installs mise tools and prepares shell plugins after apply.' \
             'Existing or changed targets stop apply for manual review; partial changes may remain.' \
             'Pixi environments, editor plugins, logins and shell changes remain manual.'
         exit 0
@@ -75,13 +75,24 @@ if "$chezmoi_bin" "$@"; then
 else
     rc=$?
     printf '%s\n' \
-        "chezmoi apply did not complete (exit $rc). Files or tools may already have changed." \
+        "chezmoi apply did not complete (exit $rc). Some configuration may already have changed." \
         'No rollback or automatic backup was attempted.' \
         'Back up affected files and link targets privately before resolving differences.' \
-        'If tools were just installed, add $HOME/.local/bin to PATH in this shell.' \
+        "If tools were just installed, add $HOME/.local/bin to PATH in this shell." \
         'Review: chezmoi diff' \
         'Choose changes manually: chezmoi apply --less-interactive' \
         'After resolving differences, rerun bootstrap to finish any pending setup.' >&2
+    exit "$rc"
+fi
+
+export MISE_GLOBAL_CONFIG_FILE="$repo/workspaces/mise/config.toml"
+if mise --cd "$HOME" install && sh "$repo/scripts/install-shell-plugins.sh"; then
+    :
+else
+    rc=$?
+    printf '%s\n' 'Configuration was placed, but explicit tool setup did not complete.' \
+        'Installed tools and previous plugin generations were not rolled back.' \
+        'Resolve the native error and rerun bootstrap to retry.' >&2
     exit "$rc"
 fi
 

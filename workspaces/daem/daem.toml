@@ -1,5 +1,5 @@
-# Chezmoi source for ~/.config/daem/daem.toml.
-# Run daem lock/apply explicitly from the user manifest; keep generated state local.
+# Native workspace reached through ~/.config/daem.
+# Run daem lock/apply explicitly; keep generated state local.
 
 version = 1
 targets = ["codex", "claude-code", "antigravity-cli"]

@@ -1,9 +1,9 @@
 #!/bin/sh
 set -eu
 
-# shell plugin declaration: {{ include "private_dot_config/private_dotfiles/shell/plugins.toml" | sha256sum }}
-config="$CHEZMOI_DEST_DIR/.config/dotfiles/shell/plugins.toml"
-state="$CHEZMOI_DEST_DIR/.local/share/dotfiles/sheldon"
+repo=$(CDPATH='' cd -P "$(dirname "$0")/.." && pwd)
+config="$repo/workspaces/sheldon/plugins.toml"
+state="$HOME/.local/share/dotfiles/sheldon"
 generations="$state/generations"
 current="$state/current"
 
@@ -23,9 +23,9 @@ if [ ! -x "$mise_bin" ]; then
     exit 1
 fi
 
-export MISE_GLOBAL_CONFIG_FILE="$CHEZMOI_DEST_DIR/.config/mise/config.toml"
+export MISE_GLOBAL_CONFIG_FILE="$repo/workspaces/mise/config.toml"
 sheldon=$(MISE_NOT_FOUND_AUTO_INSTALL=false MISE_AUTO_INSTALL=false \
-    "$mise_bin" --cd "$CHEZMOI_DEST_DIR" which sheldon)
+    "$mise_bin" --cd "$HOME" which sheldon)
 if [ ! -x "$sheldon" ]; then
     printf '%s\n' 'Sheldon is required; run mise install first.' >&2
     exit 1

@@ -2,10 +2,11 @@ import os
 import shutil
 import subprocess
 import tempfile
+import tomllib
 import unittest
 from pathlib import Path
 
-SOURCE = Path(__file__).resolve().parents[2] / "home/pixi-env/base/pixi.toml"
+SOURCE = Path(__file__).resolve().parents[2] / "workspaces/pixi-base/pixi.toml"
 PIXI = os.environ.get("PIXI")
 
 
@@ -51,6 +52,29 @@ class PixiManifestTests(unittest.TestCase):
                 self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
                 self.assertEqual(manifest.read_bytes(), expected)
                 self.assertFalse((root / ".pixi/envs/default").exists())
+
+            result = subprocess.run(
+                [
+                    PIXI,
+                    "workspace",
+                    "name",
+                    "set",
+                    "edited-base",
+                    "--manifest-path",
+                    str(manifest),
+                ],
+                env=environment,
+                cwd=root,
+                capture_output=True,
+                text=True,
+                timeout=30,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertEqual(
+                tomllib.loads(manifest.read_text())["workspace"]["name"], "edited-base"
+            )
+            self.assertFalse((root / ".pixi/envs/default").exists())
 
 
 if __name__ == "__main__":

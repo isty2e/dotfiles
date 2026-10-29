@@ -134,6 +134,18 @@ if grep -q 'shell-hook' "$tmp/log"; then
     exit 1
 fi
 
+mkdir -p "$tmp/repository/workspaces/pixi-base/.pixi/envs/default" "$tmp/home/.config/dotfiles/shell"
+touch "$tmp/repository/workspaces/pixi-base/pixi.toml"
+printf "_dotfiles_repository_manifest='%s'\n" "$tmp/repository/workspaces/pixi-base/pixi.toml" \
+    > "$tmp/home/.config/dotfiles/shell/workspaces.sh"
+: > "$tmp/log"
+run_shell /bin/bash > /dev/null
+grep -Fq "$tmp/repository/workspaces/pixi-base/pixi.toml" "$tmp/log"
+
+: > "$tmp/log"
+run_shell /bin/bash "PIXI_ENVS_HOME=$tmp/custom path" > /dev/null
+grep -Fq "$tmp/custom path/base/pixi.toml" "$tmp/log"
+
 rm "$tmp/bin/pixi"
 ln -s mise "$tmp/bin/pixi"
 : > "$tmp/log"

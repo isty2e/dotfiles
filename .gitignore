@@ -1,6 +1,16 @@
 __pycache__/
+/workspaces/pixi-base/*
+!/workspaces/pixi-base/pixi.toml
+/workspaces/daem/*
+!/workspaces/daem/daem.toml
+**/lazy-lock.json
+/workspaces/mise/*
+!/workspaces/mise/config.toml
+/workspaces/sheldon/*
+!/workspaces/sheldon/plugins.toml
+
+# Preserve exclusions for local state left behind by the workspace migration.
 /home/pixi-env/base/.pixi/
 /home/pixi-env/base/pixi.lock
-
 /home/private_dot_config/private_daem/daem.lock.toml
 /home/private_dot_config/private_daem/.daem/

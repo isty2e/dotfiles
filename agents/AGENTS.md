@@ -1,6 +1,6 @@
 # AGENTS.md
 
-<!-- BASE: Standigm/agent-commons@9fe55fdbb2bc2a861fddd7ba7cdf89acd43c355c -->
+<!-- BASE: Standigm/agent-commons@bfdb774d64f01d4df813806984be08460a3f39c4 -->
 
 Repository-agnostic working rules for coding agents.
 
@@ -23,6 +23,16 @@ Repository-agnostic working rules for coding agents.
     conditions; give no incumbent method an evidential advantage.
   - Hard gates govern only their decision, such as deployment, adoption, or a public claim. They stop exploration only
     for concrete material risk or an exceeded explicit budget.
+
+## Conversation
+
+For ordinary conversational replies and work reports:
+
+- Make necessary relationships explicit. Keep related facts, conditions, and consequences together, with clear
+  transitions and relevant time points. Retain connective words, clear referents, and useful repetition when they reduce
+  reading effort, even if this uses more words.
+- State actions, results, and reasons directly. Include limitations and unperformed work when they affect interpretation
+  or a decision; omit unrelated process narration.
 
 ## Scope and source discipline
 

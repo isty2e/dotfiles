@@ -111,7 +111,7 @@ env -i HOME="$home" ZDOTDIR="$tmp/zdotdir" PATH="$tmp/bin:/usr/bin:/bin" TERM=xt
     ' 2>/dev/null
 
 # A device's choices override platform defaults before tool activation.
-mkdir -p "$home/.config/dotfiles/device"
+mkdir -p "$home/.config/dotfiles/shell/device"
 cat > "$tmp/bin/uname" <<'EOF'
 #!/bin/sh
 printf '%s\n' "$TEST_PLATFORM"
@@ -129,8 +129,7 @@ cat > "$tmp/bin/device-brew" <<'EOF'
 printf 'export HOMEBREW_PREFIX=/device/brew\n'
 EOF
 chmod +x "$tmp/bin/"*
-printf 'export EDITOR=wrong-legacy-editor\n' > "$home/.config/dotfiles/local.sh"
-cat > "$home/.config/dotfiles/device/local.sh" <<'EOF'
+cat > "$home/.config/dotfiles/shell/device/local.sh" <<'EOF'
 printf 'loaded\n' >> "$TEST_DEVICE_LOG"
 export EDITOR=device-editor
 export LANG=C LC_ALL=C CPATH=/device/include

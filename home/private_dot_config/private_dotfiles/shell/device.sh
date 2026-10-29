@@ -1,14 +1,9 @@
 # Device files are private runtime input, not checked-in source dependencies.
 # shellcheck disable=SC1091
 
-# Exactly one device file is loaded; never merge an old and new local profile.
-if [ -e "$HOME/.config/dotfiles/device/local.sh" ] || [ -L "$HOME/.config/dotfiles/device/local.sh" ]; then
-    if [ -r "$HOME/.config/dotfiles/device/local.sh" ]; then
-        . "$HOME/.config/dotfiles/device/local.sh"
-    fi
-elif [ -r "$HOME/.config/dotfiles/local.sh" ]; then
-    # shellcheck source=/dev/null
-    . "$HOME/.config/dotfiles/local.sh"
+# Device-local shell configuration has a single canonical location.
+if [ -r "$HOME/.config/dotfiles/shell/device/local.sh" ]; then
+    . "$HOME/.config/dotfiles/shell/device/local.sh"
 fi
 
 # Credentials are private device data, not an operating-system property.
@@ -56,10 +51,8 @@ _dotfiles_load_credentials() {
     fi
 }
 
-if [ -e "$HOME/.config/dotfiles/device/credentials.sh" ] || [ -L "$HOME/.config/dotfiles/device/credentials.sh" ]; then
-    _dotfiles_load_credentials "$HOME/.config/dotfiles/device/credentials.sh"
-elif [ "$(uname -s)" = Linux ] && [ -e "$HOME/.config/dotfiles/credentials.sh" ]; then
-    # The legacy path keeps its previous Linux-only execution scope.
-    _dotfiles_load_credentials "$HOME/.config/dotfiles/credentials.sh"
+if [ -e "$HOME/.config/dotfiles/shell/device/credentials.sh" ] ||
+    [ -L "$HOME/.config/dotfiles/shell/device/credentials.sh" ]; then
+    _dotfiles_load_credentials "$HOME/.config/dotfiles/shell/device/credentials.sh"
 fi
 unset -f _dotfiles_load_credentials

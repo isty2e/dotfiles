@@ -4,7 +4,7 @@ set -eu
 repo=$(CDPATH='' cd -- "$(dirname "$0")/../.." && pwd)
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT HUP INT TERM
-mkdir -p "$tmp/home/.config/dotfiles" "$tmp/bin"
+mkdir -p "$tmp/home/.config/dotfiles/shell/device" "$tmp/bin"
 
 cat > "$tmp/bin/uname" <<'EOF'
 #!/bin/sh
@@ -56,8 +56,8 @@ case $- in
 esac
 EOF
 
-local_file="$tmp/home/.config/dotfiles/local.sh"
-credential_file="$tmp/home/.config/dotfiles/credentials.sh"
+local_file="$tmp/home/.config/dotfiles/shell/device/local.sh"
+credential_file="$tmp/home/.config/dotfiles/shell/device/credentials.sh"
 cat > "$local_file" <<'EOF'
 TEST_LOCATION='local value with spaces'
 export DK_VAULT_PATH="$TEST_VAULT_LOCATION"
@@ -71,7 +71,7 @@ for shell in bash zsh; do
     executable=$(command -v "$shell")
     for platform in Linux Darwin; do
         TEST_PLATFORM=$platform; export TEST_PLATFORM
-        if [ "$platform" = Linux ]; then TEST_EXPECT_KEY=yes; else TEST_EXPECT_KEY=no; fi
+        TEST_EXPECT_KEY=yes
         export TEST_EXPECT_KEY
         for TEST_VAULT_LOCATION in "$tmp/vaults/first machine" "$tmp/storage/second-vault"; do
             export TEST_VAULT_LOCATION
@@ -87,18 +87,18 @@ for shell in bash zsh; do
     done
 done
 
-chmod 644 "$credential_file"
-TEST_PLATFORM=Linux TEST_EXPECT_KEY=no TEST_ALLEXPORT=no; export TEST_PLATFORM TEST_EXPECT_KEY TEST_ALLEXPORT
-bash --noprofile --norc "$tmp/check.sh" 2> "$tmp/warning"
-[ -s "$tmp/warning" ]
-zsh -f "$tmp/check.sh" 2> "$tmp/warning"
-[ -s "$tmp/warning" ]
-
-chmod 600 "$credential_file"
-TEST_OTHER_OWNER=yes; export TEST_OTHER_OWNER
-bash --noprofile --norc "$tmp/check.sh" 2> "$tmp/warning"
-[ -s "$tmp/warning" ]
-unset TEST_OTHER_OWNER
+TEST_EXPECT_KEY=no TEST_ALLEXPORT=no; export TEST_EXPECT_KEY TEST_ALLEXPORT
+for TEST_PLATFORM in Linux Darwin; do
+    export TEST_PLATFORM
+    for shell in /bin/bash /bin/zsh; do
+        chmod 644 "$credential_file"
+        "$shell" "$tmp/check.sh" 2> "$tmp/warning"
+        [ -s "$tmp/warning" ]
+        chmod 600 "$credential_file"
+        TEST_OTHER_OWNER=yes "$shell" "$tmp/check.sh" 2> "$tmp/warning"
+        [ -s "$tmp/warning" ]
+    done
+done
 
 rm "$credential_file"
 bash --noprofile --norc "$tmp/check.sh"
@@ -106,33 +106,14 @@ rm "$local_file"
 TEST_EXPECT_LOCAL=no; export TEST_EXPECT_LOCAL
 zsh -f "$tmp/check.sh"
 
-# Canonical device files work on either OS and are selected instead of legacy files.
-mkdir "$tmp/home/.config/dotfiles/device"
-cat > "$tmp/home/.config/dotfiles/device/local.sh" <<'EOF'
-TEST_LOCATION='local value with spaces'
-export DK_VAULT_PATH="$TEST_VAULT_LOCATION"
-EOF
-printf 'TEST_LOCATION=wrong-legacy-value\n' > "$local_file"
-printf '%s\n' "TEST_FAKE_KEY='fake value with spaces'" "mode='fake mode'" "file='fake file'" \
-    > "$tmp/home/.config/dotfiles/device/credentials.sh"
-printf 'TEST_FAKE_KEY=wrong-legacy-value\n' > "$credential_file"
-chmod 600 "$credential_file" "$tmp/home/.config/dotfiles/device/credentials.sh"
-TEST_EXPECT_LOCAL=yes; export TEST_EXPECT_LOCAL
+# Missing private files are optional on either OS.
 for TEST_PLATFORM in Linux Darwin; do
     export TEST_PLATFORM
     for shell in /bin/bash /bin/zsh; do
-        TEST_EXPECT_KEY=yes; export TEST_EXPECT_KEY
         for TEST_ALLEXPORT in yes no; do
             export TEST_ALLEXPORT
             "$shell" "$tmp/check.sh"
         done
-        chmod 644 "$tmp/home/.config/dotfiles/device/credentials.sh"
-        TEST_EXPECT_KEY=no; export TEST_EXPECT_KEY
-        "$shell" "$tmp/check.sh" 2> "$tmp/warning"
-        [ -s "$tmp/warning" ]
-        chmod 600 "$tmp/home/.config/dotfiles/device/credentials.sh"
-        TEST_OTHER_OWNER=yes "$shell" "$tmp/check.sh" 2> "$tmp/warning"
-        [ -s "$tmp/warning" ]
     done
 done
 

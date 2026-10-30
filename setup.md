@@ -68,14 +68,24 @@ restore on that machine matters.
 ```sh
 git clone https://github.com/isty2e/dotfiles.git "$HOME/dotfiles"
 cd "$HOME/dotfiles"
-mise trust
-mise bootstrap
+mise trust mise.toml &&
+  mise dot apply &&
+  mise trust "$HOME/.config/mise/conf.d/tools.toml" &&
+  mise bootstrap
 ```
 
 Native bootstrap links settings, applies the optional preload, installs the
 shared tool declarations and then prepares shell plugins. Repeating it repeats
 these preparation operations. Pixi environments, daem resources, editor plugins,
 account logins and changes to the login shell remain separate actions.
+
+The first `mise dot apply` establishes configuration links without installing
+tools. The shared catalog is then read as a standalone global configuration, so
+trust its deployed global path before bootstrap's tool lookups. Trusting only
+the repository entry point or the catalog's pre-deployment source path can leave
+those lookups blocked. Stop and reconcile a failed placement before continuing.
+If you created a `mise.local.toml`, approve that known local file separately with
+`mise trust mise.local.toml`. Do not disable trust checks or trust unrelated paths.
 
 After a conflict, preserve the affected files and link destinations, reconcile
 their contents, then rerun the native command. A failed installation can leave

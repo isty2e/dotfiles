@@ -48,6 +48,10 @@ Groups deploy Git-indexed source files, so stage a newly authored file before
 trying its deployment. Untracked generated files are not automatically deployed.
 Put per-machine group choices or feature overrides in the ignored
 `mise.local.toml`; keep credentials in the private shell device files instead.
+When creating that local mise configuration, trust the known file with
+`mise trust mise.local.toml` before using it. The first bootstrap also needs the
+[shared catalog's explicit trust](../setup.md#bootstrap-a-checkout); a repository
+trust decision does not necessarily cover its later global configuration role.
 
 Removing a declaration alone does not remove an installed target. For groups,
 review orphaned files with `mise dot status`, then use `mise dot apply --prune`

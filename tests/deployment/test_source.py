@@ -610,6 +610,47 @@ class MiseDeploymentTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertFalse(target.exists())
 
+    def test_explicit_trust_allows_global_catalog_use_after_binding(self) -> None:
+        assert MISE is not None
+        self.environment.pop("MISE_TRUSTED_CONFIG_PATHS")
+        self.environment.pop("MISE_YES")
+
+        temporary = tempfile.TemporaryDirectory(prefix="mise-native-node-")
+        self.addCleanup(temporary.cleanup)
+        prefix = Path(temporary.name).resolve()
+        node = prefix / "bin/node"
+        node.parent.mkdir()
+        node.write_text('#!/bin/sh\nprintf "v20.0.0\\n"\n')
+        node.chmod(0o755)
+
+        catalog = self.source / "workspaces/mise/conf.d/tools.toml"
+        catalog.write_text(
+            "[tools]\nnode = { version = " + json.dumps("path:" + str(prefix)) + " }\n"
+        )
+
+        for config in ("mise.toml", "mise.local.toml"):
+            self._mise("trust", config)
+        self._mise("dot", "apply")
+        self._mise("trust", str(self.home / ".config/mise/conf.d/tools.toml"))
+
+        result = subprocess.run(
+            [MISE, "--cd", str(self.home), "which", "node"],
+            env=self.environment
+            | {
+                "MISE_GLOBAL_CONFIG_FILE": str(
+                    self.source / "workspaces/mise/config.toml"
+                )
+            },
+            cwd=self.source,
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(Path(result.stdout.strip()), node)
+
 
 if __name__ == "__main__":
     unittest.main()

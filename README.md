@@ -17,8 +17,10 @@ curl first, then:
 ```sh
 git clone https://github.com/isty2e/dotfiles.git "$HOME/dotfiles"
 cd "$HOME/dotfiles"
-mise trust
-mise bootstrap
+mise trust mise.toml &&
+  mise dot apply &&
+  mise trust "$HOME/.config/mise/conf.d/tools.toml" &&
+  mise bootstrap
 ```
 
 - [Setup](setup.md): shell settings, tools, Pixi and tests.

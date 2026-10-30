@@ -114,6 +114,14 @@ choices. For example, put `BREW_LOCATION`, `DOTFILES_PIXI_BASE_MANIFEST`,
 `DOTFILES_RSYNC_BACKUP_DIR` or `DK_VAULT_PATH` in `device/local.sh` rather than
 creating a hostname profile in Git.
 
+Zsh uses case-insensitive native completion followed by its `_approximate`
+completer (`max-errors=2`). fzf-tab selects from those candidates; its menu uses
+plain description groups and `LS_COLORS` filename styling, not a second native selection
+menu. Autosuggestions default to gray (`fg=#808080`); standalone fzf uses
+`fd --type f`. These defaults precede device settings, so `device/local.sh` can
+override the native completion styles and plugin variables. Command-name
+correction confirmation remains disabled; Bash matching policy is unchanged.
+
 History defaults are independent of OS and precede device settings. Bash uses
 `HISTSIZE=1000` and `HISTFILESIZE=2000`; Zsh uses `HISTSIZE=4096` and
 `SAVEHIST=4096`. Set the native variables, `HISTFILE`, or Zsh options in

@@ -18,6 +18,20 @@ setopt always_to_end complete_in_word extendedglob glob_complete
 setopt auto_cd auto_remove_slash chase_links list_rows_first
 unsetopt correct
 
+# Generate matches before fzf-tab filters them; do not open a second native menu.
+zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'
+zstyle ':completion:*' completer _complete _approximate
+zstyle ':completion:*:approximate:*' max-errors 2
+zstyle ':completion:*' group-name ''
+zstyle ':completion:*' list-colors "${(@s.:.)LS_COLORS}"
+zstyle ':completion:*:descriptions' format '[%d]'
+zstyle ':completion:*' menu no
+
+ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="${ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE-fg=#808080}"
+
+# This is standalone fzf input, not the candidate source for completion widgets.
+export FZF_DEFAULT_COMMAND="${FZF_DEFAULT_COMMAND-fd --type f}"
+
 # OS defaults, then this device's overrides.
 if [[ -r $_dotfiles_shell_dir/platforms/init.sh ]]; then
     source "$_dotfiles_shell_dir/platforms/init.sh"

@@ -25,7 +25,7 @@ env -i PATH="$PATH" HOME="$scratch" TMPDIR="$scratch/tmp" TERM="${TERM:-xterm-25
   XDG_DATA_HOME="$scratch/data" XDG_STATE_HOME="$scratch/state" \
   LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 SHELL=/bin/sh \
   KEYMAP_TEST_FILES="$scratch/files" KEYMAP_TEST_SCRIPT="$repo/tests/keymaps/vim.vim" KEYMAP_TEST_RESULT="$scratch/result" \
-  "$binary" -Nu "$repo/home/dot_vimrc" -n -i NONE \
+  "$binary" -Nu "$repo/config/vim/vimrc" -n -i NONE \
   -c 'autocmd VimEnter * ++once execute "source " . fnameescape($KEYMAP_TEST_SCRIPT)'
 test -s "$scratch/result"
 printf '%s\n' 'PASS: plugin-loaded Vim keymap suite completed'

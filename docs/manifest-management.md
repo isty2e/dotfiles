@@ -1,86 +1,173 @@
 # Editing managed configuration
 
-Edit ordinary settings in `home/`, review the Git diff, then apply them with
-chezmoi. `chezmoi source-path <target>` locates a managed file's source;
-`chezmoi edit <target>` opens it. Agents can edit the source files directly.
-Do not treat an edit request as permission to deploy it to the current home.
+Edit the repository source or open it through mise from the checkout:
 
 ```sh
-chezmoi edit ~/.config/helix/config.toml
-chezmoi diff ~/.config/helix/config.toml
-chezmoi apply --less-interactive --error-on-conflict ~/.config/helix/config.toml
+mise dot edit ~/.config/helix/config.toml
+git diff
 ```
 
-Generated chezmoi configuration sets `lessInteractive = true`. Existing users
-must add that setting to their local chezmoi configuration or review and run
-`chezmoi init` to regenerate it. Bootstrap and the update example below also pass
-the conflict flags explicitly. A conflict can leave earlier entries applied;
-chezmoi does not create a backup or roll back the operation.
+Existing links reflect source edits immediately; reload the application or open
+a new shell as needed. No copy/sync step is required. Keep the operating checkout
+at a stable path, and use another worktree for experiments that must not affect
+the active configuration. Updating the linked checkout also changes active settings.
+
+## Where to edit
+
+| Change | Source | Apply the change |
+| --- | --- | --- |
+| Shared shell aliases/editor defaults | `config/shell/lib/preferences.sh` | Open a new shell. |
+| Bash/Zsh options | `config/shell/bashrc`, `config/shell/zshrc` | Open a new shell. |
+| OS-specific defaults | `config/shell/lib/platforms/` | Open a new shell. |
+| Machine paths and private credentials | [Private device files](#private-device-files) | Open a new shell; keep them outside Git. |
+| Vim, Neovim, Helix, Zed, Ghostty, Starship settings | Corresponding directory under `config/` | Reload or restart that application. |
+| Link targets and groups | `mise.toml`, or `mise.local.toml` for machine choices | Follow [structural changes](#structural-changes-and-preparation). |
+| Claude Code summary hook | `mise.local.toml` override | Follow [enable/disable instructions](../setup.md#claude-code-agent-summary-preload); editing the flag alone is not enough. |
 
 ## Tool declarations
 
-| Declaration | Source | Native editing path |
+| Change | Source | Apply the change |
 | --- | --- | --- |
-| CLI tools | `workspaces/mise/config.toml` | `mise use --global …` |
-| Agent environment | `workspaces/daem/daem.toml` | `daem add …`, then review and use native lock/apply |
-| Python environment | `workspaces/pixi-base/pixi.toml` | Run Pixi in that directory or use `--manifest-path` |
-| Shell plugins | `workspaces/sheldon/plugins.toml` | Edit, then run `sh scripts/install-shell-plugins.sh` |
-| Neovim plugins | `home/private_dot_config/nvim/lua/plugins/` | Edit declarations, apply, then use `:NvimSetup` or `:Lazy` |
+| CLI tools | `workspaces/mise/conf.d/tools.toml` | Use `mise use --global`, or edit and run `mise install`. |
+| Mise settings | `workspaces/mise/config.toml` | Edit directly or use native mise commands. |
+| Agent environment | `workspaces/daem/daem.toml` | Use native `daem add`, resolve with `daem lock`, then review/apply. |
+| Scientific Python environment | `workspaces/pixi-base/pixi.toml` | Use `pixi add`, `pixi remove`, `pixi update` or `pixi install` in that workspace. |
+| Shell plugins | `workspaces/sheldon/plugins.toml` | Run `sh scripts/install-shell-plugins.sh`. |
+| Neovim plugins | `config/nvim/lua/plugins/` | Use `:NvimSetup` or `:Lazy` explicitly. |
+| Shared instruction source | `agents/AGENTS.md` | Manage installed copies separately with daem. |
 
-Chezmoi links the **directories** `~/.config/mise` and `~/.config/daem` to their
-workspaces. Native commands and atomic file replacement therefore reach the same
-source, rather than detached copies. Do not replace these with individual-file
-links. The daem workspace is protected as 0700 and its initial manifest as 0600
-before its binding is installed. Preserve private permissions when editing it.
+Mise's global commands and repository bootstrap use the same CLI catalog,
+including new `mise use --global` declarations. Keep mise/daem workspace bindings
+as **directory** links so native atomic saves update the source. Other settings
+use individual file links.
 
-Git tracks authored settings and dependency declarations, not installation
-results. Pixi's `.pixi/` and `pixi.lock`, daem's `.daem/` and `daem.lock.toml`,
-and Neovim's live `lazy-lock.json` stay local. Required locks and ownership state
-are **not disposable** just because Git ignores them. Do not use `git clean -fdx`
-on the operational checkout or delete it as a rollback strategy.
+## Shell settings
 
-Exact dependency resolution from a Git commit is a **NON-GOAL**. Preserve explicit
-compatibility constraints in declarations, including the Tree-sitter legacy-API
-pin. A local lock may support native restore on that machine, but it is not a
-shared installation snapshot.
+Set machine overrides in `~/.config/shell/device/local.sh`. It loads after OS
+defaults and before tool integrations. Bash/Zsh options and history defaults are
+set before it, so later setup keeps your overrides. Noninteractive commands and
+jobs do not load this interactive profile.
 
-## Apply, install and update
+| Setting | Default | What to change |
+| --- | --- | --- |
+| `EDITOR`, `VISUAL` | `hx` when `EDITOR` is unset; `VISUAL` follows `EDITOR` when unset | Set either in `local.sh`. `vi=vim` and `v="nvim -p"` remain separate aliases. |
+| `DOTFILES_RSYNC_BACKUP_DIR` | `~/rsync` | Select the backup directory used by `cpv`. |
+| `BREW_LOCATION` | Auto-detected if available | Set the full path to this device's `brew` executable. |
+| `DOTFILES_PIXI_BASE_MANIFEST` | Bound checkout's `workspaces/pixi-base/pixi.toml` | Select an existing base manifest elsewhere. |
+| `PIXI_ENVS_HOME` | Unset | If set, selects `$PIXI_ENVS_HOME/base/pixi.toml` unless the explicit manifest override is set. |
+| Bash history | `HISTSIZE=1000`, `HISTFILESIZE=2000`, `~/.bash_history` | Override native history variables in `local.sh`. |
+| Zsh history | `HISTSIZE=4096`, `SAVEHIST=4096`, `~/.zsh_history`, `SHARE_HISTORY` on | Override native history variables/options in `local.sh`. |
+| `DOTFILES_BASH_HISTORY_SYNC` | `0` | Set to `1` for prompt-time append/read sharing; normal exit-time persistence stays enabled. |
+| Zsh completion | Case-insensitive, then approximate matching with `max-errors=2` | Override `zstyle` rules in `local.sh`; command-name correction confirmation is off. |
+| Zsh input display | Gray autosuggestions (`fg=#808080`); fzf-tab uses description groups and `LS_COLORS` | Override completion styles/plugin variables in `local.sh`. |
+| `FZF_DEFAULT_COMMAND` | `fd --type f` | Override standalone fzf's file source; this is not the completion candidate source. |
 
-Ordinary `chezmoi apply` places configuration and bindings; it does not run mise,
-Pixi, daem, editor setup or Sheldon installation. Its only setup script protects
-the daem workspace's private permissions. `sh bootstrap.sh` explicitly installs
-mise tools and prepares shell plugins after successful configuration placement.
-Other installation and update operations remain with their native tools.
+If fzf-tab is unavailable, check fzf initialization: a missing or failed fzf
+initialization skips that selector while leaving other plugins available.
 
-Keep the operational checkout at a stable path. Use separate worktrees for
-speculative changes: `workspaces/` files are live inputs to native commands, even
-before another chezmoi apply. Git rollback does not roll back installed packages.
+To keep Bash during a Linux SSH session, pass `DOTFILES_KEEP_BASH=1` when starting
+it: `DOTFILES_KEEP_BASH=1 bash`. The handoff runs **before** `local.sh`, so that
+file cannot prevent it. Already active Zsh sessions also suppress a repeated handoff.
 
-Before pulling, commit or deliberately set aside declaration edits, and inspect
-any differences in deployed ordinary files. Then, from the operational checkout:
+> [!NOTE]
+> History sharing is best effort: Bash can trim to `HISTFILESIZE`, and Zsh rewrites
+> its shared history. Do not rely on loss-free concurrent recording on NFS. Consider
+> Zsh's [HIST_FCNTL_LOCK](https://zsh.sourceforge.io/Doc/Release/Options.html#History),
+> or a local `HISTFILE` if cross-host sharing is unnecessary.
+
+Mise reuses installed tools without startup installation. Pixi activates an
+already installed base environment only when no project/Conda/virtualenv is
+active; it does not search old `~/pixi-env` or `~/pixi_envs` locations. Starship
+supplies the prompt when installed. Open a new shell for changed environment
+settings; existing tmux sessions keep their environments.
+
+## Private device files
+
+Use these paths on either OS; missing files are skipped:
+
+| File | Contents |
+| --- | --- |
+| `~/.config/shell/device/local.sh` | Machine paths, preferences and optional integrations. |
+| `~/.config/shell/device/credentials.sh` | Trusted shell assignments; loaded variables are exported to child processes. |
+
+Both files execute shell code and stay outside Git. Create the private directory:
 
 ```sh
-git pull --ff-only
-chezmoi diff
-chezmoi apply --less-interactive --error-on-conflict
+mkdir -p "$HOME/.config/shell/device"
+chmod 700 "$HOME/.config/shell/device"
 ```
 
-Run the relevant native install/update only when intended. No update-all wrapper
-or exact chezmoi runtime-version allowlist is used. CI's chosen chezmoi version is
-a test input, not a restriction on users' installed versions.
+If you need credentials, create the file and restrict access **before** adding them:
 
-## Unexpected live edits
+```sh
+touch "$HOME/.config/shell/device/credentials.sh"
+chmod 600 "$HOME/.config/shell/device/credentials.sh"
+```
 
-If a person or program changed a deployed ordinary file, compare it with its
-source. Preserve the wanted changes in the source and review the result before
-applying. For an ordinary non-template file, a deliberately selected
-`chezmoi re-add <target>` is also available after confirming the source has no
-independent changes. Do not bulk import the home: private and unrelated changes
-must not enter Git. There is no custom reverse-capture command.
+The loader skips credentials with a warning unless the file is readable, owned
+by you and inaccessible to group/other users. Existing destination-directory
+permissions are otherwise left as they are.
 
-Secrets, machine-specific `~/.config/shell/device/local.sh`, credentials and
-installed agent resources remain with their existing owners. Native daem commands
-own installed skills and instructions; do not edit generated installations to
-bypass their manifest.
-See [setup and migration](../setup.md) before adopting this layout on an existing
-home. Pi themes retain their [manual installation](../pi/README.md#install).
+## Structural changes and preparation
+
+For new files, changed targets or group selection:
+
+1. Stage newly authored files with `git add`; groups deploy Git-indexed files,
+   not arbitrary generated/untracked files.
+2. Review and apply from the checkout:
+
+   ```sh
+   mise dot diff
+   mise dot apply --dry-run
+   mise dot apply
+   ```
+
+For per-machine choices, create the ignored `mise.local.toml` and trust it with
+`mise trust mise.local.toml`. For example, select only the shell and Vim groups:
+
+```toml
+[bootstrap]
+dotfile_groups = ["shell", "vim"]
+```
+
+Without a selection, all groups apply. The explicit mise/daem workspace bindings
+and independent preload declaration are not group selections. Keep secrets in
+device files rather than this local mise configuration.
+
+Removing a declaration or deselecting a group leaves orphaned links. Review
+`mise dot status`, then use `mise dot apply --prune`. To remove a group before
+changing its declaration, for example Vim settings:
+
+```sh
+mise dot unapply --group vim
+```
+
+For a single target, use native `mise dot unapply` with that target before deleting
+its declaration. These commands preserve unrelated files. See
+[setup](../setup.md#mise-deployment) for apply versus full bootstrap.
+
+## Unexpected local changes
+
+| Symptom | What to do |
+| --- | --- |
+| An editor replaced a link with a regular file | Compare it with the source, merge wanted edits, move the conflicting file aside, then reapply. Matching bytes alone do not avoid a conflict. |
+| You deliberately want to capture a home file | Use native `mise dot add` for that target, then inspect the source and Git diff; do not import the whole home. |
+| An existing link points somewhere else | Review and preserve its destination before [first apply](../setup.md#first-apply-on-an-existing-home); mise can repoint it without `--force`. |
+
+Do not use `--force` to bypass unexplained local changes.
+
+## Local state and boundaries
+
+Git tracks authored settings/manifests, not installation results. Keep Pixi's
+`.pixi/` and `pixi.lock`, daem's `.daem/` and `daem.lock.toml`, `mise.local.toml`
+and Neovim's live `lazy-lock.json` local. Preserve locks and ownership state when
+[moving workspaces](../setup.md#native-workspace-migration).
+
+> [!WARNING]
+> Do not run `git clean -fdx` on the operating checkout: ignored environments,
+> locks and ownership state are valuable local data. Do not delete the checkout
+> as a rollback strategy while home links still use it.
+
+Git restores declarations, not installed tools. Exact installed-version
+reproduction from a commit is not supported; native local locks can support
+restore on their machine. Retain explicit compatibility pins when editing versions.

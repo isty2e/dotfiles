@@ -29,7 +29,7 @@ class VimTestCase(unittest.TestCase):
         self.assets = self.root / "assets"
         self.assets.mkdir()
         self.vimrc = self.root / "standalone vimrc"
-        source = Path(os.environ.get("VIMRC_UNDER_TEST", REPO / "home/dot_vimrc"))
+        source = Path(os.environ.get("VIMRC_UNDER_TEST", REPO / "config/vim/vimrc"))
         shutil.copyfile(source, self.vimrc)
         shutil.copyfile(FIXTURES / "plug.vim", self.assets / "plug.vim")
         for color in (REPO / ".vim/colors").glob("*.vim"):

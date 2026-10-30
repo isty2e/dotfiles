@@ -33,16 +33,16 @@ jobs:
         run: |
           brew list --versions bash >/dev/null || brew install bash
           brew list --versions tmux >/dev/null || brew install tmux
-      - name: Install chezmoi and Python test dependencies
+      - name: Install mise and Python test dependencies
         run: |
-          curl -fsSL --proto '=https' --proto-redir '=https' https://get.chezmoi.io -o "$RUNNER_TEMP/install-chezmoi.sh"
+          curl -fsSL --proto '=https' --proto-redir '=https' https://mise.run -o "$RUNNER_TEMP/install-mise.sh"
           mkdir -p "$HOME/.local/bin"
-          sh "$RUNNER_TEMP/install-chezmoi.sh" -b "$HOME/.local/bin" -t v2.73.3
+          MISE_INSTALL_PATH="$HOME/.local/bin/mise" sh "$RUNNER_TEMP/install-mise.sh"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           python -m pip install -r tests/keymaps/requirements.txt
       - name: Run offline tests
         run: |
-          command -v chezmoi
+          command -v mise
           command -v zsh
           command -v vim
           command -v nvim

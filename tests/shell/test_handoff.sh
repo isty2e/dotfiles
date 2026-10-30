@@ -18,7 +18,7 @@ printf 'zsh handoff\n'
 EOF
 chmod +x "$tmp/bin/"*
 
-fragment="$repo/home/private_dot_config/private_shell/bash/handoff.sh"
+fragment="$repo/config/shell/lib/bash/handoff.sh"
 run_case() {
     shell=$1
     flags=$2

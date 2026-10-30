@@ -1,7 +1,7 @@
 # Colemak keymap policy
 
 These tables describe the shared keys and editor-specific cycles. Edit bindings
-in each editor's native configuration; chezmoi places those files but does not
+in each editor's native configuration; mise links those files but does not
 repair bindings when upstream defaults change.
 
 ## Shared contract
@@ -138,7 +138,7 @@ Vacant Normal/Visual window slots are no-ops; vacant operator slots cancel the
 pending operator. Unrelated Ctrl shortcuts and native command spellings are not
 transposed. Existing personal tab, completion and terminal gestures stay separate.
 
-In `home/private_dot_config/nvim/`, edit general maps in `lua/config/keymaps.lua`
+In `config/nvim/`, edit general maps in `lua/config/keymaps.lua`
 and attached-buffer LSP maps in `lua/config/lsp.lua` (`E` for hover, `K` for
 previous search). Each plugin defines its local interaction. Neo-tree
 retains native parent/child handlers, moves file details to `u` in its filesystem,

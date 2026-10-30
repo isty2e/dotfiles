@@ -19,7 +19,7 @@ if [ -z "$mise_bin" ]; then
     mise_bin="$HOME/.local/bin/mise"
 fi
 if [ ! -x "$mise_bin" ]; then
-    printf '%s\n' 'mise is required; run the checkout bootstrap.sh first.' >&2
+    printf '%s\n' 'mise is required; install it before preparing shell plugins.' >&2
     exit 1
 fi
 

@@ -1,0 +1,63 @@
+include = [
+    "workspaces/mise/conf.d/tools.toml",
+    "features/claude-no-agent-summary/mise.toml",
+]
+
+[settings]
+dotfiles.root = "."
+
+[dotfiles]
+"~/.config/mise" = { source = "workspaces/mise", mode = "symlink" }
+"~/.config/daem" = { source = "workspaces/daem", mode = "symlink" }
+"~/.zshenv" = { source = "features/claude-no-agent-summary/env.zsh", mode = "symlink" }
+
+[dotfile_groups.shell]
+root = "config/shell"
+target = "~"
+manifest = "git"
+
+[dotfile_groups.shell.entries]
+"~/.bashrc" = { source = "bashrc" }
+"~/.zshrc" = { source = "zshrc" }
+"~/.config/shell" = { source = "lib", mode = "symlink-each" }
+"~/.local/bin" = { source = "bin", mode = "symlink-each" }
+
+[dotfile_groups.vim]
+root = "config/vim"
+target = "~"
+manifest = "git"
+
+[dotfile_groups.vim.entries]
+"~/.vimrc" = { source = "vimrc" }
+
+[dotfile_groups.nvim]
+root = "config/nvim"
+target = "~/.config/nvim"
+manifest = "git"
+
+[dotfile_groups.helix]
+root = "config/helix"
+target = "~/.config/helix"
+manifest = "git"
+
+[dotfile_groups.zed]
+root = "config/zed"
+target = "~/.config/zed"
+manifest = "git"
+
+[dotfile_groups.ghostty]
+root = "config/ghostty"
+target = "~/.config/ghostty"
+manifest = "git"
+
+[dotfile_groups.starship]
+root = "config/starship"
+target = "~/.config"
+manifest = "git"
+
+[bootstrap.hooks.pre-dotfiles]
+run = "chmod 700 {{ config_root | quote }}/workspaces/daem && chmod 600 {{ config_root | quote }}/workspaces/daem/daem.toml"
+
+[tasks.bootstrap]
+description = "Prepare the declared shell plugins after mise installs tools"
+run = "sh {{ config_root | quote }}/scripts/install-shell-plugins.sh"

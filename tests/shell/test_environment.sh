@@ -47,7 +47,7 @@ printf '%s\n' 'export TEST_PIXI_LOADED=1'
 EOF
 chmod +x "$tmp/bin/"*
 
-fragment="$repo/home/private_dot_config/private_shell/integrations/environment.sh"
+fragment="$repo/config/shell/lib/integrations/environment.sh"
 run_shell() {
     shell=$1
     shift

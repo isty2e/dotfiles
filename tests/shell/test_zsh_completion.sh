@@ -7,8 +7,8 @@ repo=$(CDPATH='' cd -- "$(dirname "$0")/../.." && pwd)
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT HUP INT TERM
 mkdir -p "$tmp/home/.config/shell/device" "$tmp/bin" "$tmp/zdotdir"
-cp "$repo/home/private_dot_config/private_shell/device.sh" "$tmp/home/.config/shell/device.sh"
-config="$repo/home/dot_zshrc"
+cp "$repo/config/shell/lib/device.sh" "$tmp/home/.config/shell/device.sh"
+config="$repo/config/shell/zshrc"
 
 # Do not inherit the host's plugin paths or weaken compinit's security audit.
 completion_fpath=$(env -i HOME="$tmp/home" PATH=/usr/bin:/bin zsh -fc '

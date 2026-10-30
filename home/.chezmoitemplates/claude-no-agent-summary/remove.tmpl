@@ -1,4 +1,0 @@
-{{- $feature := include ".chezmoitemplates/claude-no-agent-summary/manifest.toml" | fromToml -}}
-{{- if eq $feature.enabled false }}
-.local/share/no-agent-summary.js
-{{ end -}}

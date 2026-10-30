@@ -1,7 +1,0 @@
-#!/bin/sh
-set -eu
-
-# The config directory is linked, so protect its actual workspace as well.
-workspace='{{ .chezmoi.workingTree | replace "'" "'\\''" }}/workspaces/daem'
-chmod 700 "$workspace"
-chmod 600 "$workspace/daem.toml"

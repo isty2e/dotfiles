@@ -4,11 +4,10 @@ set -eu
 repo=$(CDPATH='' cd -- "$(dirname "$0")/../.." && pwd)
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT HUP INT TERM
-export CHEZMOI_DEST_DIR="$tmp/destination"
-export HOME="$CHEZMOI_DEST_DIR"
+export HOME="$tmp/destination"
 export TEST_LOG="$tmp/sheldon.log"
 export PATH="$tmp/bin:/usr/bin:/bin"
-mkdir -p "$tmp/bin" "$CHEZMOI_DEST_DIR/.config/shell"
+mkdir -p "$tmp/bin" "$HOME/.config/shell"
 
 cat > "$tmp/bin/mise" <<'EOF'
 #!/bin/sh
@@ -35,9 +34,9 @@ EOF
 chmod +x "$tmp/bin/mise" "$tmp/bin/sheldon"
 export TEST_SHELDON="$tmp/bin/sheldon"
 
-manifest="$CHEZMOI_DEST_DIR/.config/shell/plugins.toml"
+manifest="$HOME/.config/shell/plugins.toml"
 printf '%s\n' '[plugins.first]' 'github = "example/first"' > "$manifest"
-legacy="$CHEZMOI_DEST_DIR/.local/share/dotfiles/plugins/first"
+legacy="$HOME/.local/share/dotfiles/plugins/first"
 mkdir -p "$legacy"
 printf '%s\n' 'existing checkout' > "$legacy/marker"
 
@@ -45,7 +44,7 @@ prepare() {
     sh "$repo/scripts/install-shell-plugins.sh" "$@"
 }
 
-state="$CHEZMOI_DEST_DIR/.local/share/dotfiles/sheldon"
+state="$HOME/.local/share/dotfiles/sheldon"
 prepare
 first=$(cat "$state/current")
 [ -r "$state/generations/$first/zsh-plugins.zsh" ]

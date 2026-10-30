@@ -12,7 +12,9 @@ editors use links or a shared runtime, follow the
 without another apply; new files and links still need deployment.
 
 Install [mise](https://mise.jdx.dev/getting-started.html), Git and HTTPS-capable
-curl first, then:
+curl first. Bootstrap enables the optional
+[Claude Code summary hook](setup.md#claude-code-agent-summary-preload) by default;
+see its setup section if you want it off.
 
 ```sh
 git clone https://github.com/isty2e/dotfiles.git "$HOME/dotfiles"
@@ -23,9 +25,9 @@ mise trust mise.toml &&
   mise bootstrap
 ```
 
-- [Setup](setup.md): shell settings, tools, Pixi and tests.
-- [Editing configuration](docs/manifest-management.md): direct source editing,
-  native manifests, structural changes and local state.
+- [Setup](setup.md): bootstrap, additional installations and existing-home preparation.
+- [Configuration reference](docs/manifest-management.md): where to edit, shell
+  defaults, private files and when changes take effect.
 - [Vim](docs/vim.md) and [Neovim](docs/neovim.md): explicit plugin setup and recovery.
 - [Colemak keymaps](docs/keymaps.md): shared keys and editor-specific bindings.
 - [Pi PaperColor themes](pi/README.md): optional theme installation.

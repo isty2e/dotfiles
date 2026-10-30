@@ -1,75 +1,75 @@
 # Vim setup and recovery
 
-`config/vim/vimrc` works without an existing `~/.vim` directory. It declares
-vim-plug, plugins, three personal colorschemes and indentation settings for HTML,
-Python, Ruby, Rust and Swift. Vim and Neovim keep separate configurations.
+`config/vim/vimrc` runs without an existing `~/.vim` directory and keeps Vim
+separate from Neovim. It configures vim-plug, plugins, three personal colorschemes
+and indentation for HTML, Python, Ruby, Rust and Swift.
 
-Use Vim 8.2+ with `+eval` for the declared plugins. Setup also needs Git, curl with
-HTTPS support, and network access to GitHub and plugin download hosts. It needs
-no administrator rights.
+Use Vim 8.2+ with `+eval`, Git, HTTPS-capable curl and access to GitHub/plugin
+download hosts. No administrator rights are needed.
 
 ## Install
 
-**Setup writes to `~/.vim`, including a symlink's destination.** Follow the
-[migration guide](editor-migration.md#vim) before using an existing shared or
-cloud-synced runtime.
+> [!WARNING]
+> Setup writes to `~/.vim`, including a symlink's destination. Prepare existing
+> shared or cloud-synced runtimes with the [migration guide](editor-migration.md#vim).
 
-For a new account, run from the checkout root:
+If mise has placed `~/.vimrc`, open Vim directly. For standalone setup on a new
+account, run from the checkout root:
 
 ```sh
 cp -n config/vim/vimrc "$HOME/.vimrc"
 vim
 ```
 
-Run `:VimSetup`, inspect its output and `:PlugStatus`, then restart Vim. Use the
-actual Vim executable, not an alias for Neovim. To select this vimrc without
-replacing an existing one, run `vim -u "$PWD/config/vim/vimrc"`. Use a separate home
-for an isolated trial; selecting a vimrc alone does not isolate the runtime.
+1. Run `:VimSetup` using actual Vim, not an alias for Neovim.
+2. Inspect the output and `:PlugStatus`, then restart Vim.
 
-Ordinary startup downloads nothing. It warns if the manager or plugins are
-missing. If codedark is unavailable, Vim keeps core editing with its default
-colorscheme. Fixed Colemak bindings follow [the keymap policy](keymaps.md).
+To select this vimrc without replacing yours, use `vim -u "$PWD/config/vim/vimrc"`.
+Use a separate home for an isolated trial: `-u` alone does not isolate `~/.vim`.
+
+Normal startup downloads nothing and warns if the manager or plugins are missing.
+Without codedark, Vim uses its default colorscheme. Fixed Colemak bindings follow
+[the keymap policy](keymaps.md).
 
 ## What setup changes
 
-Each `:VimSetup` fetches the latest vim-plug from upstream `master`. It replaces
-the manager if the content differs, acquires missing personal color files,
-reloads the manager and runs `PlugInstall --sync` in `~/.vim/plugged`. The
-personal color sources are pinned; the manager and plugin versions are not.
-Future upstream changes may need configuration updates.
+| Item | Action |
+| --- | --- |
+| vim-plug manager | Fetch latest upstream `master`; replace differing content, then reload it. |
+| Personal colors | Acquire missing files from pinned sources; keep existing files. |
+| Plugins | Run `PlugInstall --sync` in `~/.vim/plugged`, not `PlugUpdate` or `PlugClean`. |
+| fzf | Run its binary installer with `--bin`; shell startup files are not edited. |
+| External tools | Install Ruff, isort, language runtimes and other ALE executables separately. |
 
-Setup executes third-party plugin code and fzf's binary installer. The fzf hook
-uses `--bin`, so it does not edit shell startup files. Setup does not run
-`PlugUpdate` or `PlugClean`. External tools such as Ruff, isort, language runtimes
-and other ALE executables must be installed separately. Recovery does not restore
-editing history or caches.
+Setup runs third-party plugin code. Manager/plugin versions are not pinned, so
+upstream changes may require configuration updates.
 
-Existing personal color files are kept. Empty or unreadable color files stop
-setup. Failed or empty manager downloads preserve the installed manager and stop
-the operation; setup does not continue with an older manager. Downloads are
-staged beside their targets so failed transfers do not publish partial files.
-After fixing a plugin hook failure, use vim-plug's explicit forced-install retry
-if needed. A present plugin checkout does not prove that its build succeeded.
+| If setup stops | What to do |
+| --- | --- |
+| Failed or empty manager download | Fix the download error and rerun setup. The installed manager is kept; no partial download is published and setup does not continue with the old manager. |
+| Empty or unreadable personal color file | Inspect and repair that file before retrying. |
+| Plugin install/build hook failure | Fix the cause, then use vim-plug's explicit forced-install retry if needed. A checkout's presence does not mean its build succeeded. |
 
 ## Restore the previous manager
 
-Before replacing a different manager, setup saves its exact contents in
-`~/.vim/autoload/plug.vim.old`. An identical download leaves that backup alone.
-First installation makes no backup. Missing or empty manager files count as
-uninstalled and do not replace an existing backup.
+Setup saves a differing installed manager's exact contents to
+`~/.vim/autoload/plug.vim.old` before replacement. Identical downloads leave the
+backup alone; a first install or missing/empty manager does not replace it.
 
-A failed backup write stops replacement. Setup publishes the backup before the
-manager, not in one transaction: if manager replacement then fails, the active
-manager remains and `.old` may contain the same version. The backup is the previous
-file, not a known-good release. There is no automatic rollback.
+| Failure | Files left in place |
+| --- | --- |
+| Backup write fails | Manager replacement stops. |
+| Manager replacement fails after backup | The active manager remains; `.old` can contain that same version. |
 
-To restore it, close Vim, copy the backup and restart:
+The backup is the previous file, not a known-good release. To restore it manually,
+close Vim, copy it back, then restart:
 
 ```sh
 cp "$HOME/.vim/autoload/plug.vim.old" "$HOME/.vim/autoload/plug.vim"
 ```
 
-The next `:VimSetup` tries the latest upstream manager again.
+This restores only the manager, not plugins, editing history or caches. The next
+`:VimSetup` tries the latest upstream manager again.
 
 ## Tests
 
@@ -86,8 +86,8 @@ To include the real-manager tests, which fetch the latest vim-plug once:
 python -m unittest discover -s tests/vim -v
 ```
 
-Network or upstream incompatibility is a failure in that tier. Neither tier
-installs the declared plugins or checks their full runtime compatibility.
+Network or upstream incompatibility fails that tier. Neither tier installs the
+declared plugins or checks their full runtime compatibility.
 
 For native keymap and NERDTree checks, use a terminal with an existing
 vim-plug/NERDTree runtime:
@@ -97,7 +97,7 @@ sh tests/keymaps/run-vim.sh
 ```
 
 Set `VIM_TEST_BINARY` to select Vim and `VIM_TEST_RUNTIME` to select a runtime.
-The runner uses temporary home/XDG state, borrows cached plugins and does not run
-`:VimSetup`. Missing prerequisites or a non-terminal invocation exit with code 77.
-It checks movement, operators, literal input, window keys and NERDTree through
-their effects. Ex-only startup is not a substitute for this terminal test.
+The runner uses temporary home/XDG state and cached plugins without `:VimSetup`.
+It checks movement, operators, literal input, window keys and NERDTree. Missing
+prerequisites or a non-terminal invocation exit with code 77; use a terminal,
+not Ex-only startup, for these checks.

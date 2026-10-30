@@ -121,7 +121,16 @@ History defaults are independent of OS and precede device settings. Bash uses
 Bash retains native exit-time history persistence. Additional prompt-time
 append/read synchronization is off by default; set
 `DOTFILES_BASH_HISTORY_SYNC=1` on devices where shared interactive history is
-wanted. No OS-based NFS assumption is made, and no history rewrite is performed.
+wanted. No OS-based NFS assumption is made. The prompt hook uses `history -a`
+and `history -n`, not `history -w`, but Bash can still trim its history file
+according to `HISTFILESIZE`. Zsh's default `SHARE_HISTORY` also periodically
+rewrites its file. Sharing is best effort, not a loss-free concurrent log on NFS;
+the isolated local tests do not establish behavior on the cluster filesystem.
+For an NFS-backed Zsh history, native `HIST_FCNTL_LOCK` is an available device
+option; the [Zsh documentation](https://zsh.sourceforge.io/Doc/Release/Options.html#History)
+specifically discusses NFS corruption avoidance, without establishing a guarantee
+for every server/mount configuration. A local `HISTFILE` is another option when
+sharing across different hosts is not required.
 
 Create `~/.config/shell/device/` privately, with mode 0700. Its
 `local.sh` and `credentials.sh` are the only device-file locations loaded by the

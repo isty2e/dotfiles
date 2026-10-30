@@ -4,7 +4,7 @@ set -eu
 repo=$(CDPATH='' cd -- "$(dirname "$0")/../.." && pwd)
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT HUP INT TERM
-mkdir -p "$tmp/home/.config/dotfiles/shell/device" "$tmp/bin"
+mkdir -p "$tmp/home/.config/shell/device" "$tmp/bin"
 
 cat > "$tmp/bin/uname" <<'EOF'
 #!/bin/sh
@@ -56,8 +56,8 @@ case $- in
 esac
 EOF
 
-local_file="$tmp/home/.config/dotfiles/shell/device/local.sh"
-credential_file="$tmp/home/.config/dotfiles/shell/device/credentials.sh"
+local_file="$tmp/home/.config/shell/device/local.sh"
+credential_file="$tmp/home/.config/shell/device/credentials.sh"
 cat > "$local_file" <<'EOF'
 TEST_LOCATION='local value with spaces'
 export DK_VAULT_PATH="$TEST_VAULT_LOCATION"
@@ -65,7 +65,7 @@ EOF
 printf '%s\n' "TEST_FAKE_KEY='fake value with spaces'" "mode='fake mode'" "file='fake file'" > "$credential_file"
 chmod 600 "$credential_file"
 export HOME="$tmp/home" PATH="$tmp/bin:/usr/bin:/bin"
-export TEST_LOADER="$repo/home/private_dot_config/private_dotfiles/shell/device.sh"
+export TEST_LOADER="$repo/home/private_dot_config/private_shell/device.sh"
 
 for shell in bash zsh; do
     executable=$(command -v "$shell")

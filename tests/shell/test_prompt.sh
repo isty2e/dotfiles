@@ -7,7 +7,7 @@ repo=$(CDPATH='' cd -- "$(dirname "$0")/../.." && pwd)
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT HUP INT TERM
 mkdir -p "$tmp/home" "$tmp/bin"
-fragment="$repo/home/private_dot_config/private_dotfiles/shell/integrations/prompt.sh"
+fragment="$repo/home/private_dot_config/private_shell/integrations/prompt.sh"
 
 cat > "$tmp/bin/starship" <<'EOF'
 #!/bin/sh

@@ -7,10 +7,10 @@ repo=$(CDPATH='' cd -- "$(dirname "$0")/../.." && pwd)
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT HUP INT TERM
 home="$tmp/home"
-fragments="$home/.config/dotfiles/shell"
+fragments="$home/.config/shell"
 mkdir -p "$fragments" "$tmp/bin" "$tmp/zdotdir"
 
-for name in bash/handoff.sh device.sh platform.sh generation.sh integrations/homebrew.sh \
+for name in bash/handoff.sh device.sh platforms/init.sh generation.sh integrations/homebrew.sh \
     preferences.sh integrations/slurm.sh integrations/environment.sh \
     bash/history.sh bash/completion.sh zsh/plugins.zsh integrations/prompt.sh; do
     mkdir -p "$(dirname "$fragments/$name")"
@@ -20,7 +20,7 @@ cp "$repo/home/dot_zshrc" "$tmp/zdotdir/.zshrc"
 
 env -i HOME="$home" PATH=/usr/bin:/bin TERM=xterm TEST_LOG="$tmp/log" \
     /bin/bash --noprofile --rcfile "$repo/home/dot_bashrc" -ic ':' 2>/dev/null
-printf '%s\n' bash/handoff.sh platform.sh device.sh generation.sh integrations/homebrew.sh \
+printf '%s\n' bash/handoff.sh platforms/init.sh device.sh generation.sh integrations/homebrew.sh \
     preferences.sh integrations/slurm.sh integrations/environment.sh \
     bash/history.sh bash/completion.sh integrations/prompt.sh > "$tmp/expected"
 diff -u "$tmp/expected" "$tmp/log"
@@ -28,7 +28,7 @@ diff -u "$tmp/expected" "$tmp/log"
 : > "$tmp/log"
 env -i HOME="$home" ZDOTDIR="$tmp/zdotdir" PATH=/usr/bin:/bin TERM=xterm TEST_LOG="$tmp/log" \
     /bin/zsh -ic '[[ $DOTFILES_ZSH_ACTIVE == 1 && :$PATH: == *:"$HOME/.local/bin":* ]]' 2>/dev/null
-printf '%s\n' platform.sh device.sh generation.sh integrations/homebrew.sh preferences.sh \
+printf '%s\n' platforms/init.sh device.sh generation.sh integrations/homebrew.sh preferences.sh \
     integrations/slurm.sh integrations/environment.sh zsh/plugins.zsh integrations/prompt.sh > "$tmp/expected"
 diff -u "$tmp/expected" "$tmp/log"
 
@@ -40,7 +40,7 @@ env -i HOME="$home" PATH=/usr/bin:/bin TEST_LOG="$tmp/log" RC="$repo/home/dot_zs
 [ ! -s "$tmp/log" ]
 
 # Exercise the actual handoff without starting a real Zsh or touching a login account.
-cp "$repo/home/private_dot_config/private_dotfiles/shell/bash/handoff.sh" "$fragments/bash/handoff.sh"
+cp "$repo/home/private_dot_config/private_shell/bash/handoff.sh" "$fragments/bash/handoff.sh"
 cat > "$tmp/bin/uname" <<'EOF'
 #!/bin/sh
 printf 'Linux\n'
@@ -59,13 +59,13 @@ for guard in DOTFILES_KEEP_BASH DOTFILES_ZSH_ACTIVE; do
     : > "$tmp/log"
     env -i HOME="$home" PATH="$tmp/bin:/usr/bin:/bin" TERM=xterm TEST_LOG="$tmp/log" \
         SSH_CONNECTION='test' "$guard=1" /bin/bash --noprofile --rcfile "$repo/home/dot_bashrc" -ic ':' 2>/dev/null
-    printf '%s\n' platform.sh device.sh generation.sh integrations/homebrew.sh preferences.sh \
+    printf '%s\n' platforms/init.sh device.sh generation.sh integrations/homebrew.sh preferences.sh \
         integrations/slurm.sh integrations/environment.sh bash/history.sh bash/completion.sh integrations/prompt.sh > "$tmp/expected"
     diff -u "$tmp/expected" "$tmp/log"
 done
 
 # Load the actual fragments together with isolated, non-installing tool doubles.
-cp -R "$repo/home/private_dot_config/private_dotfiles/shell/." "$fragments/"
+cp -R "$repo/home/private_dot_config/private_shell/." "$fragments/"
 mkdir -p "$tmp/repository/workspaces/pixi-base/.pixi/envs/default"
 printf '[workspace]\nname = "base"\n' > "$tmp/repository/workspaces/pixi-base/pixi.toml"
 printf "_dotfiles_repository_manifest='%s'\n" "$tmp/repository/workspaces/pixi-base/pixi.toml" \
@@ -113,7 +113,7 @@ env -i HOME="$home" ZDOTDIR="$tmp/zdotdir" PATH="$tmp/bin:/usr/bin:/bin" TERM=xt
     ' 2>/dev/null
 
 # A device's choices override platform defaults before tool activation.
-mkdir -p "$home/.config/dotfiles/shell/device"
+mkdir -p "$home/.config/shell/device"
 cat > "$tmp/bin/uname" <<'EOF'
 #!/bin/sh
 printf '%s\n' "$TEST_PLATFORM"
@@ -131,7 +131,7 @@ cat > "$tmp/bin/device-brew" <<'EOF'
 printf 'export HOMEBREW_PREFIX=/device/brew\n'
 EOF
 chmod +x "$tmp/bin/"*
-cat > "$home/.config/dotfiles/shell/device/local.sh" <<'EOF'
+cat > "$home/.config/shell/device/local.sh" <<'EOF'
 printf 'loaded\n' >> "$TEST_DEVICE_LOG"
 export EDITOR=device-editor
 export LANG=C LC_ALL=C CPATH=/device/include

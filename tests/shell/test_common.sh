@@ -32,7 +32,7 @@ cd "$TEST_WORK"
 unset PI_CLIPBOARD_OSC52
 unset EDITOR VISUAL
 _dotfiles_shell_dir=$TEST_SHELL_DIR
-. "$_dotfiles_shell_dir/platform.sh"
+. "$_dotfiles_shell_dir/platforms/init.sh"
 . "$_dotfiles_shell_dir/integrations/slurm.sh"
 . "$TEST_COMMON"
 
@@ -70,8 +70,8 @@ eval 'rsmv source destination'
 eval 'rssync source destination'
 EOF
 
-export HOME="$tmp/home" USER=testuser TEST_WORK="$tmp/work" TEST_COMMON="$repo/home/private_dot_config/private_dotfiles/shell/preferences.sh"
-export TEST_SHELL_DIR="$repo/home/private_dot_config/private_dotfiles/shell"
+export HOME="$tmp/home" USER=testuser TEST_WORK="$tmp/work" TEST_COMMON="$repo/home/private_dot_config/private_shell/preferences.sh"
+export TEST_SHELL_DIR="$repo/home/private_dot_config/private_shell"
 export PATH="$tmp/bin:/usr/bin:/bin" TEST_LOG="$tmp/log"
 
 for shell in bash zsh; do

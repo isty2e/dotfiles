@@ -7,11 +7,11 @@ case :$PATH: in
     *) export PATH="$HOME/.local/bin:$PATH" ;;
 esac
 
-_dotfiles_shell_dir="$HOME/.config/dotfiles/shell"
+_dotfiles_shell_dir="$HOME/.config/shell"
 
 # OS defaults, then this device's overrides.
-if [[ -r $_dotfiles_shell_dir/platform.sh ]]; then
-    source "$_dotfiles_shell_dir/platform.sh"
+if [[ -r $_dotfiles_shell_dir/platforms/init.sh ]]; then
+    source "$_dotfiles_shell_dir/platforms/init.sh"
 fi
 if [[ -r $_dotfiles_shell_dir/device.sh ]]; then
     source "$_dotfiles_shell_dir/device.sh"

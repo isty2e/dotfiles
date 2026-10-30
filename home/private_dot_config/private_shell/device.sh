@@ -2,8 +2,8 @@
 # shellcheck disable=SC1091
 
 # Device-local shell configuration has a single canonical location.
-if [ -r "$HOME/.config/dotfiles/shell/device/local.sh" ]; then
-    . "$HOME/.config/dotfiles/shell/device/local.sh"
+if [ -r "$HOME/.config/shell/device/local.sh" ]; then
+    . "$HOME/.config/shell/device/local.sh"
 fi
 
 # Credentials are private device data, not an operating-system property.
@@ -51,8 +51,8 @@ _dotfiles_load_credentials() {
     fi
 }
 
-if [ -e "$HOME/.config/dotfiles/shell/device/credentials.sh" ] ||
-    [ -L "$HOME/.config/dotfiles/shell/device/credentials.sh" ]; then
-    _dotfiles_load_credentials "$HOME/.config/dotfiles/shell/device/credentials.sh"
+if [ -e "$HOME/.config/shell/device/credentials.sh" ] ||
+    [ -L "$HOME/.config/shell/device/credentials.sh" ]; then
+    _dotfiles_load_credentials "$HOME/.config/shell/device/credentials.sh"
 fi
 unset -f _dotfiles_load_credentials

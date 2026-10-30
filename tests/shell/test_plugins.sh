@@ -8,7 +8,7 @@ export CHEZMOI_DEST_DIR="$tmp/destination"
 export HOME="$CHEZMOI_DEST_DIR"
 export TEST_LOG="$tmp/sheldon.log"
 export PATH="$tmp/bin:/usr/bin:/bin"
-mkdir -p "$tmp/bin" "$CHEZMOI_DEST_DIR/.config/dotfiles/shell"
+mkdir -p "$tmp/bin" "$CHEZMOI_DEST_DIR/.config/shell"
 
 cat > "$tmp/bin/mise" <<'EOF'
 #!/bin/sh
@@ -35,7 +35,7 @@ EOF
 chmod +x "$tmp/bin/mise" "$tmp/bin/sheldon"
 export TEST_SHELDON="$tmp/bin/sheldon"
 
-manifest="$CHEZMOI_DEST_DIR/.config/dotfiles/shell/plugins.toml"
+manifest="$CHEZMOI_DEST_DIR/.config/shell/plugins.toml"
 printf '%s\n' '[plugins.first]' 'github = "example/first"' > "$manifest"
 legacy="$CHEZMOI_DEST_DIR/.local/share/dotfiles/plugins/first"
 mkdir -p "$legacy"

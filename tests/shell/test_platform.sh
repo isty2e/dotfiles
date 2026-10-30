@@ -8,8 +8,8 @@ tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT HUP INT TERM
 mkdir -p "$tmp/home" "$tmp/bin"
 fragment="$tmp/phases.sh"
-printf '_dotfiles_shell_dir="%s"\n. "$_dotfiles_shell_dir/platform.sh"\n. "$_dotfiles_shell_dir/integrations/homebrew.sh"\n' \
-    "$repo/home/private_dot_config/private_dotfiles/shell" > "$fragment"
+printf '_dotfiles_shell_dir="%s"\n. "$_dotfiles_shell_dir/platforms/init.sh"\n. "$_dotfiles_shell_dir/integrations/homebrew.sh"\n' \
+    "$repo/home/private_dot_config/private_shell" > "$fragment"
 
 cat > "$tmp/bin/uname" <<'EOF'
 #!/bin/sh

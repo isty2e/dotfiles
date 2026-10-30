@@ -26,7 +26,7 @@ chmod +x "$tmp/bin/uname" "$tmp/bin/zsh"
 # shellcheck disable=SC2016
 env -i HOME="$tmp/home" PATH="$tmp/bin:/usr/bin:/bin" SHELL=/bin/bash \
     SSH_CONNECTION=remote TERM=xterm TEST_TMUX="$tmux" TEST_SOCKET="$tmp/socket" \
-    FRAGMENT="$repo/home/private_dot_config/private_dotfiles/shell/bash/handoff.sh" \
+    FRAGMENT="$repo/home/private_dot_config/private_shell/bash/handoff.sh" \
     /bin/bash --noprofile --norc -ic '. "$FRAGMENT"' 2>/dev/null
 
 selected=$("$tmux" -S "$tmp/socket" show-options -gv default-shell)

@@ -78,8 +78,9 @@ applying. For an ordinary non-template file, a deliberately selected
 independent changes. Do not bulk import the home: private and unrelated changes
 must not enter Git. There is no custom reverse-capture command.
 
-Secrets, machine-specific `shell/device/local.sh`, credentials
-and installed agent resources remain with their existing owners. Native daem commands own installed skills and
-instructions; do not edit generated installations to bypass their manifest.
+Secrets, machine-specific `~/.config/shell/device/local.sh`, credentials and
+installed agent resources remain with their existing owners. Native daem commands
+own installed skills and instructions; do not edit generated installations to
+bypass their manifest.
 See [setup and migration](../setup.md) before adopting this layout on an existing
 home. Pi themes retain their [manual installation](../pi/README.md#install).

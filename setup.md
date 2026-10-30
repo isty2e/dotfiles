@@ -11,12 +11,12 @@ Back up startup files, managed settings, symlink targets and native workspaces t
 a private location outside Git. Inspect `chezmoi diff` before applying. Keep
 machine values and secrets in private device files, not the shared sources:
 
-- `~/.config/dotfiles/shell/device/local.sh`: machine-specific paths and shell settings.
-- `~/.config/dotfiles/shell/device/credentials.sh`: trusted shell code containing
+- `~/.config/shell/device/local.sh`: machine-specific paths and shell settings.
+- `~/.config/shell/device/credentials.sh`: trusted shell code containing
   credentials. Only readable, user-owned files with no group/other permissions
   are loaded; use 0600.
 
-The managed `.config` and `.config/dotfiles` directories use 0700. This can remove
+The managed `.config` and `.config/shell` directories use 0700. This can remove
 access previously granted to other users; review shared-home requirements first.
 Bootstrap uses conflict protection and stops rather than silently replacing
 existing startup files or native workspace directories. Earlier entries may have
@@ -94,30 +94,34 @@ source editing, updates, drift handling and local-state exclusions.
 ## Shell settings
 
 Interactive Bash and Zsh use the following ownership boundaries under
-`~/.config/dotfiles/`. Noninteractive shells do not initialize this profile.
+`~/.config/shell/`. Noninteractive shells do not initialize this profile.
 
 | Location | Responsibility |
 | --- | --- |
-| `shell/platforms/macos.sh`, `linux.sh` | OS defaults: listing flags, SDK/locale, historical profile defaults |
-| `shell/device/local.sh` (unmanaged) | This device's paths and overrides; loaded after OS defaults, before tools |
-| `shell/preferences.sh` | Shared editor, clipboard, aliases and command preferences |
-| `shell/integrations/` | Optional Homebrew, mise/Pixi, Slurm and prompt integration on either OS |
-| `shell/bash/`, `shell/zsh/` | Shell-native handoff, completion, history and plugin mechanics |
+| `platforms/init.sh`, `platforms/macos.sh`, `platforms/linux.sh` | OS selection and defaults: listing flags, SDK/locale, historical profile defaults |
+| `device/local.sh` (unmanaged) | This device's paths and overrides; loaded after OS defaults, before tools |
+| `preferences.sh` | Shared editor, clipboard, aliases and command preferences |
+| `integrations/` | Optional Homebrew, mise/Pixi, Slurm and prompt integration on either OS |
+| `bash/`, `zsh/` | Shell-native handoff, completion, history and plugin mechanics |
+
+The corresponding source is `home/private_dot_config/private_shell/`.
+The `private_` attributes retain the owner-only directory permissions; they are
+not part of the deployed path names.
 
 The entrypoints show these stages explicitly. Ordinary Zsh options live directly
 in `.zshrc`. Device settings can override platform defaults and shared editor
 choices. For example, put `BREW_LOCATION`, `DOTFILES_PIXI_BASE_MANIFEST`,
-`DOTFILES_RSYNC_BACKUP_DIR` or `DK_VAULT_PATH` in `shell/device/local.sh` rather than
+`DOTFILES_RSYNC_BACKUP_DIR` or `DK_VAULT_PATH` in `device/local.sh` rather than
 creating a hostname profile in Git. `DOTFILES_ZSH_HISTORY_SIZE` controls retention;
 `DOTFILES_BASH_HISTORY_SYNC=0` disables prompt-time history writes on an NFS device,
 regardless of OS. Existing defaults remain macOS on/Linux off for the latter.
 
-Create `~/.config/dotfiles/shell/device/` privately, with mode 0700. Its
+Create `~/.config/shell/device/` privately, with mode 0700. Its
 `local.sh` and `credentials.sh` are the only device-file locations loaded by the
 profile. Missing files are optional; no alternate path is searched. These files
 are trusted shell code and must remain outside Git.
 
-Private `shell/device/credentials.sh` is an opt-in path on either OS. It must be
+Private `device/credentials.sh` is an opt-in path on either OS. It must be
 user-owned, readable and have no group/other access, normally 0600. An unsafe
 file is skipped with a warning. Credential loading preserves the caller's export
 setting.

@@ -8,10 +8,10 @@ tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT HUP INT TERM
 mkdir -p "$tmp/bin" "$tmp/home/pixi-env/base/.pixi/envs/default"
 touch "$tmp/home/pixi-env/base/pixi.toml"
-mkdir -p "$tmp/repository/workspaces/pixi-base/.pixi/envs/default" "$tmp/home/.config/dotfiles/shell"
+mkdir -p "$tmp/repository/workspaces/pixi-base/.pixi/envs/default" "$tmp/home/.config/shell"
 touch "$tmp/repository/workspaces/pixi-base/pixi.toml"
 printf "_dotfiles_repository_manifest='%s'\n" "$tmp/repository/workspaces/pixi-base/pixi.toml" \
-    > "$tmp/home/.config/dotfiles/shell/workspaces.sh"
+    > "$tmp/home/.config/shell/workspaces.sh"
 
 cat > "$tmp/bin/mise" <<'EOF'
 #!/bin/sh
@@ -47,7 +47,7 @@ printf '%s\n' 'export TEST_PIXI_LOADED=1'
 EOF
 chmod +x "$tmp/bin/"*
 
-fragment="$repo/home/private_dot_config/private_dotfiles/shell/integrations/environment.sh"
+fragment="$repo/home/private_dot_config/private_shell/integrations/environment.sh"
 run_shell() {
     shell=$1
     shift
@@ -146,7 +146,7 @@ grep -Fq "$tmp/repository/workspaces/pixi-base/pixi.toml" "$tmp/log"
 run_shell /bin/bash "PIXI_ENVS_HOME=$tmp/custom path" > /dev/null
 grep -Fq "$tmp/custom path/base/pixi.toml" "$tmp/log"
 
-rm "$tmp/home/.config/dotfiles/shell/workspaces.sh"
+rm "$tmp/home/.config/shell/workspaces.sh"
 for shell in /bin/bash /bin/zsh; do
     : > "$tmp/log"
     output=$(run_shell "$shell")
@@ -157,7 +157,7 @@ for shell in /bin/bash /bin/zsh; do
     fi
 done
 printf "_dotfiles_repository_manifest='%s'\n" "$tmp/repository/workspaces/pixi-base/pixi.toml" \
-    > "$tmp/home/.config/dotfiles/shell/workspaces.sh"
+    > "$tmp/home/.config/shell/workspaces.sh"
 
 rm "$tmp/bin/pixi"
 ln -s mise "$tmp/bin/pixi"

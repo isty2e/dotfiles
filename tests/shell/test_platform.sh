@@ -9,7 +9,7 @@ trap 'rm -rf "$tmp"' EXIT HUP INT TERM
 mkdir -p "$tmp/home" "$tmp/bin"
 fragment="$tmp/phases.sh"
 printf '_dotfiles_shell_dir="%s"\n. "$_dotfiles_shell_dir/platforms/init.sh"\n. "$_dotfiles_shell_dir/integrations/homebrew.sh"\n' \
-    "$repo/home/private_dot_config/private_shell" > "$fragment"
+    "$repo/config/shell/lib" > "$fragment"
 
 cat > "$tmp/bin/uname" <<'EOF'
 #!/bin/sh

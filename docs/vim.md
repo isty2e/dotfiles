@@ -1,6 +1,6 @@
 # Vim setup and recovery
 
-`home/dot_vimrc` works without an existing `~/.vim` directory. It declares
+`config/vim/vimrc` works without an existing `~/.vim` directory. It declares
 vim-plug, plugins, three personal colorschemes and indentation settings for HTML,
 Python, Ruby, Rust and Swift. Vim and Neovim keep separate configurations.
 
@@ -17,13 +17,13 @@ cloud-synced runtime.
 For a new account, run from the checkout root:
 
 ```sh
-cp -n home/dot_vimrc "$HOME/.vimrc"
+cp -n config/vim/vimrc "$HOME/.vimrc"
 vim
 ```
 
 Run `:VimSetup`, inspect its output and `:PlugStatus`, then restart Vim. Use the
 actual Vim executable, not an alias for Neovim. To select this vimrc without
-replacing an existing one, run `vim -u "$PWD/home/dot_vimrc"`. Use a separate home
+replacing an existing one, run `vim -u "$PWD/config/vim/vimrc"`. Use a separate home
 for an isolated trial; selecting a vimrc alone does not isolate the runtime.
 
 Ordinary startup downloads nothing. It warns if the manager or plugins are

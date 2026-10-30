@@ -5,16 +5,16 @@ distribution such as AstroNvim or LazyVim. You need Git and a true-color termina
 A Nerd Font adds file icons. Telescope live grep needs ripgrep; its native fzf
 sorter also needs a C compiler and Make.
 
-The source is `home/private_dot_config/nvim/`. Paths below are relative to that
+The source is `config/nvim/`. Paths below are relative to that
 directory. The [former repository](https://github.com/isty2e/dotfiles.nvim) keeps
 history; this checkout is the source for edits. [Vim](vim.md) remains independent.
 
 ## Install and update
 
-Chezmoi places the contents at `~/.config/nvim`; see
-[setup](../setup.md#chezmoi-placement). If that path already contains configuration
+Mise links the configuration files at `~/.config/nvim`; see
+[setup](../setup.md#mise-deployment). If that path already contains configuration
 or a Git checkout, follow [the migration guide](editor-migration.md#neovim) first.
-Without chezmoi, preserve the old target and copy only the configuration directory's
+Without mise deployment, preserve the old target and copy only the configuration directory's
 contents into an empty target, not the whole dotfiles repository. Plugin data,
 state and caches are separate; selecting another config does not isolate them.
 
@@ -25,7 +25,7 @@ declarations. It reuses existing managers and
 healthy checkouts without running update, sync, clean or restore.
 
 Setup uses the network and executes third-party plugin code. Run it explicitly:
-ordinary startup and chezmoi apply do not install plugins, language servers or
+ordinary startup and `mise dot apply` do not install plugins, language servers or
 parsers, or check for updates. Without lazy.nvim, startup warns and keeps options,
 core maps and `:NvimSetup` available, but not the plugin features.
 
@@ -35,7 +35,7 @@ before retrying. Inspect plugin failures and retries in `:Lazy`.
 
 Use `:Lazy restore` to return plugins to `lazy-lock.json` revisions. After an
 intentional `:Lazy update`, keep the generated lockfile local; it is not tracked
-or deployed by chezmoi. Plugin declarations are the shared source. The Tree-sitter
+or deployed by mise. Plugin declarations are the shared source. The Tree-sitter
 declaration pins its legacy API; a newer API needs configuration changes.
 
 For the native Telescope sorter, run `make` in the installed
@@ -138,9 +138,9 @@ fixture Git repository. It borrows an existing plugin cache without installing:
 sh tests/nvim/run-keymaps.sh
 ```
 
-Pass another cache directory as the first argument. To test a chezmoi result,
+Pass another cache directory as the first argument. To test a linked deployment,
 set `KEYMAP_TEST_CONFIG` to its `.config/nvim`; the default is this repository's
-`home/private_dot_config/nvim`. Missing Neovim, Git or the neo-tree cache exits
+`config/nvim`. Missing Neovim, Git or the neo-tree cache exits
 with code 77; other incomplete caches fail. Checks cover plugin buffers, picker
 input, completion, an LSP protocol fixture, comments, themes and the statusline.
 They do not check every external language server.
@@ -153,7 +153,7 @@ scratch=$(mktemp -d)
 env -i PATH="$PATH" HOME="$scratch" TMPDIR="$scratch" \
   XDG_CONFIG_HOME="$scratch/config" XDG_DATA_HOME="$scratch/data" \
   XDG_CACHE_HOME="$scratch/cache" XDG_STATE_HOME="$scratch/state" \
-  KEYMAP_TEST_CONFIG="$root/home/private_dot_config/nvim" \
+  KEYMAP_TEST_CONFIG="$root/config/nvim" \
   nvim --headless -u NONE -i NONE -l "$root/tests/nvim/core.lua"
 rm -rf "$scratch"
 ```

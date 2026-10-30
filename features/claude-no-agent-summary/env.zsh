@@ -1,12 +1,10 @@
-{{- $feature := include ".chezmoitemplates/claude-no-agent-summary/manifest.toml" | fromToml -}}
 _dotfiles_claude_summary_env() {
     local hook="$HOME/.local/share/no-agent-summary.js"
     local preload="--preload=$hook"
     local original="${BUN_OPTIONS-}" option pending= seen=0 enabled=0
     local -a options=()
-{{ if eq $feature.enabled true }}
-    [[ -r $hook ]] && enabled=1
-{{ end }}
+    # Keep this cleanup active after the optional JS has been removed.
+    [[ -f $hook && -r $hook ]] && enabled=1
     # Preserve unrelated token quoting; decode only to identify our preload.
     for option in "${(@z)original}"; do
         [[ -z $option ]] && continue

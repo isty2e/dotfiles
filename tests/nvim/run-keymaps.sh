@@ -2,7 +2,7 @@
 set -eu
 
 repo=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
-config=${KEYMAP_TEST_CONFIG:-$repo/home/private_dot_config/nvim}
+config=${KEYMAP_TEST_CONFIG:-$repo/config/nvim}
 config=$(CDPATH= cd -- "$config" && pwd)
 plugins=${1:-${XDG_DATA_HOME:-$HOME/.local/share}/nvim/lazy}
 if ! command -v nvim >/dev/null 2>&1 || ! command -v git >/dev/null 2>&1 || ! test -d "$plugins/neo-tree.nvim"; then

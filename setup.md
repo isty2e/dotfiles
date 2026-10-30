@@ -1,32 +1,41 @@
 # Setup
 
-Git, a POSIX shell and HTTPS-capable curl are required. Bootstrap can acquire
-chezmoi and mise through their official installers in `~/.local/bin`; it does not
-require administrator privileges. Tool installation uses the network and runs
-third-party installers and builds.
+Install current [mise](https://mise.jdx.dev/getting-started.html), Git, a POSIX
+shell and HTTPS-capable curl before using this checkout. Mise must provide native
+bootstrap, dotfile groups and local configuration includes; no exact-patch
+allowlist is imposed. Tool installation uses the network and runs third-party
+installers and builds. This configuration does not change accounts, login shells
+or system packages.
 
 ## First apply on an existing home
 
+This layout is no longer a chezmoi source. Do not run its apply/update commands
+against this checkout. Retire old source bindings and automation as part of the
+handoff, preserving their state for a deliberate rollback rather than deleting it.
+
 Back up startup files, managed settings, symlink targets and native workspaces to
-a private location outside Git. Inspect `chezmoi diff` before applying. Keep
-machine values and secrets in private device files, not the shared sources:
+a private location outside Git. Inspect `mise dot diff` from the intended checkout.
+Keep machine values and secrets in private device files, not the shared sources:
 
 - `~/.config/shell/device/local.sh`: machine-specific paths and shell settings.
 - `~/.config/shell/device/credentials.sh`: trusted shell code containing
   credentials. Only readable, user-owned files with no group/other permissions
   are loaded; use 0600.
 
-The managed `.config` and `.config/shell` directories use 0700. This can remove
-access previously granted to other users; review shared-home requirements first.
-Bootstrap uses conflict protection and stops rather than silently replacing
-existing startup files or native workspace directories. Earlier entries may have
-been applied before a conflict. There is no automatic backup or rollback.
+Ordinary configuration uses file links. Existing regular files conflict even when
+their bytes match, so reconcile and move only reviewed files aside before the
+first apply. Mise can repoint existing links without `--force`; inspect their
+destinations as well as their contents. Do not force-adopt an existing home or
+bulk-import private startup files. Existing destination-directory permissions are
+left intact; create private device directories with 0700 and credentials with
+0600. Earlier entries can remain applied after a failure; there is no automatic
+backup or whole-operation rollback.
 
 ### Native workspace migration
 
 The source checkout must remain at a stable location. Mise and daem now use
 directory bindings; Pixi uses an actual workspace in the checkout. Do not force
-chezmoi to replace an existing native workspace directory: it can contain valuable
+mise to replace an existing native workspace directory: it can contain valuable
 local edits, locks and daem ownership state.
 
 For daem, first reconcile the live manifest with `workspaces/daem/daem.toml`,
@@ -36,16 +45,14 @@ the reviewed binding. Keep the workspace 0700 and manifest 0600. Use native
 `daem apply --dry-run` afterwards; stop on unexpected adoption, deletion or
 ownership changes. Do not reset state or use forced adoption to complete a move.
 
-Older source checkouts can also contain ignored state under
-`home/private_dot_config/private_daem/` or `home/pixi-env/base/`. Git does not move
-those files with the declarations. Privately preserve them and reconcile them
-with the corresponding new workspace before applying. Retired source directories
-can conflict with the new directory bindings; remove only empty retired
-directories after their contents are safely preserved, never clean them forcibly.
+Git does not move ignored local state when declarations move. Preserve any state
+from an older checkout layout and reconcile it with the corresponding workspace
+before adoption; do not remove old directories until their contents are safe.
 
-For mise, reconcile the global declaration and preserve any other local files
-before replacing its config directory. Existing installed runtimes stay in
-mise's data directory. No automatic migration script is provided.
+For mise, reconcile existing tools with `workspaces/mise/conf.d/tools.toml` and
+settings with `workspaces/mise/config.toml`. Preserve other local files before
+replacing the config directory. Installed runtimes stay in mise's data directory.
+No automatic migration script is provided.
 
 For Pixi, build a separate environment with the new workspace manifest, verify
 it, then switch new shell activation. **Do not move a live `.pixi` prefix.** Keep
@@ -53,49 +60,54 @@ the old environment and running processes intact until cleanup is explicitly
 chosen. `DOTFILES_PIXI_BASE_MANIFEST` in local settings can continue selecting
 the old manifest while preparing the new one.
 
-Removing the tracked Neovim lock does not delete a live `lazy-lock.json`. It is
-unmanaged and stays local. Preserve it if native restore on that machine matters.
-After adopting the new editing workflow, retire any old installed
-`~/.local/bin/dotfiles-capture` alias and `dotfiles_capture.py` copy explicitly;
-removing them from source does not remove an existing installed command.
+Neovim's live `lazy-lock.json` is unmanaged and stays local. Preserve it if native
+restore on that machine matters.
 
 ## Bootstrap a checkout
 
 ```sh
 git clone https://github.com/isty2e/dotfiles.git "$HOME/dotfiles"
 cd "$HOME/dotfiles"
-sh bootstrap.sh
+mise trust
+mise bootstrap
 ```
 
-Bootstrap binds chezmoi to this checkout, deploys settings with
-`--less-interactive --error-on-conflict`, then explicitly runs mise installation
-and shell-plugin preparation. Repeating bootstrap repeats those explicit setup
-operations; ordinary apply never installs them. Pixi, daem resources, editor
-plugins, account logins and changes to the login shell remain manual.
+Native bootstrap links settings, applies the optional preload, installs the
+shared tool declarations and then prepares shell plugins. Repeating it repeats
+these preparation operations. Pixi environments, daem resources, editor plugins,
+account logins and changes to the login shell remain separate actions.
 
-After a placement conflict: back up the affected files and targets, inspect
-`chezmoi diff`, choose changes with `chezmoi apply --less-interactive`, then rerun
-bootstrap to finish installation. A failed installation leaves configuration
-placed and may leave some packages installed; retry bootstrap after addressing
-the native error. It does not undo completed steps.
+After a conflict, preserve the affected files and link destinations, reconcile
+their contents, then rerun the native command. A failed installation can leave
+configuration linked and some tools installed; retry after addressing the error.
+Completed steps are not undone.
 
-## Chezmoi placement
+## Mise deployment
 
-`home/` contains ordinary configuration. Files are copied, not linked, except
-for the mise and daem **directory** bindings. A small configuration-only hook
-protects the actual daem workspace permissions before binding it. Review existing
-editor links and shared runtime directories using the
+`config/` contains native settings, deployed as individual links by application
+groups. Mise and daem retain **directory** bindings for native editing. A
+pre-dotfiles hook protects the daem workspace before publishing its link.
+Review existing editor links and shared runtime directories using the
 [editor migration guide](docs/editor-migration.md).
 
-Edit managed settings in their source, not the deployed copy. The
-[editing guide](docs/manifest-management.md) defines declaration ownership,
-source editing, updates, drift handling and local-state exclusions.
+Edit linked source directly; content changes do not need another apply. The
+[editing guide](docs/manifest-management.md) covers structural changes, orphan
+removal, native declarations and local state. To link settings without installing
+tools or shell plugins, run `mise dot apply`. Its preload hook can download the
+declared JS; use `mise dot apply --dry-run` to preview without running hooks.
+
+Use ignored `mise.local.toml` for machine-specific choices. For example,
+`[bootstrap]` with `dotfile_groups = ["shell", "vim"]` selects those groups;
+omitting that selection uses all declared groups. Explicit workspace bindings
+and the independent preload declaration are not group selections. Review
+`mise dot status` and use native prune/unapply when removing a deployed group;
+deselecting it alone leaves orphaned links.
 
 ## Shell settings
 
 ### Claude Code agent-summary preload
 
-This integration is enabled by default. Chezmoi downloads a pinned
+This integration is enabled by default. A mise post-dotfiles hook downloads a pinned
 [no-agent-summary hook](https://gist.github.com/flamerix-ai/c3905705cc4205e5de3011fa2e74efce)
 to `~/.local/share/no-agent-summary.js`; `.zshenv` adds it to `BUN_OPTIONS`.
 The hook suppresses periodic background-agent progress summaries, so the agent
@@ -103,21 +115,30 @@ panel and SDK `task_progress.summary` stop receiving those summaries. It is an
 unofficial runtime hook whose compatibility with Claude Code updates is owned by
 the upstream project, not a guarantee of this configuration.
 
-The feature's declaration and environment/removal templates live together in
-`home/.chezmoitemplates/claude-no-agent-summary/`. Its `manifest.toml` is the
-single switch: `enabled = true` installs/enables it; `enabled = false` removes
-the downloaded JS and strips its preload from new Zsh environments. Other Bun
+The feature's declaration, acquisition adapter and static environment adapter
+live in `features/claude-no-agent-summary/`. Its native `mise.toml` owns
+the `claude_no_agent_summary` mode (`"on"` or `"off"`) and the pinned URL.
+To disable it on one machine,
+put this override in the checkout's ignored `mise.local.toml`:
+
+```toml
+[vars]
+claude_no_agent_summary = "off"
+```
+
+Applying `"off"` removes the downloaded JS without fetching, while the retained
+environment adapter strips its preload from new Zsh environments. Other Bun
 options are preserved. The JS is not tracked in Git and shell startup does not
-download it. Edit the pinned URL in the same manifest to update it.
+download it. Set the mode to `"on"` or remove the override to re-enable it.
 
 Before disabling, finish existing Claude/Bun sessions and stop any Claude Code
 daemon through its normal controls: those processes retain loaded code and
-inherited options. Then change `enabled`, review `chezmoi diff`, run
-`chezmoi apply --less-interactive --error-on-conflict`, and start a fresh Zsh
-before using Bun or Claude again. Re-enable with `enabled = true` and the same
-apply workflow. Do not delete the JS alone while old environments refer to it.
-As with other managed files, review conflicts rather than forcing changes to
-existing private directories.
+inherited options. Then change the flag, review `mise dot apply --dry-run`, run
+`mise dot apply`, and start a fresh Zsh before using Bun or Claude again.
+Changing the flag alone does not perform acquisition/removal. Do not delete the
+JS alone while old environments refer to it. Failed downloads leave the previous
+file intact and fail the command; they do not roll back unrelated linked files.
+Disable/apply before retiring the feature's source and deployment entry.
 
 ### Interactive configuration
 
@@ -132,9 +153,8 @@ Interactive Bash and Zsh use the following ownership boundaries under
 | `integrations/` | Optional Homebrew, mise/Pixi, Slurm and prompt integration on either OS |
 | `bash/`, `zsh/` | Shell-native handoff, completion, history and plugin mechanics |
 
-The corresponding source is `home/private_dot_config/private_shell/`.
-The `private_` attributes retain the owner-only directory permissions; they are
-not part of the deployed path names.
+The corresponding source is `config/shell/lib/`; `device/` remains private runtime
+input outside that tree. Bash/Zsh entrypoints live beside `lib/` in the source.
 
 The entrypoints show these stages explicitly. Ordinary Zsh options live directly
 in `.zshrc`. Device settings can override platform defaults and shared editor
@@ -192,8 +212,8 @@ current environments; new shells read the deployed settings.
 ### History, prompt and environments
 
 Mise activation reuses installed tools and disables automatic installation.
-The default Pixi manifest is rendered from this checkout's
-`workspaces/pixi-base/pixi.toml`; no runtime source lookup is needed. Explicit
+The default Pixi manifest is resolved through the bound mise workspace to its
+sibling `workspaces/pixi-base/pixi.toml`, without a generated absolute path. Explicit
 `DOTFILES_PIXI_BASE_MANIFEST` and `PIXI_ENVS_HOME` overrides take precedence.
 An inherited Pixi project, Conda environment or virtualenv is not replaced.
 Without an already installed default Pixi environment, startup skips activation.
@@ -221,7 +241,8 @@ failed fzf initialization skips that selector without skipping the other plugins
 ## Mise global tools
 
 `~/.config/mise` links to `workspaces/mise`. Use normal `mise use --global …`
-or edit its `config.toml` and run `mise install`. Tool requests retain their
+or edit `workspaces/mise/conf.d/tools.toml` and run `mise install`. The same catalog
+is included by repository bootstrap. Tool requests retain their
 existing version policies; a repository rollback is not a package rollback.
 
 ## Pixi base environment
@@ -254,7 +275,7 @@ and keep credentials out of declarations.
 
 ## Tests
 
-Use Python 3.11+, chezmoi, Git, Bash, Zsh, Vim and Neovim. Expect and tmux enable
+Use Python 3.11+, mise, Git, curl, Bash, Zsh, Vim and Neovim. Expect and tmux enable
 session/handoff checks; the macOS tests can also use Homebrew Bash. Install Python
 test dependencies from `tests/keymaps/requirements.txt`.
 
@@ -267,7 +288,9 @@ Pixi declaration checks use available binaries or the `MISE` and `PIXI`
 overrides; missing optional tools are reported as skips. Network-backed editor
 acquisition and plugin-loaded checks are separate. See [Vim](docs/vim.md),
 [Neovim](docs/neovim.md), and [keymap checks](docs/keymaps.md) for their commands.
-CI's pinned chezmoi version is a test input, not an exact-version runtime gate.
+Deployment tests exercise native mise with temporary homes and file-URL assets;
+they do not fetch the real preload or install the declared tools. Optional native
+Bun, Ghostty and daem checks skip when unavailable. CI installs current mise.
 
 ## Slurm commands
 
@@ -291,7 +314,7 @@ and optional theme selection are separate operations.
 
 ## Ghostty
 
-Chezmoi places `home/private_dot_config/ghostty/` in `~/.config/ghostty/`.
+Mise links files from `config/ghostty/` into `~/.config/ghostty/`.
 The selected theme is `one-half-light.conf`; `catppuccin-latte.conf` is also
 available. Other local themes and runtime state remain unmanaged and are not
 removed by apply. Edit the managed source for persistent shared changes.

@@ -33,8 +33,8 @@ printf 'sleep <%s>\n' "$1" >> "$LOG"
 EOF
 chmod +x "$tmp/bin/"*
 
-cancel() { sh "$repo/home/dot_local/bin/executable_slurm-cancel" "$@"; }
-submit() { sh "$repo/home/dot_local/bin/executable_sbatchall"; }
+cancel() { sh "$repo/config/shell/bin/slurm-cancel" "$@"; }
+submit() { sh "$repo/config/shell/bin/sbatchall"; }
 check_log() {
     printf '%s\n' "$1" > "$tmp/expected"
     if ! cmp -s "$tmp/expected" "$LOG"; then

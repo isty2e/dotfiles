@@ -1,86 +1,94 @@
 # Editing managed configuration
 
-Edit ordinary settings in `home/`, review the Git diff, then apply them with
-chezmoi. `chezmoi source-path <target>` locates a managed file's source;
-`chezmoi edit <target>` opens it. Agents can edit the source files directly.
-Do not treat an edit request as permission to deploy it to the current home.
+`mise.toml` declares the deployment. Native settings live under `config/` and are
+linked individually into the home directory. Edit their repository source, or
+open it through mise from the checkout:
 
 ```sh
-chezmoi edit ~/.config/helix/config.toml
-chezmoi diff ~/.config/helix/config.toml
-chezmoi apply --less-interactive --error-on-conflict ~/.config/helix/config.toml
+mise dot edit ~/.config/helix/config.toml
+git diff
 ```
 
-Generated chezmoi configuration sets `lessInteractive = true`. Existing users
-must add that setting to their local chezmoi configuration or review and run
-`chezmoi init` to regenerate it. Bootstrap and the update example below also pass
-the conflict flags explicitly. A conflict can leave earlier entries applied;
-chezmoi does not create a backup or roll back the operation.
+Edits to an existing linked source are immediately visible through the link.
+There is no copy or synchronization step; applications may need a reload or a new
+session. Updating the linked checkout also updates the active configuration.
+Use another worktree when an experiment or request needs source-only isolation,
+not as a prerequisite for ordinary editing. Keep the operating checkout at a
+stable path while home links point into it.
 
 ## Tool declarations
 
 | Declaration | Source | Native editing path |
 | --- | --- | --- |
-| CLI tools | `workspaces/mise/config.toml` | `mise use --global …` |
-| Agent environment | `workspaces/daem/daem.toml` | `daem add …`, then review and use native lock/apply |
-| Python environment | `workspaces/pixi-base/pixi.toml` | Run Pixi in that directory or use `--manifest-path` |
+| CLI tools | `workspaces/mise/conf.d/tools.toml` | `mise use --global …` |
+| Mise settings | `workspaces/mise/config.toml` | Edit settings or use native mise commands |
+| Agent environment | `workspaces/daem/daem.toml` | `daem add …`, then review native lock/apply |
+| Python environment | `workspaces/pixi-base/pixi.toml` | Run Pixi there or pass `--manifest-path` |
 | Shell plugins | `workspaces/sheldon/plugins.toml` | Edit, then run `sh scripts/install-shell-plugins.sh` |
-| Neovim plugins | `home/private_dot_config/nvim/lua/plugins/` | Edit declarations, apply, then use `:NvimSetup` or `:Lazy` |
+| Neovim plugins | `config/nvim/lua/plugins/` | Edit, then use `:NvimSetup` or `:Lazy` explicitly |
 
-Chezmoi links the **directories** `~/.config/mise` and `~/.config/daem` to their
-workspaces. Native commands and atomic file replacement therefore reach the same
-source, rather than detached copies. Do not replace these with individual-file
-links. The daem workspace is protected as 0700 and its initial manifest as 0600
-before its binding is installed. Preserve private permissions when editing it.
+The repository and global mise configuration read the same tool catalog. Global
+write-target routing sends new `mise use --global` declarations there too. Mise
+and daem use **directory** links so native atomic saves reach the repository;
+do not replace them with individual-file links. The pre-dotfiles hook protects
+the actual daem workspace as 0700 and its manifest as 0600 before binding it.
 
-Git tracks authored settings and dependency declarations, not installation
-results. Pixi's `.pixi/` and `pixi.lock`, daem's `.daem/` and `daem.lock.toml`,
-and Neovim's live `lazy-lock.json` stay local. Required locks and ownership state
-are **not disposable** just because Git ignores them. Do not use `git clean -fdx`
-on the operational checkout or delete it as a rollback strategy.
+## Structural changes and preparation
 
-Exact dependency resolution from a Git commit is a **NON-GOAL**. Preserve explicit
-compatibility constraints in declarations, including the Tree-sitter legacy-API
-pin. A local lock may support native restore on that machine, but it is not a
-shared installation snapshot.
-
-## Apply, install and update
-
-Ordinary `chezmoi apply` places configuration and bindings; it does not run mise,
-Pixi, daem, editor setup or Sheldon installation. Its only setup script protects
-the daem workspace's private permissions. `sh bootstrap.sh` explicitly installs
-mise tools and prepares shell plugins after successful configuration placement.
-Other installation and update operations remain with their native tools.
-
-Keep the operational checkout at a stable path. Use separate worktrees for
-speculative changes: `workspaces/` files are live inputs to native commands, even
-before another chezmoi apply. Git rollback does not roll back installed packages.
-
-Before pulling, commit or deliberately set aside declaration edits, and inspect
-any differences in deployed ordinary files. Then, from the operational checkout:
+For new files, removed files, changed link targets or group selection, review and
+apply the deployment from the checkout:
 
 ```sh
-git pull --ff-only
-chezmoi diff
-chezmoi apply --less-interactive --error-on-conflict
+mise dot diff
+mise dot apply --dry-run
+mise dot apply
 ```
 
-Run the relevant native install/update only when intended. No update-all wrapper
-or exact chezmoi runtime-version allowlist is used. CI's chosen chezmoi version is
-a test input, not a restriction on users' installed versions.
+Groups deploy Git-indexed source files, so stage a newly authored file before
+trying its deployment. Untracked generated files are not automatically deployed.
+Put per-machine group choices or feature overrides in the ignored
+`mise.local.toml`; keep credentials in the private shell device files instead.
 
-## Unexpected live edits
+Removing a declaration alone does not remove an installed target. For groups,
+review orphaned files with `mise dot status`, then use `mise dot apply --prune`
+or `mise dot unapply --group <name>`. For an explicit target, run
+`mise dot unapply <target>` before deleting its declaration. These operations
+preserve unrelated files; do not use `--force` to bypass unexpected local changes.
 
-If a person or program changed a deployed ordinary file, compare it with its
-source. Preserve the wanted changes in the source and review the result before
-applying. For an ordinary non-template file, a deliberately selected
-`chezmoi re-add <target>` is also available after confirming the source has no
-independent changes. Do not bulk import the home: private and unrelated changes
-must not enter Git. There is no custom reverse-capture command.
+`mise dot apply` does not install tools, Pixi environments, shell plugins or editor
+plugins, and does not deploy daem resources. It does run the permission and
+[optional preload](../setup.md#claude-code-agent-summary-preload) hooks. Preload
+acquisition uses its declared URL; disabling it removes its JS without fetching.
+`mise bootstrap` additionally installs the declared tools and prepares shell
+plugins. Native failures propagate, but completed steps are not rolled back.
 
-Secrets, machine-specific `~/.config/shell/device/local.sh`, credentials and
-installed agent resources remain with their existing owners. Native daem commands
-own installed skills and instructions; do not edit generated installations to
-bypass their manifest.
-See [setup and migration](../setup.md) before adopting this layout on an existing
-home. Pi themes retain their [manual installation](../pi/README.md#install).
+## Unexpected local changes
+
+An application can replace an individual link with a regular file when saving.
+Mise then refuses to overwrite it, even if its bytes match the source. Compare
+both files and preserve the wanted changes before restoring the link. Native
+`mise dot add` can capture a deliberately selected target; review the source and
+Git diff rather than importing the whole home.
+
+Mise can repoint an existing link to a different source without `--force`; it is
+not a universal link-adoption guard. Review link targets and preserve their
+original destinations during the [first handoff](../setup.md#first-apply-on-an-existing-home).
+
+## Local state and boundaries
+
+Git tracks authored configuration and manifests, not locks or installation
+results. Pixi's `.pixi/` and `pixi.lock`, daem's `.daem/` and `daem.lock.toml`,
+mise's local configuration and Neovim's live `lazy-lock.json` remain local.
+Ignored locks and ownership state are not disposable. Do not use
+`git clean -fdx` on the operating checkout or remove it as a rollback strategy.
+
+Exact dependency resolution from a Git commit is a **NON-GOAL**. Preserve the
+declarations' explicit compatibility constraints, including the Tree-sitter
+legacy-API pin. A local lock can support native restore on its machine; it is not
+a shared installation snapshot. Git rollback does not roll back installed tools.
+
+Private device files and installed agent resources retain their existing owners.
+Shared instruction source lives in `agents/AGENTS.md`; editing it here does not
+update installed copies. Daem owns installed skills and instructions; deployment
+of these settings does not deploy those resources. Pi themes retain their
+[manual installation](../pi/README.md#install).

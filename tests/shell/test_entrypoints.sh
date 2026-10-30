@@ -16,10 +16,10 @@ for name in bash/handoff.sh device.sh platforms/init.sh generation.sh integratio
     mkdir -p "$(dirname "$fragments/$name")"
     printf 'printf "%%s\\n" "%s" >> "$TEST_LOG"\n' "$name" > "$fragments/$name"
 done
-cp "$repo/home/dot_zshrc" "$tmp/zdotdir/.zshrc"
+cp "$repo/config/shell/zshrc" "$tmp/zdotdir/.zshrc"
 
 env -i HOME="$home" PATH=/usr/bin:/bin TERM=xterm TEST_LOG="$tmp/log" \
-    /bin/bash --noprofile --rcfile "$repo/home/dot_bashrc" -ic ':' 2>/dev/null
+    /bin/bash --noprofile --rcfile "$repo/config/shell/bashrc" -ic ':' 2>/dev/null
 printf '%s\n' bash/handoff.sh platforms/init.sh device.sh generation.sh integrations/homebrew.sh \
     preferences.sh integrations/slurm.sh integrations/environment.sh \
     bash/history.sh bash/completion.sh integrations/prompt.sh > "$tmp/expected"
@@ -33,14 +33,14 @@ printf '%s\n' platforms/init.sh device.sh generation.sh integrations/homebrew.sh
 diff -u "$tmp/expected" "$tmp/log"
 
 : > "$tmp/log"
-env -i HOME="$home" PATH=/usr/bin:/bin TEST_LOG="$tmp/log" RC="$repo/home/dot_bashrc" \
+env -i HOME="$home" PATH=/usr/bin:/bin TEST_LOG="$tmp/log" RC="$repo/config/shell/bashrc" \
     /bin/bash --noprofile --norc -c '. "$RC"' 2>/dev/null
-env -i HOME="$home" PATH=/usr/bin:/bin TEST_LOG="$tmp/log" RC="$repo/home/dot_zshrc" \
+env -i HOME="$home" PATH=/usr/bin:/bin TEST_LOG="$tmp/log" RC="$repo/config/shell/zshrc" \
     /bin/zsh -fc 'source "$RC"' 2>/dev/null
 [ ! -s "$tmp/log" ]
 
 # Exercise the actual handoff without starting a real Zsh or touching a login account.
-cp "$repo/home/private_dot_config/private_shell/bash/handoff.sh" "$fragments/bash/handoff.sh"
+cp "$repo/config/shell/lib/bash/handoff.sh" "$fragments/bash/handoff.sh"
 cat > "$tmp/bin/uname" <<'EOF'
 #!/bin/sh
 printf 'Linux\n'
@@ -52,20 +52,20 @@ EOF
 chmod +x "$tmp/bin/"*
 : > "$tmp/log"
 env -i HOME="$home" PATH="$tmp/bin:/usr/bin:/bin" TERM=xterm TEST_LOG="$tmp/log" \
-    SSH_CONNECTION='test' /bin/bash --noprofile --rcfile "$repo/home/dot_bashrc" -ic ':' 2>/dev/null
+    SSH_CONNECTION='test' /bin/bash --noprofile --rcfile "$repo/config/shell/bashrc" -ic ':' 2>/dev/null
 [ "$(cat "$tmp/log")" = handoff ]
 
 for guard in DOTFILES_KEEP_BASH DOTFILES_ZSH_ACTIVE; do
     : > "$tmp/log"
     env -i HOME="$home" PATH="$tmp/bin:/usr/bin:/bin" TERM=xterm TEST_LOG="$tmp/log" \
-        SSH_CONNECTION='test' "$guard=1" /bin/bash --noprofile --rcfile "$repo/home/dot_bashrc" -ic ':' 2>/dev/null
+        SSH_CONNECTION='test' "$guard=1" /bin/bash --noprofile --rcfile "$repo/config/shell/bashrc" -ic ':' 2>/dev/null
     printf '%s\n' platforms/init.sh device.sh generation.sh integrations/homebrew.sh preferences.sh \
         integrations/slurm.sh integrations/environment.sh bash/history.sh bash/completion.sh integrations/prompt.sh > "$tmp/expected"
     diff -u "$tmp/expected" "$tmp/log"
 done
 
 # Load the actual fragments together with isolated, non-installing tool doubles.
-cp -R "$repo/home/private_dot_config/private_shell/." "$fragments/"
+cp -R "$repo/config/shell/lib/." "$fragments/"
 mkdir -p "$tmp/repository/workspaces/pixi-base/.pixi/envs/default"
 printf '[workspace]\nname = "base"\n' > "$tmp/repository/workspaces/pixi-base/pixi.toml"
 printf "_dotfiles_repository_manifest='%s'\n" "$tmp/repository/workspaces/pixi-base/pixi.toml" \
@@ -102,7 +102,7 @@ EOF
 chmod +x "$tmp/bin/"*
 
 env -i HOME="$home" PATH="$tmp/bin:/usr/bin:/bin" TERM=xterm DOTFILES_KEEP_BASH=1 \
-    /bin/bash --noprofile --rcfile "$repo/home/dot_bashrc" -ic '
+    /bin/bash --noprofile --rcfile "$repo/config/shell/bashrc" -ic '
         [ "$TEST_MISE_ACTIVE" = 1 ] && [ "$TEST_PIXI_ACTIVE" = 1 ] &&
         [ "$EDITOR" = hx ] && [ "$PS1" = integration_prompt ]
     ' 2>/dev/null
@@ -134,7 +134,7 @@ chmod +x "$tmp/bin/"*
 # The same native defaults apply on both OSes without a device file.
 for platform in Linux Darwin; do
     env -i HOME="$home" PATH="$tmp/bin:/usr/bin:/bin" TERM=xterm DOTFILES_KEEP_BASH=1 \
-        TEST_PLATFORM="$platform" /bin/bash --noprofile --rcfile "$repo/home/dot_bashrc" -ic '
+        TEST_PLATFORM="$platform" /bin/bash --noprofile --rcfile "$repo/config/shell/bashrc" -ic '
             [[ $HISTCONTROL == ignoreboth && $HISTSIZE == 1000 && $HISTFILESIZE == 2000 &&
                $DOTFILES_BASH_HISTORY_SYNC == 0 ]]
         ' 2>/dev/null
@@ -163,7 +163,7 @@ for platform in Linux Darwin; do
         if [ "$shell" = bash ]; then
             env -i HOME="$home" PATH="$tmp/bin:/usr/bin:/bin" TERM=xterm DOTFILES_KEEP_BASH=1 \
                 TEST_PLATFORM="$platform" TEST_DEVICE_LOG="$tmp/device-log" \
-                /bin/bash --noprofile --rcfile "$repo/home/dot_bashrc" -ic '
+                /bin/bash --noprofile --rcfile "$repo/config/shell/bashrc" -ic '
                     [ "$EDITOR" = device-editor ] && [ "$VISUAL" = device-editor ] &&
                     [ "$CPATH" = /device/include ] && [ "$LANG" = C ] &&
                     [ "$PI_CLIPBOARD_OSC52" = 0 ] && [ "$SQUEUE_FORMAT" = device-queue ] &&

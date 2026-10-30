@@ -48,7 +48,7 @@ if [ -z "${PIXI+x}" ]; then
     export PIXI
 fi
 
-for directory in bootstrap chezmoi keymaps mise pixi; do
+for directory in deployment keymaps mise pixi; do
     printf '\n== Python tests: %s ==\n' "$directory"
     "$python" -m unittest discover -s "tests/$directory" -v
 done

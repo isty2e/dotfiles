@@ -294,11 +294,14 @@ reporting or the next authorized delivery step.
 ### Execution
 
 - Before editing a home configuration, find its canonical source. For these
-  dotfiles, edit ordinary settings in the chezmoi source and native tool manifests
-  in their workspace; see `docs/manifest-management.md` in the dotfiles checkout.
-  Do not overwrite live differences, bulk-import home files, commit generated
-  locks/state, or deploy a source edit without authorization. Installed agent
-  resources remain owned by daem, not by direct edits to their generated copies.
+  dotfiles, edit linked settings in their repository source and native tool
+  manifests in their workspace; see `docs/manifest-management.md` in the checkout.
+  Authorized edits to linked settings take effect directly, without a separate
+  copy or synchronization step. Isolate work that must remain source-only.
+  Preserve local changes; do not bulk-import home files or commit generated
+  locks/state. Initial home adoption and agent-resource deployment still need
+  authorization. Installed agent resources remain owned by daem, not by direct
+  edits to their generated copies.
 
 - Do not test documentation by asserting that it contains specific prose, or API surfaces by asserting symbol
   presence/absence. Test behavior and contracts through executable examples, imports/calls, type/interface checks, or

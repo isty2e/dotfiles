@@ -1,29 +1,29 @@
 # Dotfiles
 
-Personal shell, editor and tool configuration for macOS and Linux. Chezmoi places
-configuration files, mise installs command-line tools, and Pixi manages the
-scientific Python environment. Vim and Neovim have independent configurations.
+Personal shell, editor and tool configuration for macOS and Linux. Mise links
+configuration files and prepares command-line tools; Pixi manages the scientific
+Python environment. Vim and Neovim have independent configurations.
 
 **For an existing home, review the configuration and back up startup files before
 applying.** Follow [first-apply preparation](setup.md#first-apply-on-an-existing-home)
-to keep private shell values out of Git. Do not bulk `re-add` before that first
-reviewed apply or when newly managed files appear. If your editors use links or
-a shared runtime, follow the
-[migration guide](docs/editor-migration.md) first. Bootstrap replaces managed
-`.bashrc` and `.zshrc` files and downloads tools and shell plugins.
+to preserve existing files and keep private shell values out of Git. If your
+editors use links or a shared runtime, follow the
+[migration guide](docs/editor-migration.md) first. Linked source edits become live
+without another apply; new files and links still need deployment.
 
-With Git, a POSIX shell and HTTPS-capable curl installed:
+Install [mise](https://mise.jdx.dev/getting-started.html), Git and HTTPS-capable
+curl first, then:
 
 ```sh
 git clone https://github.com/isty2e/dotfiles.git "$HOME/dotfiles"
 cd "$HOME/dotfiles"
-sh bootstrap.sh
+mise trust
+mise bootstrap
 ```
 
 - [Setup](setup.md): shell settings, tools, Pixi and tests.
-- [Editing configuration](docs/manifest-management.md): edit ordinary settings
-  in their source; native tool commands edit shared manifests directly. Generated
-  lockfiles and installed environments remain local.
+- [Editing configuration](docs/manifest-management.md): direct source editing,
+  native manifests, structural changes and local state.
 - [Vim](docs/vim.md) and [Neovim](docs/neovim.md): explicit plugin setup and recovery.
 - [Colemak keymaps](docs/keymaps.md): shared keys and editor-specific bindings.
 - [Pi PaperColor themes](pi/README.md): optional theme installation.

@@ -1,0 +1,6 @@
+[vars]
+claude_no_agent_summary = "on"
+claude_no_agent_summary_url = "https://gist.githubusercontent.com/flamerix-ai/c3905705cc4205e5de3011fa2e74efce/raw/4f1ad563fbe4fb830af5dd67fbde4c1860f9caa6/no-agent-summary.js"
+
+[bootstrap.hooks.post-dotfiles]
+run = "sh {{ config_root | quote }}/features/claude-no-agent-summary/apply.sh {{ vars.claude_no_agent_summary | quote }} {{ vars.claude_no_agent_summary_url | quote }}"

@@ -260,3 +260,19 @@ shared. Language servers and parsers remain separately installed tools.
 
 See [manual theme installation](pi/README.md#install). Agent environment deployment
 and optional theme selection are separate operations.
+
+## Ghostty
+
+Chezmoi places `home/private_dot_config/ghostty/` in `~/.config/ghostty/`.
+The selected theme is `one-half-light.conf`; `catppuccin-latte.conf` is also
+available. Other local themes and runtime state remain unmanaged and are not
+removed by apply. Edit the managed source for persistent shared changes.
+
+The font-family entries retain their order. Install Ghostty and any desired
+fonts separately; configuration placement does not require them to be present.
+`window-save-state = always` is a native macOS setting that Ghostty ignores on
+Linux.
+
+On macOS, Ghostty reads files in
+`~/Library/Application Support/com.mitchellh.ghostty/` after the XDG configuration.
+Settings there remain local and can override the managed configuration.

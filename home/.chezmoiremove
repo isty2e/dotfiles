@@ -1,0 +1,1 @@
+{{ includeTemplate "claude-no-agent-summary/remove.tmpl" . }}

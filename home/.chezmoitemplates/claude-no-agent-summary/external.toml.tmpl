@@ -1,0 +1,6 @@
+{{- $feature := include ".chezmoitemplates/claude-no-agent-summary/manifest.toml" | fromToml -}}
+{{- if eq $feature.enabled true }}
+[".local/share/no-agent-summary.js"]
+type = "file"
+url = {{ $feature.url | quote }}
+{{ end -}}

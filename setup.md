@@ -93,6 +93,34 @@ source editing, updates, drift handling and local-state exclusions.
 
 ## Shell settings
 
+### Claude Code agent-summary preload
+
+This integration is enabled by default. Chezmoi downloads a pinned
+[no-agent-summary hook](https://gist.github.com/flamerix-ai/c3905705cc4205e5de3011fa2e74efce)
+to `~/.local/share/no-agent-summary.js`; `.zshenv` adds it to `BUN_OPTIONS`.
+The hook suppresses periodic background-agent progress summaries, so the agent
+panel and SDK `task_progress.summary` stop receiving those summaries. It is an
+unofficial runtime hook whose compatibility with Claude Code updates is owned by
+the upstream project, not a guarantee of this configuration.
+
+The feature's declaration and environment/removal templates live together in
+`home/.chezmoitemplates/claude-no-agent-summary/`. Its `manifest.toml` is the
+single switch: `enabled = true` installs/enables it; `enabled = false` removes
+the downloaded JS and strips its preload from new Zsh environments. Other Bun
+options are preserved. The JS is not tracked in Git and shell startup does not
+download it. Edit the pinned URL in the same manifest to update it.
+
+Before disabling, finish existing Claude/Bun sessions and stop any Claude Code
+daemon through its normal controls: those processes retain loaded code and
+inherited options. Then change `enabled`, review `chezmoi diff`, run
+`chezmoi apply --less-interactive --error-on-conflict`, and start a fresh Zsh
+before using Bun or Claude again. Re-enable with `enabled = true` and the same
+apply workflow. Do not delete the JS alone while old environments refer to it.
+As with other managed files, review conflicts rather than forcing changes to
+existing private directories.
+
+### Interactive configuration
+
 Interactive Bash and Zsh use the following ownership boundaries under
 `~/.config/shell/`. Noninteractive shells do not initialize this profile.
 

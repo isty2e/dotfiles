@@ -1,10 +1,13 @@
 import os
+import shlex
 import shutil
 import stat
 import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+
+import tomllib
 
 REPO = Path(__file__).resolve().parents[2]
 VIM_SOURCE = REPO / "home/dot_vimrc"
@@ -23,6 +26,8 @@ CHEZMOI = (
 )
 GIT = shutil.which("git")
 DAEM = shutil.which(os.environ.get("DAEM", "daem"))
+ZSH = shutil.which("zsh")
+BUN = shutil.which(os.environ.get("BUN", "bun"))
 
 
 @unittest.skipUnless(CHEZMOI, "chezmoi is required; set CHEZMOI to its executable")
@@ -38,6 +43,15 @@ class ChezmoiSourceTests(unittest.TestCase):
             REPO / "home",
             self.source / "home",
             ignore=shutil.ignore_patterns("__pycache__"),
+        )
+        hook = self.root / "summary-preload.js"
+        hook.write_text("// Offline external-file fixture.\n")
+        feature = (
+            self.source / "home/.chezmoitemplates/claude-no-agent-summary/manifest.toml"
+        )
+        enabled = tomllib.loads(feature.read_text())["enabled"]
+        feature.write_text(
+            f'enabled = {str(enabled).lower()}\nurl = "{hook.as_uri()}"\n'
         )
         for workspace, name in (
             ("mise", "config.toml"),
@@ -76,6 +90,28 @@ class ChezmoiSourceTests(unittest.TestCase):
                 for p in source.rglob("*")
                 if p.is_file()
             )
+
+    def _summary_options(self, options: str = "") -> list[str]:
+        assert ZSH is not None
+        result = subprocess.run(
+            [
+                ZSH,
+                "-f",
+                "-c",
+                (
+                    '. "$HOME/.zshenv"; . "$HOME/.zshenv"; '
+                    'for option in "${(@z)${BUN_OPTIONS-}}"; do '
+                    'if [[ -n $option ]]; then print -r -- "${(Q)option}"; fi; done'
+                ),
+            ],
+            env=self.environment
+            | {"HOME": str(self.destination), "BUN_OPTIONS": options},
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        return result.stdout.splitlines()
 
     def _run(self, *arguments: str) -> subprocess.CompletedProcess[str]:
         assert CHEZMOI is not None
@@ -468,6 +504,109 @@ class ChezmoiSourceTests(unittest.TestCase):
         self._chezmoi("apply")
         self._chezmoi("verify")
         self.assertEqual(state.read_bytes(), b"unmanaged editor state")
+
+    @unittest.skipUnless(ZSH, "zsh is required for preload environment checks")
+    def test_summary_preload_preserves_other_options_and_is_idempotent(self) -> None:
+        self._chezmoi("apply", "--less-interactive", "--error-on-conflict")
+        hook = self.destination / ".local/share/no-agent-summary.js"
+        self.assertEqual(
+            hook.read_bytes(), (self.root / "summary-preload.js").read_bytes()
+        )
+        preload = f"--preload={hook}"
+        preload_arg = shlex.quote(preload)
+        self.assertEqual(self._summary_options(), [preload])
+        self.assertEqual(
+            self._summary_options(
+                f"--smol --preload='/other path.js' {preload_arg} {preload_arg}"
+            ),
+            ["--smol", "--preload=/other path.js", preload],
+        )
+
+        hook_arg = shlex.quote(str(hook))
+        self.assertEqual(
+            self._summary_options(f"--smol --preload {hook_arg} {preload_arg}"),
+            ["--smol", preload],
+        )
+
+        saved = self.root / "saved-hook.js"
+        hook.rename(saved)
+        self.assertEqual(self._summary_options(f"{preload_arg} --smol"), ["--smol"])
+        saved.rename(hook)
+        self._chezmoi("apply", "--less-interactive", "--error-on-conflict")
+        self._chezmoi("verify")
+
+    @unittest.skipUnless(ZSH, "zsh is required for preload environment checks")
+    def test_summary_preload_can_be_removed_and_reenabled(self) -> None:
+        self._chezmoi("apply", "--less-interactive", "--error-on-conflict")
+        hook = self.destination / ".local/share/no-agent-summary.js"
+        preload = f"--preload={hook}"
+        preload_arg = shlex.quote(preload)
+        feature = (
+            self.source / "home/.chezmoitemplates/claude-no-agent-summary/manifest.toml"
+        )
+        feature.write_text('enabled = false\nurl = "file:///nonexistent/disabled.js"\n')
+
+        self._chezmoi("apply", "--less-interactive", "--error-on-conflict")
+        self.assertFalse(hook.exists())
+        self.assertEqual(
+            self._summary_options(f"--smol {preload_arg} {preload_arg}"), ["--smol"]
+        )
+        self.assertEqual(self._summary_options(preload_arg), [])
+        self.assertEqual(
+            self._summary_options(
+                f"--preload {shlex.quote(str(hook))} --smol {preload_arg}"
+            ),
+            ["--smol"],
+        )
+        self._chezmoi("apply", "--less-interactive", "--error-on-conflict")
+        self._chezmoi("verify")
+
+        fixture = self.root / "summary-preload.js"
+        feature.write_text(f'enabled = true\nurl = "{fixture.as_uri()}"\n')
+        self._chezmoi("apply", "--less-interactive", "--error-on-conflict")
+        self.assertEqual(hook.read_bytes(), fixture.read_bytes())
+        self.assertEqual(self._summary_options(), [preload])
+        self._chezmoi("verify")
+
+    @unittest.skipUnless(BUN and ZSH, "native bun and zsh are required")
+    def test_summary_preload_quoting_is_accepted_by_bun(self) -> None:
+        assert BUN is not None and ZSH is not None
+        bun = Path(BUN).resolve()
+        if bun.name == "mise":
+            self.skipTest("bun resolves to a mise shim rather than a native binary")
+        fixture = self.root / "summary-preload.js"
+        fixture.write_text("globalThis.summaryFixture = true;\n")
+        self._chezmoi("apply", "--less-interactive", "--error-on-conflict")
+        result = subprocess.run(
+            [
+                ZSH,
+                "-f",
+                "-c",
+                """. "$HOME/.zshenv"; exec "$BUN" --eval 'console.log(globalThis.summaryFixture)'""",
+            ],
+            env=self.environment
+            | {
+                "HOME": str(self.destination),
+                "BUN": str(bun),
+                "MISE_AUTO_INSTALL": "false",
+                "MISE_NOT_FOUND_AUTO_INSTALL": "false",
+            },
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=True,
+        )
+        self.assertEqual(result.stdout.strip(), "true")
+
+    def test_summary_preload_conflict_does_not_relax_private_parent(self) -> None:
+        parent = self.destination / ".local/share"
+        parent.mkdir(parents=True, mode=0o700)
+        parent.chmod(0o700)
+        self._chezmoi("managed")
+        result = self._run("apply", "--less-interactive", "--error-on-conflict")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(stat.S_IMODE(parent.stat().st_mode), 0o700)
+        self.assertFalse((parent / "no-agent-summary.js").exists())
 
 
 if __name__ == "__main__":

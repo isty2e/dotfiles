@@ -4,9 +4,10 @@ import shlex
 import shutil
 import subprocess
 import tempfile
-import tomllib
 import unittest
 from pathlib import Path
+
+import tomllib
 
 REPO = Path(__file__).resolve().parents[2]
 CHEZMOI = shutil.which(os.environ.get("CHEZMOI", "chezmoi"))
@@ -25,6 +26,15 @@ class _BootstrapTests(unittest.TestCase):
         shutil.copyfile(REPO / "bootstrap.sh", self.repo / "bootstrap.sh")
         shutil.copyfile(REPO / ".chezmoiroot", self.repo / ".chezmoiroot")
         shutil.copytree(REPO / "home", self.repo / "home")
+        hook = self.root / "summary-preload.js"
+        hook.write_text("// Offline external-file fixture.\n")
+        feature = (
+            self.repo / "home/.chezmoitemplates/claude-no-agent-summary/manifest.toml"
+        )
+        enabled = tomllib.loads(feature.read_text())["enabled"]
+        feature.write_text(
+            f'enabled = {str(enabled).lower()}\nurl = "{hook.as_uri()}"\n'
+        )
         for workspace, filename in (
             ("mise", "config.toml"),
             ("daem", "daem.toml"),

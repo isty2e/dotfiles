@@ -9,6 +9,15 @@ esac
 
 _dotfiles_shell_dir="$HOME/.config/shell"
 
+# Ordinary preferences are defaults, not overrides of device settings.
+HISTSIZE=4096
+SAVEHIST=4096
+HISTFILE="${HISTFILE:-$HOME/.zsh_history}"
+setopt append_history hist_ignore_all_dups hist_expire_dups_first share_history
+setopt always_to_end complete_in_word extendedglob glob_complete
+setopt auto_cd auto_remove_slash chase_links list_rows_first
+unsetopt correct
+
 # OS defaults, then this device's overrides.
 if [[ -r $_dotfiles_shell_dir/platforms/init.sh ]]; then
     source "$_dotfiles_shell_dir/platforms/init.sh"
@@ -33,15 +42,6 @@ fi
 if [[ -r $_dotfiles_shell_dir/integrations/environment.sh ]]; then
     source "$_dotfiles_shell_dir/integrations/environment.sh"
 fi
-
-# Ordinary Zsh preferences live here, not behind another loader.
-HISTSIZE=${DOTFILES_ZSH_HISTORY_SIZE:-${HISTSIZE:-1024}}
-SAVEHIST=$HISTSIZE
-HISTFILE="${HISTFILE:-$HOME/.zsh_history}"
-setopt append_history hist_ignore_all_dups hist_expire_dups_first share_history
-setopt always_to_end complete_in_word extendedglob glob_complete
-setopt auto_cd auto_remove_slash chase_links list_rows_first
-unsetopt correct
 
 if [[ -r $_dotfiles_shell_dir/zsh/plugins.zsh ]]; then
     source "$_dotfiles_shell_dir/zsh/plugins.zsh"

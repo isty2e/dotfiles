@@ -13,6 +13,14 @@ if [ -r "$_dotfiles_shell_dir/bash/handoff.sh" ]; then
     . "$_dotfiles_shell_dir/bash/handoff.sh"
 fi
 
+# Defaults are shared across OSes; device settings below can override them.
+HISTCONTROL=ignoreboth
+HISTSIZE=1000
+HISTFILESIZE=2000
+HISTFILE="${HISTFILE:-$HOME/.bash_history}"
+DOTFILES_BASH_HISTORY_SYNC=${DOTFILES_BASH_HISTORY_SYNC:-0}
+shopt -s histappend checkwinsize
+
 # OS defaults, then this device's overrides.
 if [ -r "$_dotfiles_shell_dir/platforms/init.sh" ]; then
     . "$_dotfiles_shell_dir/platforms/init.sh"

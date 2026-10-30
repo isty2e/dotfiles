@@ -1,10 +1,5 @@
-# Retain the existing Bash history settings and native persistence behavior.
-HISTCONTROL=ignoreboth
-HISTSIZE=1000
-HISTFILESIZE=2000
-shopt -s histappend checkwinsize
-
-# A device with NFS may disable prompt-time writes regardless of its OS.
+# Defaults and device choices are already set by .bashrc. Only compose behavior.
+# Prompt-time writes are opt-in, regardless of OS or filesystem guesses.
 if [ "${DOTFILES_BASH_HISTORY_SYNC:-0}" = 1 ]; then
     _dotfiles_history_sync() {
         local _dotfiles_status=$?

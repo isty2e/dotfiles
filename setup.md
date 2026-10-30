@@ -98,7 +98,7 @@ Interactive Bash and Zsh use the following ownership boundaries under
 
 | Location | Responsibility |
 | --- | --- |
-| `platforms/init.sh`, `platforms/macos.sh`, `platforms/linux.sh` | OS selection and defaults: listing flags, SDK/locale, historical profile defaults |
+| `platforms/init.sh`, `platforms/macos.sh`, `platforms/linux.sh` | OS selection and defaults: listing flags and SDK/locale |
 | `device/local.sh` (unmanaged) | This device's paths and overrides; loaded after OS defaults, before tools |
 | `preferences.sh` | Shared editor, clipboard, aliases and command preferences |
 | `integrations/` | Optional Homebrew, mise/Pixi, Slurm and prompt integration on either OS |
@@ -112,9 +112,16 @@ The entrypoints show these stages explicitly. Ordinary Zsh options live directly
 in `.zshrc`. Device settings can override platform defaults and shared editor
 choices. For example, put `BREW_LOCATION`, `DOTFILES_PIXI_BASE_MANIFEST`,
 `DOTFILES_RSYNC_BACKUP_DIR` or `DK_VAULT_PATH` in `device/local.sh` rather than
-creating a hostname profile in Git. `DOTFILES_ZSH_HISTORY_SIZE` controls retention;
-`DOTFILES_BASH_HISTORY_SYNC=0` disables prompt-time history writes on an NFS device,
-regardless of OS. Existing defaults remain macOS on/Linux off for the latter.
+creating a hostname profile in Git.
+
+History defaults are independent of OS and precede device settings. Bash uses
+`HISTSIZE=1000` and `HISTFILESIZE=2000`; Zsh uses `HISTSIZE=4096` and
+`SAVEHIST=4096`. Set the native variables, `HISTFILE`, or Zsh options in
+`device/local.sh` to override them; later initialization does not reset them.
+Bash retains native exit-time history persistence. Additional prompt-time
+append/read synchronization is off by default; set
+`DOTFILES_BASH_HISTORY_SYNC=1` on devices where shared interactive history is
+wanted. No OS-based NFS assumption is made, and no history rewrite is performed.
 
 Create `~/.config/shell/device/` privately, with mode 0700. Its
 `local.sh` and `credentials.sh` are the only device-file locations loaded by the

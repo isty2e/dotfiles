@@ -131,14 +131,31 @@ cat > "$tmp/bin/device-brew" <<'EOF'
 printf 'export HOMEBREW_PREFIX=/device/brew\n'
 EOF
 chmod +x "$tmp/bin/"*
+# The same native defaults apply on both OSes without a device file.
+for platform in Linux Darwin; do
+    env -i HOME="$home" PATH="$tmp/bin:/usr/bin:/bin" TERM=xterm DOTFILES_KEEP_BASH=1 \
+        TEST_PLATFORM="$platform" /bin/bash --noprofile --rcfile "$repo/home/dot_bashrc" -ic '
+            [[ $HISTCONTROL == ignoreboth && $HISTSIZE == 1000 && $HISTFILESIZE == 2000 &&
+               $DOTFILES_BASH_HISTORY_SYNC == 0 ]]
+        ' 2>/dev/null
+    env -i HOME="$home" ZDOTDIR="$tmp/zdotdir" PATH="$tmp/bin:/usr/bin:/bin" TERM=xterm \
+        TEST_PLATFORM="$platform" /bin/zsh -ic '
+            [[ $HISTSIZE == 4096 && $SAVEHIST == 4096 && -o sharehistory ]]
+        ' 2>/dev/null
+done
 cat > "$home/.config/shell/device/local.sh" <<'EOF'
 printf 'loaded\n' >> "$TEST_DEVICE_LOG"
 export EDITOR=device-editor
 export LANG=C LC_ALL=C CPATH=/device/include
 export PI_CLIPBOARD_OSC52=0 SQUEUE_FORMAT=device-queue
 BREW_LOCATION="$HOME/../bin/device-brew"
-DOTFILES_ZSH_HISTORY_SIZE=8192
+HISTSIZE=8192
+HISTFILESIZE=16384
+SAVEHIST=6144
+HISTFILE="$HOME/device history"
+HISTCONTROL=ignoredups
 DOTFILES_BASH_HISTORY_SYNC=0
+if [ -n "${ZSH_VERSION:-}" ]; then unsetopt share_history; fi
 EOF
 for platform in Linux Darwin; do
     for shell in bash zsh; do
@@ -151,6 +168,8 @@ for platform in Linux Darwin; do
                     [ "$CPATH" = /device/include ] && [ "$LANG" = C ] &&
                     [ "$PI_CLIPBOARD_OSC52" = 0 ] && [ "$SQUEUE_FORMAT" = device-queue ] &&
                     [ "$HOMEBREW_PREFIX" = /device/brew ] &&
+                    [ "$HISTSIZE" = 8192 ] && [ "$HISTFILESIZE" = 16384 ] &&
+                    [ "$HISTFILE" = "$HOME/device history" ] && [ "$HISTCONTROL" = ignoredups ] &&
                     ! declare -F _dotfiles_history_sync >/dev/null
                 ' 2>/dev/null
         else
@@ -160,7 +179,8 @@ for platform in Linux Darwin; do
                     [[ $EDITOR == device-editor && $VISUAL == device-editor &&
                        $CPATH == /device/include && $LANG == C &&
                        $PI_CLIPBOARD_OSC52 == 0 && $SQUEUE_FORMAT == device-queue &&
-                       $HOMEBREW_PREFIX == /device/brew && $HISTSIZE == 8192 ]]
+                       $HOMEBREW_PREFIX == /device/brew && $HISTSIZE == 8192 &&
+                       $SAVEHIST == 6144 && $HISTFILE == "$HOME/device history" && ! -o sharehistory ]]
                 ' 2>/dev/null
         fi
         [ "$(cat "$tmp/device-log")" = loaded ]

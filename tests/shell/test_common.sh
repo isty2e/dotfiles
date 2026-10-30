@@ -90,7 +90,7 @@ for shell in bash zsh; do
         else
             color=--color=auto
         fi
-        printf 'nnn <>\nvim <example>\nvim <example>\nnvim <-p> <example>\nls <%s> <-lh>\nls <%s> <-lh>\nls <%s> <-lah>\ngrep <--color> <needle>\ngrep <--color> <-R> <-n> <-H> <-C> <5> <--exclude-dir=.git> <--exclude-dir=.svn> <--exclude-dir=CVS> <needle> <.>\nrsync <-poghb> <--backup-dir=/home/testuser/rsync> <--info=progress2> <--> <source> <destination>\nrsync <-poghb> <--backup-dir=%s/backup directory> <--info=progress2> <--> <source> <destination>\nrsync <-avz> <--info=progress2> <-h> <--remove-source-files> <source> <destination>\nrsync <-avzu> <--delete> <--info=progress2> <-h> <source> <destination>\n' "$color" "$color" "$color" "$tmp/work" > "$tmp/expected"
+        printf 'nnn <>\nvim <example>\nvim <example>\nnvim <-p> <example>\nls <%s> <-lh>\nls <%s> <-lh>\nls <%s> <-lah>\ngrep <--color> <needle>\ngrep <--color> <-R> <-n> <-H> <-C> <5> <--exclude-dir=.git> <--exclude-dir=.svn> <--exclude-dir=CVS> <needle> <.>\nrsync <-poghb> <--backup-dir=%s/rsync> <--info=progress2> <--> <source> <destination>\nrsync <-poghb> <--backup-dir=%s/backup directory> <--info=progress2> <--> <source> <destination>\nrsync <-avz> <--info=progress2> <-h> <--remove-source-files> <source> <destination>\nrsync <-avzu> <--delete> <--info=progress2> <-h> <source> <destination>\n' "$color" "$color" "$color" "$tmp/home" "$tmp/work" > "$tmp/expected"
         diff -u "$tmp/expected" "$TEST_LOG"
     done
 done

@@ -66,8 +66,10 @@ done
 
 # Load the actual fragments together with isolated, non-installing tool doubles.
 cp -R "$repo/home/private_dot_config/private_dotfiles/shell/." "$fragments/"
-mkdir -p "$home/pixi-env/base/.pixi/envs/default"
-printf '[workspace]\nname = "base"\n' > "$home/pixi-env/base/pixi.toml"
+mkdir -p "$tmp/repository/workspaces/pixi-base/.pixi/envs/default"
+printf '[workspace]\nname = "base"\n' > "$tmp/repository/workspaces/pixi-base/pixi.toml"
+printf "_dotfiles_repository_manifest='%s'\n" "$tmp/repository/workspaces/pixi-base/pixi.toml" \
+    > "$fragments/workspaces.sh"
 cat > "$tmp/bin/brew" <<'EOF'
 #!/bin/sh
 [ "$1" = shellenv ] || exit 1

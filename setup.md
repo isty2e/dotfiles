@@ -141,6 +141,9 @@ The default Pixi manifest is rendered from this checkout's
 `DOTFILES_PIXI_BASE_MANIFEST` and `PIXI_ENVS_HOME` overrides take precedence.
 An inherited Pixi project, Conda environment or virtualenv is not replaced.
 Without an already installed default Pixi environment, startup skips activation.
+If no manifest is selected, old `~/pixi-env` or `~/pixi_envs` directories are not
+searched automatically. The shared `cpv` alias defaults its backup directory to
+`$HOME/rsync`; `DOTFILES_RSYNC_BACKUP_DIR` selects a device-specific alternative.
 
 ### Repair or update shell plugins
 
@@ -156,6 +159,8 @@ The installer reads `workspaces/sheldon/plugins.toml`, prepares a new generation
 under `~/.local/share/dotfiles/sheldon`, and publishes it only after success.
 Failures leave the current generation intact; previous generations and legacy
 plugin checkouts are retained. Shell startup only loads prepared plugins.
+Zsh loads fzf-tab only after the fzf initialization hook succeeds. Missing or
+failed fzf initialization skips that selector without skipping the other plugins.
 
 ## Mise global tools
 

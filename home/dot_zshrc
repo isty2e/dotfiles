@@ -10,15 +10,29 @@ esac
 _dotfiles_shell_dir="$HOME/.config/dotfiles/shell"
 
 # OS defaults, then this device's overrides.
-[[ ! -r $_dotfiles_shell_dir/platform.sh ]] || source "$_dotfiles_shell_dir/platform.sh"
-[[ ! -r $_dotfiles_shell_dir/device.sh ]] || source "$_dotfiles_shell_dir/device.sh"
+if [[ -r $_dotfiles_shell_dir/platform.sh ]]; then
+    source "$_dotfiles_shell_dir/platform.sh"
+fi
+if [[ -r $_dotfiles_shell_dir/device.sh ]]; then
+    source "$_dotfiles_shell_dir/device.sh"
+fi
 
 # Shared preferences and existing tools; none of these installs software.
-[[ ! -r $_dotfiles_shell_dir/generation.sh ]] || source "$_dotfiles_shell_dir/generation.sh"
-[[ ! -r $_dotfiles_shell_dir/integrations/homebrew.sh ]] || source "$_dotfiles_shell_dir/integrations/homebrew.sh"
-[[ ! -r $_dotfiles_shell_dir/preferences.sh ]] || source "$_dotfiles_shell_dir/preferences.sh"
-[[ ! -r $_dotfiles_shell_dir/integrations/slurm.sh ]] || source "$_dotfiles_shell_dir/integrations/slurm.sh"
-[[ ! -r $_dotfiles_shell_dir/integrations/environment.sh ]] || source "$_dotfiles_shell_dir/integrations/environment.sh"
+if [[ -r $_dotfiles_shell_dir/generation.sh ]]; then
+    source "$_dotfiles_shell_dir/generation.sh"
+fi
+if [[ -r $_dotfiles_shell_dir/integrations/homebrew.sh ]]; then
+    source "$_dotfiles_shell_dir/integrations/homebrew.sh"
+fi
+if [[ -r $_dotfiles_shell_dir/preferences.sh ]]; then
+    source "$_dotfiles_shell_dir/preferences.sh"
+fi
+if [[ -r $_dotfiles_shell_dir/integrations/slurm.sh ]]; then
+    source "$_dotfiles_shell_dir/integrations/slurm.sh"
+fi
+if [[ -r $_dotfiles_shell_dir/integrations/environment.sh ]]; then
+    source "$_dotfiles_shell_dir/integrations/environment.sh"
+fi
 
 # Ordinary Zsh preferences live here, not behind another loader.
 HISTSIZE=${DOTFILES_ZSH_HISTORY_SIZE:-${HISTSIZE:-1024}}
@@ -29,6 +43,10 @@ setopt always_to_end complete_in_word extendedglob glob_complete
 setopt auto_cd auto_remove_slash chase_links list_rows_first
 unsetopt correct
 
-[[ ! -r $_dotfiles_shell_dir/zsh/plugins.zsh ]] || source "$_dotfiles_shell_dir/zsh/plugins.zsh"
-[[ ! -r $_dotfiles_shell_dir/integrations/prompt.sh ]] || source "$_dotfiles_shell_dir/integrations/prompt.sh"
+if [[ -r $_dotfiles_shell_dir/zsh/plugins.zsh ]]; then
+    source "$_dotfiles_shell_dir/zsh/plugins.zsh"
+fi
+if [[ -r $_dotfiles_shell_dir/integrations/prompt.sh ]]; then
+    source "$_dotfiles_shell_dir/integrations/prompt.sh"
+fi
 unset _dotfiles_shell_dir

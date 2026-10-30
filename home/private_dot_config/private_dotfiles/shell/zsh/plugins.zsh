@@ -18,13 +18,17 @@ compinit
 # Initialize fzf before fzf-tab so the final Tab binding belongs to fzf-tab.
 _dotfiles_fzf=$(whence -p fzf 2>/dev/null) || _dotfiles_fzf=
 _dotfiles_mise=$(whence -p mise 2>/dev/null) || _dotfiles_mise=
-_dotfiles_fzf_ready=no
 if [[ -n $_dotfiles_fzf && -x $_dotfiles_fzf ]] &&
     { [[ -z $_dotfiles_mise ]] || [[ ! $_dotfiles_fzf -ef $_dotfiles_mise ]]; }; then
     if _dotfiles_hook=$(MISE_NOT_FOUND_AUTO_INSTALL=false MISE_AUTO_INSTALL=false \
         "$_dotfiles_fzf" --zsh); then
         if eval "$_dotfiles_hook"; then
-            _dotfiles_fzf_ready=yes
+            # Loading the selector is owned by this successful initialization,
+            # not by a status variable interpreted in a generated script.
+            _dotfiles_fzf_tab="${_dotfiles_generation_dir:-}/repos/github.com/Aloxaf/fzf-tab/fzf-tab.plugin.zsh"
+            if [[ -n ${_dotfiles_generation_dir:-} && -r $_dotfiles_fzf_tab ]]; then
+                source "$_dotfiles_fzf_tab" || :
+            fi
         fi
     fi
 fi
@@ -48,4 +52,4 @@ if (( ${+widgets[history-substring-search-down]} )); then
     fi
 fi
 
-unset _dotfiles_fzf _dotfiles_mise _dotfiles_fzf_ready _dotfiles_hook
+unset _dotfiles_fzf _dotfiles_mise _dotfiles_fzf_tab _dotfiles_hook

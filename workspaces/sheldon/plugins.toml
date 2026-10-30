@@ -6,11 +6,6 @@ if [[ -r "$_dotfiles_generation_dir/{{ hooks.path }}" ]]; then
     source "$_dotfiles_generation_dir/{{ hooks.path }}" || :
 fi
 '''
-fzf_tab = '''
-if [[ $_dotfiles_fzf_ready = yes && -r "$_dotfiles_generation_dir/{{ hooks.path }}" ]]; then
-    source "$_dotfiles_generation_dir/{{ hooks.path }}" || :
-fi
-'''
 prepare_only = ""
 
 [plugins.zsh_completions]
@@ -21,8 +16,7 @@ apply = ["prepare_only"]
 [plugins.fzf_tab]
 github = "Aloxaf/fzf-tab"
 use = ["fzf-tab.plugin.zsh"]
-apply = ["fzf_tab"]
-hooks.path = "repos/github.com/Aloxaf/fzf-tab/fzf-tab.plugin.zsh"
+apply = ["prepare_only"]
 
 [plugins.zsh_256color]
 github = "chrissicool/zsh-256color"

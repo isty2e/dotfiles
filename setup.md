@@ -9,10 +9,6 @@ or system packages.
 
 ## First apply on an existing home
 
-This layout is no longer a chezmoi source. Do not run its apply/update commands
-against this checkout. Retire old source bindings and automation as part of the
-handoff, preserving their state for a deliberate rollback rather than deleting it.
-
 Back up startup files, managed settings, symlink targets and native workspaces to
 a private location outside Git. Inspect `mise dot diff` from the intended checkout.
 Keep machine values and secrets in private device files, not the shared sources:

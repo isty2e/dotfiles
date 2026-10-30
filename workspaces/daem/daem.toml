@@ -187,3 +187,10 @@ carrier = "pi-package"
 targets = ["pi"]
 scope = "global"
 source = { host_source = "git:github.com/isty2e/pi-codex-ultra@main" }
+
+[[extension]]
+id = "pi-tool-views"
+carrier = "pi-package"
+targets = ["pi"]
+scope = "global"
+source = { host_source = "git:github.com/isty2e/pi-tool-views@main" }

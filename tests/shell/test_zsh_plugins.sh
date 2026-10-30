@@ -11,6 +11,8 @@ mkdir -p "$tmp/bin" "$tmp/home" "$plugins/zsh-users/zsh-completions/src"
 cat > "$tmp/bin/fzf" <<'EOF'
 #!/bin/sh
 [ "$1" = --zsh ] || exit 1
+if [ "${TEST_FAIL_FZF:-0}" = 1 ]; then exit 1; fi
+if [ "${TEST_FAIL_FZF_EVAL:-0}" = 1 ]; then printf 'false\n'; exit; fi
 printf '%s\n' 'print -r -- fzf-init >> "$TEST_LOG"'
 printf '%s\n' 'fzf_initial_tab() { :; }; zle -N fzf_initial_tab; bindkey "^I" fzf_initial_tab'
 EOF
@@ -46,9 +48,6 @@ zle -N history-substring-search-down
 EOF
 
 cat > "$generation/zsh-plugins.zsh" <<'EOF'
-if [[ $_dotfiles_fzf_ready = yes ]]; then
-    source "$_dotfiles_generation_dir/repos/github.com/Aloxaf/fzf-tab/fzf-tab.plugin.zsh"
-fi
 for plugin in \
     chrissicool/zsh-256color/zsh-256color.plugin.zsh \
     Tarrasch/zsh-command-not-found/command-not-found.plugin.zsh \
@@ -62,7 +61,7 @@ for plugin in \
 done
 EOF
 
-fragment="$repo/home/private_dot_config/private_dotfiles/shell/zsh-plugins.zsh"
+fragment="$repo/home/private_dot_config/private_shell/zsh/plugins.zsh"
 export HOME="$tmp/home" PATH="$tmp/bin:/usr/bin:/bin" TEST_LOG="$tmp/log" FRAGMENT="$fragment" TERM=xterm
 export _dotfiles_generation_dir="$generation"
 
@@ -97,6 +96,13 @@ unset _dotfiles_generation_dir
 zsh -fic '. "$FRAGMENT"; (( $+functions[compdef] ))'
 [ "$(cat "$TEST_LOG")" = fzf-init ]
 export _dotfiles_generation_dir="$generation"
+
+for failure in TEST_FAIL_FZF TEST_FAIL_FZF_EVAL; do
+    : > "$TEST_LOG"
+    env "$failure=1" zsh -fic '. "$FRAGMENT"'
+    printf '%s\n' color command-not-found extract rsync dirhistory autosuggestions highlighting history > "$tmp/expected"
+    diff -u "$tmp/expected" "$TEST_LOG"
+done
 
 rm "$tmp/bin/fzf"
 : > "$TEST_LOG"

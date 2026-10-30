@@ -33,28 +33,28 @@ fi
 EOF
 
 env -i HOME="$tmp/home" PATH=/usr/bin:/bin TEST_LOG="$tmp/log" TEST_WORK="$tmp/work" _dotfiles_generation_dir="$generation" \
-    COMMON="$repo/home/private_dot_config/private_dotfiles/shell/common.sh" \
+    COMMON="$repo/home/private_dot_config/private_shell/preferences.sh" \
     /bin/bash --noprofile --norc "$tmp/check.sh"
 printf '<failed>\n' > "$tmp/expected"
 diff -u "$tmp/expected" "$tmp/log"
 
 # The test plugin receives each argument intact, including spaces and options.
 env -i HOME="$tmp/home" PATH=/usr/bin:/bin TEST_LOG="$tmp/log" _dotfiles_generation_dir="$generation" \
-    COMMON="$repo/home/private_dot_config/private_dotfiles/shell/common.sh" \
+    COMMON="$repo/home/private_dot_config/private_shell/preferences.sh" \
     /bin/bash --noprofile --norc -c '. "$COMMON"; extract -t "target directory" "archive with spaces.tar.zst"'
 printf '<-t>\n<target directory>\n<archive with spaces.tar.zst>\n' > "$tmp/expected"
 diff -u "$tmp/expected" "$tmp/log"
 
 printf '#!/bin/sh\nprintf "Linux\\n"\n' > "$tmp/bin/uname"
 chmod +x "$tmp/bin/uname"
-if env -i HOME="$tmp/home" PATH="$tmp/bin" _dotfiles_generation_dir="$generation" COMMON="$repo/home/private_dot_config/private_dotfiles/shell/common.sh" \
+if env -i HOME="$tmp/home" PATH="$tmp/bin" _dotfiles_generation_dir="$generation" COMMON="$repo/home/private_dot_config/private_shell/preferences.sh" \
     /bin/bash --noprofile --norc -c '. "$COMMON"; extract archive' 2>/dev/null; then
     printf 'extract unexpectedly succeeded without zsh\n' >&2
     exit 1
 fi
 
 rm "$plugin"
-if env -i HOME="$tmp/home" PATH=/usr/bin:/bin _dotfiles_generation_dir="$generation" COMMON="$repo/home/private_dot_config/private_dotfiles/shell/common.sh" \
+if env -i HOME="$tmp/home" PATH=/usr/bin:/bin _dotfiles_generation_dir="$generation" COMMON="$repo/home/private_dot_config/private_shell/preferences.sh" \
     /bin/bash --noprofile --norc -c '. "$COMMON"; extract archive' 2>/dev/null; then
     printf 'extract unexpectedly succeeded without its plugin\n' >&2
     exit 1

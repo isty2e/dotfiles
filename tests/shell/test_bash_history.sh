@@ -7,7 +7,7 @@ repo=$(CDPATH='' cd -- "$(dirname "$0")/../.." && pwd)
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT HUP INT TERM
 mkdir -p "$tmp/home" "$tmp/bin"
-fragment="$repo/home/private_dot_config/private_dotfiles/shell/bash-history.sh"
+fragment="$repo/home/private_dot_config/private_shell/bash/history.sh"
 
 cat > "$tmp/bin/uname" <<'EOF'
 #!/bin/sh
@@ -17,6 +17,7 @@ chmod +x "$tmp/bin/uname"
 
 cat > "$tmp/rc" <<'EOF'
 PS1='TEST_PROMPT> '
+shopt -s histappend
 . "$FRAGMENT"
 EOF
 cat > "$tmp/history.exp" <<'EOF'
@@ -45,18 +46,19 @@ EOF
 
 for shell in /bin/bash /opt/homebrew/bin/bash; do
     [ -x "$shell" ] || continue
-    env -i HOME="$tmp/home" PATH="$tmp/bin:/usr/bin:/bin" TERM=xterm FRAGMENT="$fragment" TEST_PLATFORM=Darwin \
+    env -i HOME="$tmp/home" PATH="$tmp/bin:/usr/bin:/bin" TERM=xterm FRAGMENT="$fragment" TEST_PLATFORM=Darwin DOTFILES_BASH_HISTORY_SYNC=1 \
         "$shell" --noprofile --norc -ic '
             PROMPT_COMMAND="printf existing"
+            HISTCONTROL=ignorespace HISTSIZE=3210 HISTFILESIZE=6540
             . "$FRAGMENT"
             . "$FRAGMENT"
             [[ $PROMPT_COMMAND == "printf existing;_dotfiles_history_sync" ]] || exit 1
-            [[ $HISTCONTROL == ignoreboth && $HISTSIZE == 1000 && $HISTFILESIZE == 2000 ]]
+            [[ $HISTCONTROL == ignorespace && $HISTSIZE == 3210 && $HISTFILESIZE == 6540 ]]
         ' 2>/dev/null
 
     major=$($shell --noprofile --norc -c 'printf %s "${BASH_VERSINFO[0]}"')
     if [ "$major" -ge 5 ]; then
-        env -i HOME="$tmp/home" PATH="$tmp/bin:/usr/bin:/bin" TERM=xterm FRAGMENT="$fragment" TEST_PLATFORM=Darwin \
+        env -i HOME="$tmp/home" PATH="$tmp/bin:/usr/bin:/bin" TERM=xterm FRAGMENT="$fragment" TEST_PLATFORM=Darwin DOTFILES_BASH_HISTORY_SYNC=1 \
             "$shell" --noprofile --norc -ic '
                 PROMPT_COMMAND=("printf existing")
                 . "$FRAGMENT"
@@ -67,16 +69,19 @@ for shell in /bin/bash /opt/homebrew/bin/bash; do
 
     if command -v expect >/dev/null 2>&1; then
         # Bash 3.2's history -a does not append to a fresh, empty history file.
-        printf 'echo previous_session\n' > "$tmp/home/.bash_history"
-        env -i HOME="$tmp/home" PATH="$tmp/bin:/usr/bin:/bin" TERM=xterm FRAGMENT="$fragment" TEST_PLATFORM=Darwin \
-            BASH_SILENCE_DEPRECATION_WARNING=1 TEST_SHELL="$shell" TEST_RC="$tmp/rc" \
-            expect "$tmp/history.exp" > /dev/null
+        for platform in Darwin Linux; do
+            printf 'echo previous_session\n' > "$tmp/home/.bash_history"
+            env -i HOME="$tmp/home" PATH="$tmp/bin:/usr/bin:/bin" TERM=xterm FRAGMENT="$fragment" \
+                TEST_PLATFORM="$platform" DOTFILES_BASH_HISTORY_SYNC=1 \
+                BASH_SILENCE_DEPRECATION_WARNING=1 TEST_SHELL="$shell" TEST_RC="$tmp/rc" \
+                expect "$tmp/history.exp" > /dev/null
+        done
     else
         printf 'Skipping interactive history test: expect is not installed\n' >&2
     fi
 
     output=$(env -i HOME="$tmp/home" PATH="$tmp/bin:/usr/bin:/bin" TERM=xterm \
-        FRAGMENT="$fragment" TEST_PLATFORM=Linux "$shell" --noprofile --norc -ic '
+        FRAGMENT="$fragment" TEST_PLATFORM=Linux DOTFILES_BASH_HISTORY_SYNC=0 "$shell" --noprofile --norc -ic '
             PROMPT_COMMAND="printf existing"
             history() { printf unexpected; }
             . "$FRAGMENT"
@@ -87,7 +92,7 @@ for shell in /bin/bash /opt/homebrew/bin/bash; do
 
     if [ "$major" -ge 5 ]; then
         output=$(env -i HOME="$tmp/home" PATH="$tmp/bin:/usr/bin:/bin" TERM=xterm \
-            FRAGMENT="$fragment" TEST_PLATFORM=Linux "$shell" --noprofile --norc -ic '
+            FRAGMENT="$fragment" TEST_PLATFORM=Linux DOTFILES_BASH_HISTORY_SYNC=0 "$shell" --noprofile --norc -ic '
                 PROMPT_COMMAND=("printf existing")
                 history() { printf unexpected; }
                 . "$FRAGMENT"

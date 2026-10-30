@@ -9,14 +9,14 @@ third-party installers and builds.
 
 Back up startup files, managed settings, symlink targets and native workspaces to
 a private location outside Git. Inspect `chezmoi diff` before applying. Keep
-machine values and secrets in the existing local files, not the shared sources:
+machine values and secrets in private device files, not the shared sources:
 
-- `~/.config/dotfiles/local.sh`: machine-specific paths and shell settings.
-- `~/.config/dotfiles/credentials.sh` or `~/.config/shell/credentials.sh`:
-  trusted shell code containing credentials. Only readable, user-owned files
-  with no group/other permissions are loaded; use 0600.
+- `~/.config/shell/device/local.sh`: machine-specific paths and shell settings.
+- `~/.config/shell/device/credentials.sh`: trusted shell code containing
+  credentials. Only readable, user-owned files with no group/other permissions
+  are loaded; use 0600.
 
-The managed `.config` and `.config/dotfiles` directories use 0700. This can remove
+The managed `.config` and `.config/shell` directories use 0700. This can remove
 access previously granted to other users; review shared-home requirements first.
 Bootstrap uses conflict protection and stops rather than silently replacing
 existing startup files or native workspace directories. Earlier entries may have
@@ -93,13 +93,63 @@ source editing, updates, drift handling and local-state exclusions.
 
 ## Shell settings
 
-Interactive Bash and Zsh share fragments under `~/.config/dotfiles/shell`.
-Noninteractive shells do not activate environments. Local settings load before
-platform and environment setup. Zsh options include `autocd`; Colemak bindings
-are intentional. Bash keeps its own history and completion behavior.
+Interactive Bash and Zsh use the following ownership boundaries under
+`~/.config/shell/`. Noninteractive shells do not initialize this profile.
+
+| Location | Responsibility |
+| --- | --- |
+| `platforms/init.sh`, `platforms/macos.sh`, `platforms/linux.sh` | OS selection and defaults: listing flags and SDK/locale |
+| `device/local.sh` (unmanaged) | This device's paths and overrides; loaded after OS defaults, before tools |
+| `preferences.sh` | Shared editor, clipboard, aliases and command preferences |
+| `integrations/` | Optional Homebrew, mise/Pixi, Slurm and prompt integration on either OS |
+| `bash/`, `zsh/` | Shell-native handoff, completion, history and plugin mechanics |
+
+The corresponding source is `home/private_dot_config/private_shell/`.
+The `private_` attributes retain the owner-only directory permissions; they are
+not part of the deployed path names.
+
+The entrypoints show these stages explicitly. Ordinary Zsh options live directly
+in `.zshrc`. Device settings can override platform defaults and shared editor
+choices. For example, put `BREW_LOCATION`, `DOTFILES_PIXI_BASE_MANIFEST`,
+`DOTFILES_RSYNC_BACKUP_DIR` or `DK_VAULT_PATH` in `device/local.sh` rather than
+creating a hostname profile in Git.
+
+History defaults are independent of OS and precede device settings. Bash uses
+`HISTSIZE=1000` and `HISTFILESIZE=2000`; Zsh uses `HISTSIZE=4096` and
+`SAVEHIST=4096`. Set the native variables, `HISTFILE`, or Zsh options in
+`device/local.sh` to override them; later initialization does not reset them.
+Bash retains native exit-time history persistence. Additional prompt-time
+append/read synchronization is off by default; set
+`DOTFILES_BASH_HISTORY_SYNC=1` on devices where shared interactive history is
+wanted. No OS-based NFS assumption is made. The prompt hook uses `history -a`
+and `history -n`, not `history -w`, but Bash can still trim its history file
+according to `HISTFILESIZE`. Zsh's default `SHARE_HISTORY` also periodically
+rewrites its file. Sharing is best effort, not a loss-free concurrent log on NFS;
+the isolated local tests do not establish behavior on the cluster filesystem.
+For an NFS-backed Zsh history, native `HIST_FCNTL_LOCK` is an available device
+option; the [Zsh documentation](https://zsh.sourceforge.io/Doc/Release/Options.html#History)
+specifically discusses NFS corruption avoidance, without establishing a guarantee
+for every server/mount configuration. A local `HISTFILE` is another option when
+sharing across different hosts is not required.
+
+Create `~/.config/shell/device/` privately, with mode 0700. Its
+`local.sh` and `credentials.sh` are the only device-file locations loaded by the
+profile. Missing files are optional; no alternate path is searched. These files
+are trusted shell code and must remain outside Git.
+
+Private `device/credentials.sh` is an opt-in path on either OS. It must be
+user-owned, readable and have no group/other access, normally 0600. An unsafe
+file is skipped with a warning. Credential loading preserves the caller's export
+setting.
+
+Zsh options include `autocd`; Colemak bindings are intentional. Bash retains its
+own history and completion behavior. Homebrew availability and Slurm commands do
+not identify a device as a particular operating system or cluster.
 
 SSH interactive Bash hands off to an available Zsh unless `DOTFILES_KEEP_BASH=1`
-or a handoff guard is active. Set machine-specific options in `local.sh`.
+or a handoff guard is active. This happens before profile/device code to avoid
+executing it twice; pass a handoff guard in the invoking environment, not only in
+the device file.
 Starship supplies the prompt when installed. Existing tmux sessions keep their
 current environments; new shells read the deployed settings.
 
@@ -111,6 +161,9 @@ The default Pixi manifest is rendered from this checkout's
 `DOTFILES_PIXI_BASE_MANIFEST` and `PIXI_ENVS_HOME` overrides take precedence.
 An inherited Pixi project, Conda environment or virtualenv is not replaced.
 Without an already installed default Pixi environment, startup skips activation.
+If no manifest is selected, old `~/pixi-env` or `~/pixi_envs` directories are not
+searched automatically. The shared `cpv` alias defaults its backup directory to
+`$HOME/rsync`; `DOTFILES_RSYNC_BACKUP_DIR` selects a device-specific alternative.
 
 ### Repair or update shell plugins
 
@@ -126,6 +179,8 @@ The installer reads `workspaces/sheldon/plugins.toml`, prepares a new generation
 under `~/.local/share/dotfiles/sheldon`, and publishes it only after success.
 Failures leave the current generation intact; previous generations and legacy
 plugin checkouts are retained. Shell startup only loads prepared plugins.
+Zsh loads fzf-tab only after the fzf initialization hook succeeds. Missing or
+failed fzf initialization skips that selector without skipping the other plugins.
 
 ## Mise global tools
 

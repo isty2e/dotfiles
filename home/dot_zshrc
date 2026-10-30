@@ -1,4 +1,3 @@
-# Do not transition child Bash sessions back to Zsh.
 [[ -o interactive ]] || return 0
 export DOTFILES_ZSH_ACTIVE=1
 
@@ -8,12 +7,46 @@ case :$PATH: in
     *) export PATH="$HOME/.local/bin:$PATH" ;;
 esac
 
-# Machine settings precede tool activation and interactive features.
-_dotfiles_shell_dir="$HOME/.config/dotfiles/shell"
-for _dotfiles_file in local-loader.sh plugin-paths.sh platform.sh common.sh environment.sh \
-    zsh-options.zsh zsh-plugins.zsh prompt.sh; do
-    if [[ -r "$_dotfiles_shell_dir/$_dotfiles_file" ]]; then
-        source "$_dotfiles_shell_dir/$_dotfiles_file"
-    fi
-done
-unset _dotfiles_file _dotfiles_shell_dir
+_dotfiles_shell_dir="$HOME/.config/shell"
+
+# Ordinary preferences are defaults, not overrides of device settings.
+HISTSIZE=4096
+SAVEHIST=4096
+HISTFILE="${HISTFILE:-$HOME/.zsh_history}"
+setopt append_history hist_ignore_all_dups hist_expire_dups_first share_history
+setopt always_to_end complete_in_word extendedglob glob_complete
+setopt auto_cd auto_remove_slash chase_links list_rows_first
+unsetopt correct
+
+# OS defaults, then this device's overrides.
+if [[ -r $_dotfiles_shell_dir/platforms/init.sh ]]; then
+    source "$_dotfiles_shell_dir/platforms/init.sh"
+fi
+if [[ -r $_dotfiles_shell_dir/device.sh ]]; then
+    source "$_dotfiles_shell_dir/device.sh"
+fi
+
+# Shared preferences and existing tools; none of these installs software.
+if [[ -r $_dotfiles_shell_dir/generation.sh ]]; then
+    source "$_dotfiles_shell_dir/generation.sh"
+fi
+if [[ -r $_dotfiles_shell_dir/integrations/homebrew.sh ]]; then
+    source "$_dotfiles_shell_dir/integrations/homebrew.sh"
+fi
+if [[ -r $_dotfiles_shell_dir/preferences.sh ]]; then
+    source "$_dotfiles_shell_dir/preferences.sh"
+fi
+if [[ -r $_dotfiles_shell_dir/integrations/slurm.sh ]]; then
+    source "$_dotfiles_shell_dir/integrations/slurm.sh"
+fi
+if [[ -r $_dotfiles_shell_dir/integrations/environment.sh ]]; then
+    source "$_dotfiles_shell_dir/integrations/environment.sh"
+fi
+
+if [[ -r $_dotfiles_shell_dir/zsh/plugins.zsh ]]; then
+    source "$_dotfiles_shell_dir/zsh/plugins.zsh"
+fi
+if [[ -r $_dotfiles_shell_dir/integrations/prompt.sh ]]; then
+    source "$_dotfiles_shell_dir/integrations/prompt.sh"
+fi
+unset _dotfiles_shell_dir

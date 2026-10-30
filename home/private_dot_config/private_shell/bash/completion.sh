@@ -7,8 +7,11 @@ esac
 # Initialize the standard fzf shortcuts even when fuzzy Tab is unavailable.
 _dotfiles_fzf=$(type -P fzf 2>/dev/null) || _dotfiles_fzf=
 _dotfiles_mise=$(type -P mise 2>/dev/null) || _dotfiles_mise=
-if [ -n "$_dotfiles_fzf" ] && [ -x "$_dotfiles_fzf" ] &&
-    { [ -z "$_dotfiles_mise" ] || [ ! "$_dotfiles_fzf" -ef "$_dotfiles_mise" ]; }; then
+if [ -n "$_dotfiles_fzf" ] && [ -n "$_dotfiles_mise" ] &&
+    [ "$_dotfiles_fzf" -ef "$_dotfiles_mise" ]; then
+    _dotfiles_fzf=
+fi
+if [ -n "$_dotfiles_fzf" ]; then
     if _dotfiles_fzf_init=$(MISE_NOT_FOUND_AUTO_INSTALL=false MISE_AUTO_INSTALL=false \
         "$_dotfiles_fzf" --bash); then
         eval "$_dotfiles_fzf_init"
@@ -53,8 +56,7 @@ if [ "$(uname -s)" = Darwin ]; then
 fi
 
 if [ "$_dotfiles_fzf_supported" = yes ] && [ -r "$_dotfiles_fzf_tab" ] &&
-    [ -n "$_dotfiles_fzf" ] && [ -x "$_dotfiles_fzf" ] &&
-    { [ -z "$_dotfiles_mise" ] || [ ! "$_dotfiles_fzf" -ef "$_dotfiles_mise" ]; }; then
+    [ -n "$_dotfiles_fzf" ]; then
     # shellcheck source=/dev/null
     if . "$_dotfiles_fzf_tab"; then
         bind -x '"\t": fzf_bash_completion'

@@ -121,6 +121,9 @@ class ChezmoiSourceTests(unittest.TestCase):
             stat.S_IMODE((self.destination / ".config").stat().st_mode), 0o700
         )
         self.assertEqual(
+            stat.S_IMODE((self.destination / ".config/shell").stat().st_mode), 0o700
+        )
+        self.assertEqual(
             stat.S_IMODE((self.destination / ".config/daem").stat().st_mode), 0o700
         )
         self.assertEqual(
@@ -258,7 +261,9 @@ class ChezmoiSourceTests(unittest.TestCase):
             self.source / "workspaces/pixi-base/pixi.lock",
             self.source / "workspaces/pixi-base/.pixi/envs/default/bin/python",
             self.destination / "pixi-env/base/.pixi/envs/default/bin/python",
-            self.destination / ".config/dotfiles/local.sh",
+            self.destination / ".config/shell/local.sh",
+            self.destination / ".config/shell/device/local.sh",
+            self.destination / ".config/shell/device/credentials.sh",
         )
         for path in fixtures:
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -282,7 +287,7 @@ class ChezmoiSourceTests(unittest.TestCase):
 
     def test_rendered_shell_path_uses_the_actual_checkout(self) -> None:
         self._chezmoi("apply")
-        fragment = self.destination / ".config/dotfiles/shell/workspaces.sh"
+        fragment = self.destination / ".config/shell/workspaces.sh"
         result = subprocess.run(
             [
                 "/bin/sh",
@@ -310,6 +315,8 @@ class ChezmoiSourceTests(unittest.TestCase):
             "workspaces/daem/daem.lock.toml",
             "workspaces/daem/.daem/state.json",
             "home/private_dot_config/nvim/lazy-lock.json",
+            "home/private_dot_config/private_shell/device/local.sh",
+            "home/private_dot_config/private_shell/device/credentials.sh",
         )
         for relative in fixtures:
             path = self.source / relative

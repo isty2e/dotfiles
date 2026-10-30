@@ -1,22 +1,59 @@
-# Non-interactive commands and jobs must not enter the interactive profile.
+# Fragments are optional deployed files, not paths beside this source file.
+# shellcheck disable=SC1091
+
+# Scripts and jobs must not enter the interactive profile.
 case $- in
     *i*) ;;
     *) return 0 ;;
 esac
+_dotfiles_shell_dir="$HOME/.config/shell"
 
-# A remote Linux session enters Zsh before loading Bash-only settings.
-_dotfiles_shell_dir="$HOME/.config/dotfiles/shell"
-if [ -r "$_dotfiles_shell_dir/bash-handoff.sh" ]; then
-    # shellcheck source=/dev/null
-    . "$_dotfiles_shell_dir/bash-handoff.sh"
+# Handoff precedes profile setup so the final shell loads device code only once.
+if [ -r "$_dotfiles_shell_dir/bash/handoff.sh" ]; then
+    . "$_dotfiles_shell_dir/bash/handoff.sh"
 fi
 
-# Machine settings precede tool activation and interactive features.
-for _dotfiles_file in local-loader.sh plugin-paths.sh platform.sh common.sh environment.sh \
-    bash-history.sh bash-completion.sh prompt.sh; do
-    if [ -r "$_dotfiles_shell_dir/$_dotfiles_file" ]; then
-        # shellcheck source=/dev/null
-        . "$_dotfiles_shell_dir/$_dotfiles_file"
-    fi
-done
-unset _dotfiles_file _dotfiles_shell_dir
+# Defaults are shared across OSes; device settings below can override them.
+HISTCONTROL=ignoreboth
+HISTSIZE=1000
+HISTFILESIZE=2000
+HISTFILE="${HISTFILE:-$HOME/.bash_history}"
+DOTFILES_BASH_HISTORY_SYNC=${DOTFILES_BASH_HISTORY_SYNC:-0}
+shopt -s histappend checkwinsize
+
+# OS defaults, then this device's overrides.
+if [ -r "$_dotfiles_shell_dir/platforms/init.sh" ]; then
+    . "$_dotfiles_shell_dir/platforms/init.sh"
+fi
+if [ -r "$_dotfiles_shell_dir/device.sh" ]; then
+    . "$_dotfiles_shell_dir/device.sh"
+fi
+
+# Shared preferences and existing tools; none of these installs software.
+if [ -r "$_dotfiles_shell_dir/generation.sh" ]; then
+    . "$_dotfiles_shell_dir/generation.sh"
+fi
+if [ -r "$_dotfiles_shell_dir/integrations/homebrew.sh" ]; then
+    . "$_dotfiles_shell_dir/integrations/homebrew.sh"
+fi
+if [ -r "$_dotfiles_shell_dir/preferences.sh" ]; then
+    . "$_dotfiles_shell_dir/preferences.sh"
+fi
+if [ -r "$_dotfiles_shell_dir/integrations/slurm.sh" ]; then
+    . "$_dotfiles_shell_dir/integrations/slurm.sh"
+fi
+if [ -r "$_dotfiles_shell_dir/integrations/environment.sh" ]; then
+    . "$_dotfiles_shell_dir/integrations/environment.sh"
+fi
+
+# Native Bash features, then the final prompt.
+if [ -r "$_dotfiles_shell_dir/bash/history.sh" ]; then
+    . "$_dotfiles_shell_dir/bash/history.sh"
+fi
+if [ -r "$_dotfiles_shell_dir/bash/completion.sh" ]; then
+    . "$_dotfiles_shell_dir/bash/completion.sh"
+fi
+if [ -r "$_dotfiles_shell_dir/integrations/prompt.sh" ]; then
+    . "$_dotfiles_shell_dir/integrations/prompt.sh"
+fi
+unset _dotfiles_shell_dir

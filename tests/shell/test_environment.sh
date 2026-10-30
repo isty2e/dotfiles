@@ -8,6 +8,10 @@ tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT HUP INT TERM
 mkdir -p "$tmp/bin" "$tmp/home/pixi-env/base/.pixi/envs/default"
 touch "$tmp/home/pixi-env/base/pixi.toml"
+mkdir -p "$tmp/repository/workspaces/pixi-base/.pixi/envs/default" "$tmp/home/.config/shell"
+touch "$tmp/repository/workspaces/pixi-base/pixi.toml"
+printf "_dotfiles_repository_manifest='%s'\n" "$tmp/repository/workspaces/pixi-base/pixi.toml" \
+    > "$tmp/home/.config/shell/workspaces.sh"
 
 cat > "$tmp/bin/mise" <<'EOF'
 #!/bin/sh
@@ -43,7 +47,7 @@ printf '%s\n' 'export TEST_PIXI_LOADED=1'
 EOF
 chmod +x "$tmp/bin/"*
 
-fragment="$repo/home/private_dot_config/private_dotfiles/shell/environment.sh"
+fragment="$repo/home/private_dot_config/private_shell/integrations/environment.sh"
 run_shell() {
     shell=$1
     shift
@@ -62,7 +66,7 @@ for shell in /bin/bash /bin/zsh; do
     output=$(run_shell "$shell")
     [ "$output" = '1 1 0' ]
     grep -q '<--as-is>' "$tmp/log"
-    grep -Fq "$tmp/home/pixi-env/base/pixi.toml" "$tmp/log"
+    grep -Fq "$tmp/repository/workspaces/pixi-base/pixi.toml" "$tmp/log"
 
     : > "$tmp/log"
     output=$(run_shell "$shell" PIXI_PROJECT_MANIFEST=/project/pixi.toml)
@@ -118,7 +122,7 @@ mkdir -p "$tmp/home/pixi_envs/base/.pixi/envs/default"
 touch "$tmp/home/pixi_envs/base/pixi.toml"
 : > "$tmp/log"
 run_shell /bin/bash > /dev/null
-grep -Fq "$tmp/home/pixi_envs/base/pixi.toml" "$tmp/log"
+grep -Fq "$tmp/repository/workspaces/pixi-base/pixi.toml" "$tmp/log"
 
 mkdir -p "$tmp/custom path/base/.pixi/envs/default"
 touch "$tmp/custom path/base/pixi.toml"
@@ -134,10 +138,6 @@ if grep -q 'shell-hook' "$tmp/log"; then
     exit 1
 fi
 
-mkdir -p "$tmp/repository/workspaces/pixi-base/.pixi/envs/default" "$tmp/home/.config/dotfiles/shell"
-touch "$tmp/repository/workspaces/pixi-base/pixi.toml"
-printf "_dotfiles_repository_manifest='%s'\n" "$tmp/repository/workspaces/pixi-base/pixi.toml" \
-    > "$tmp/home/.config/dotfiles/shell/workspaces.sh"
 : > "$tmp/log"
 run_shell /bin/bash > /dev/null
 grep -Fq "$tmp/repository/workspaces/pixi-base/pixi.toml" "$tmp/log"
@@ -145,6 +145,19 @@ grep -Fq "$tmp/repository/workspaces/pixi-base/pixi.toml" "$tmp/log"
 : > "$tmp/log"
 run_shell /bin/bash "PIXI_ENVS_HOME=$tmp/custom path" > /dev/null
 grep -Fq "$tmp/custom path/base/pixi.toml" "$tmp/log"
+
+rm "$tmp/home/.config/shell/workspaces.sh"
+for shell in /bin/bash /bin/zsh; do
+    : > "$tmp/log"
+    output=$(run_shell "$shell")
+    [ "$output" = '1 0 0' ]
+    if grep -q '^pixi' "$tmp/log"; then
+        printf 'An implicit old Pixi directory was activated\n' >&2
+        exit 1
+    fi
+done
+printf "_dotfiles_repository_manifest='%s'\n" "$tmp/repository/workspaces/pixi-base/pixi.toml" \
+    > "$tmp/home/.config/shell/workspaces.sh"
 
 rm "$tmp/bin/pixi"
 ln -s mise "$tmp/bin/pixi"

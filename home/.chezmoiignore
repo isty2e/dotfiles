@@ -2,3 +2,5 @@
 **/__pycache__/**
 
 .config/nvim/lazy-lock.json
+.config/shell/device
+.config/shell/device/**

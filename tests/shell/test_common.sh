@@ -19,6 +19,8 @@ printf '\n' >> "$TEST_LOG"
 EOF
 done
 chmod +x "$tmp/bin/"*
+printf '#!/bin/sh\nexit 1\n' > "$tmp/bin/xcode-select"
+chmod +x "$tmp/bin/xcode-select"
 
 cat > "$tmp/check.sh" <<'EOF'
 set -eu
@@ -28,6 +30,10 @@ fi
 
 cd "$TEST_WORK"
 unset PI_CLIPBOARD_OSC52
+unset EDITOR VISUAL
+_dotfiles_shell_dir=$TEST_SHELL_DIR
+. "$_dotfiles_shell_dir/platforms/init.sh"
+. "$_dotfiles_shell_dir/integrations/slurm.sh"
 . "$TEST_COMMON"
 
 [ "$EDITOR" = hx ]
@@ -64,7 +70,8 @@ eval 'rsmv source destination'
 eval 'rssync source destination'
 EOF
 
-export HOME="$tmp/home" USER=testuser TEST_WORK="$tmp/work" TEST_COMMON="$repo/home/private_dot_config/private_dotfiles/shell/common.sh"
+export HOME="$tmp/home" USER=testuser TEST_WORK="$tmp/work" TEST_COMMON="$repo/home/private_dot_config/private_shell/preferences.sh"
+export TEST_SHELL_DIR="$repo/home/private_dot_config/private_shell"
 export PATH="$tmp/bin:/usr/bin:/bin" TEST_LOG="$tmp/log"
 
 for shell in bash zsh; do
@@ -83,7 +90,7 @@ for shell in bash zsh; do
         else
             color=--color=auto
         fi
-        printf 'nnn <>\nvim <example>\nvim <example>\nnvim <-p> <example>\nls <%s> <-lh>\nls <%s> <-lh>\nls <%s> <-lah>\ngrep <--color> <needle>\ngrep <--color> <-R> <-n> <-H> <-C> <5> <--exclude-dir=.git> <--exclude-dir=.svn> <--exclude-dir=CVS> <needle> <.>\nrsync <-poghb> <--backup-dir=/home/testuser/rsync> <--info=progress2> <--> <source> <destination>\nrsync <-poghb> <--backup-dir=%s/backup directory> <--info=progress2> <--> <source> <destination>\nrsync <-avz> <--info=progress2> <-h> <--remove-source-files> <source> <destination>\nrsync <-avzu> <--delete> <--info=progress2> <-h> <source> <destination>\n' "$color" "$color" "$color" "$tmp/work" > "$tmp/expected"
+        printf 'nnn <>\nvim <example>\nvim <example>\nnvim <-p> <example>\nls <%s> <-lh>\nls <%s> <-lh>\nls <%s> <-lah>\ngrep <--color> <needle>\ngrep <--color> <-R> <-n> <-H> <-C> <5> <--exclude-dir=.git> <--exclude-dir=.svn> <--exclude-dir=CVS> <needle> <.>\nrsync <-poghb> <--backup-dir=%s/rsync> <--info=progress2> <--> <source> <destination>\nrsync <-poghb> <--backup-dir=%s/backup directory> <--info=progress2> <--> <source> <destination>\nrsync <-avz> <--info=progress2> <-h> <--remove-source-files> <source> <destination>\nrsync <-avzu> <--delete> <--info=progress2> <-h> <source> <destination>\n' "$color" "$color" "$color" "$tmp/home" "$tmp/work" > "$tmp/expected"
         diff -u "$tmp/expected" "$TEST_LOG"
     done
 done

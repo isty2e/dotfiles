@@ -4,7 +4,7 @@ set -eu
 repo=$(CDPATH='' cd -- "$(dirname "$0")/../.." && pwd)
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT HUP INT TERM
-mkdir -p "$tmp/home/.config/dotfiles" "$tmp/bin"
+mkdir -p "$tmp/home/.config/shell/device" "$tmp/bin"
 
 cat > "$tmp/bin/uname" <<'EOF'
 #!/bin/sh
@@ -16,13 +16,13 @@ if [ "$2" = %u ] && [ "${TEST_OTHER_OWNER:-}" = yes ]; then
     printf '999999\n'
     exit
 fi
-if /usr/bin/stat -c "$2" "$4" 2>/dev/null; then
-    exit
+if [ "$1" = -f ]; then
+    target=$3
+else
+    target=$4
 fi
-case $2 in
-    %a) /usr/bin/stat -f '%Lp' "$4" ;;
-    %u) /usr/bin/stat -f '%u' "$4" ;;
-esac
+case $2 in %a|%Lp) gnu=%a; bsd=%Lp ;; %u) gnu=%u; bsd=%u ;; esac
+/usr/bin/stat -c "$gnu" "$target" 2>/dev/null || /usr/bin/stat -f "$bsd" "$target"
 EOF
 chmod +x "$tmp/bin/"*
 
@@ -56,8 +56,8 @@ case $- in
 esac
 EOF
 
-local_file="$tmp/home/.config/dotfiles/local.sh"
-credential_file="$tmp/home/.config/dotfiles/credentials.sh"
+local_file="$tmp/home/.config/shell/device/local.sh"
+credential_file="$tmp/home/.config/shell/device/credentials.sh"
 cat > "$local_file" <<'EOF'
 TEST_LOCATION='local value with spaces'
 export DK_VAULT_PATH="$TEST_VAULT_LOCATION"
@@ -65,13 +65,13 @@ EOF
 printf '%s\n' "TEST_FAKE_KEY='fake value with spaces'" "mode='fake mode'" "file='fake file'" > "$credential_file"
 chmod 600 "$credential_file"
 export HOME="$tmp/home" PATH="$tmp/bin:/usr/bin:/bin"
-export TEST_LOADER="$repo/home/private_dot_config/private_dotfiles/shell/local-loader.sh"
+export TEST_LOADER="$repo/home/private_dot_config/private_shell/device.sh"
 
 for shell in bash zsh; do
     executable=$(command -v "$shell")
     for platform in Linux Darwin; do
         TEST_PLATFORM=$platform; export TEST_PLATFORM
-        if [ "$platform" = Linux ]; then TEST_EXPECT_KEY=yes; else TEST_EXPECT_KEY=no; fi
+        TEST_EXPECT_KEY=yes
         export TEST_EXPECT_KEY
         for TEST_VAULT_LOCATION in "$tmp/vaults/first machine" "$tmp/storage/second-vault"; do
             export TEST_VAULT_LOCATION
@@ -87,23 +87,34 @@ for shell in bash zsh; do
     done
 done
 
-chmod 644 "$credential_file"
-TEST_PLATFORM=Linux TEST_EXPECT_KEY=no TEST_ALLEXPORT=no; export TEST_PLATFORM TEST_EXPECT_KEY TEST_ALLEXPORT
-bash --noprofile --norc "$tmp/check.sh" 2> "$tmp/warning"
-[ -s "$tmp/warning" ]
-zsh -f "$tmp/check.sh" 2> "$tmp/warning"
-[ -s "$tmp/warning" ]
-
-chmod 600 "$credential_file"
-TEST_OTHER_OWNER=yes; export TEST_OTHER_OWNER
-bash --noprofile --norc "$tmp/check.sh" 2> "$tmp/warning"
-[ -s "$tmp/warning" ]
-unset TEST_OTHER_OWNER
+TEST_EXPECT_KEY=no TEST_ALLEXPORT=no; export TEST_EXPECT_KEY TEST_ALLEXPORT
+for TEST_PLATFORM in Linux Darwin; do
+    export TEST_PLATFORM
+    for shell in /bin/bash /bin/zsh; do
+        chmod 644 "$credential_file"
+        "$shell" "$tmp/check.sh" 2> "$tmp/warning"
+        [ -s "$tmp/warning" ]
+        chmod 600 "$credential_file"
+        TEST_OTHER_OWNER=yes "$shell" "$tmp/check.sh" 2> "$tmp/warning"
+        [ -s "$tmp/warning" ]
+    done
+done
 
 rm "$credential_file"
 bash --noprofile --norc "$tmp/check.sh"
 rm "$local_file"
 TEST_EXPECT_LOCAL=no; export TEST_EXPECT_LOCAL
 zsh -f "$tmp/check.sh"
+
+# Missing private files are optional on either OS.
+for TEST_PLATFORM in Linux Darwin; do
+    export TEST_PLATFORM
+    for shell in /bin/bash /bin/zsh; do
+        for TEST_ALLEXPORT in yes no; do
+            export TEST_ALLEXPORT
+            "$shell" "$tmp/check.sh"
+        done
+    done
+done
 
 printf 'Local shell configuration tests passed\n'

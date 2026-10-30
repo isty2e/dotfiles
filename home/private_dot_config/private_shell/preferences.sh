@@ -1,20 +1,15 @@
 # Editors
-export EDITOR=hx
-export VISUAL=hx
+export EDITOR="${EDITOR:-hx}"
+export VISUAL="${VISUAL:-$EDITOR}"
 
 unalias vim 2>/dev/null || :
 alias vi='vim'
 alias v='nvim -p'
 
 # Pi clipboard
-export PI_CLIPBOARD_OSC52=1
+export PI_CLIPBOARD_OSC52="${PI_CLIPBOARD_OSC52:-1}"
 
 # Directory listings
-case $(uname -s) in
-    Darwin) alias ls='ls -G' ;;
-    Linux) alias ls='ls --color=auto' ;;
-esac
-
 alias l='ls -lh'
 alias ll='ls -lh'
 alias lla='ls -lah'
@@ -24,7 +19,7 @@ alias grep='grep --color'
 alias sgrep='grep -R -n -H -C 5 --exclude-dir={.git,.svn,CVS} '
 
 # File transfers
-alias cpv='rsync -poghb --backup-dir="${DOTFILES_RSYNC_BACKUP_DIR:-/home/$USER/rsync}" --info=progress2 --'
+alias cpv='rsync -poghb --backup-dir="${DOTFILES_RSYNC_BACKUP_DIR:-$HOME/rsync}" --info=progress2 --'
 alias rscp='rsync -avz --info=progress2 -h'
 alias rsmv='rsync -avz --info=progress2 -h --remove-source-files'
 alias rsup='rsync -avzu --info=progress2 -h'
@@ -59,7 +54,3 @@ mcd() {
 n() {
     command nnn "$@"
 }
-
-# Slurm output
-export SQUEUE_FORMAT='%.12i %.9P %.20j %.12u %.4Q %.2T %.10M %.9l %.6D %R'
-alias jobinfo='scontrol show jobid -dd'

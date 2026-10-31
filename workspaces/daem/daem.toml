@@ -84,13 +84,6 @@ targets = ["pi"]
 
 # Pi package declaration order defines runtime precedence. Preserve this sequence.
 [[extension]]
-id = "pi-mcp-adapter"
-carrier = "pi-package"
-targets = ["pi"]
-scope = "global"
-source = { host_source = "npm:pi-mcp-adapter" }
-
-[[extension]]
 id = "pi-subagents"
 carrier = "pi-package"
 targets = ["pi"]
@@ -152,13 +145,6 @@ carrier = "pi-package"
 targets = ["pi"]
 scope = "global"
 source = { host_source = "git:github.com/NVlabs/SoL-Pi" }
-
-[[extension]]
-id = "pi-code-previews"
-carrier = "pi-package"
-targets = ["pi"]
-scope = "global"
-source = { host_source = "npm:pi-code-previews" }
 
 [[extension]]
 id = "memlet"

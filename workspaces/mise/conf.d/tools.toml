@@ -45,6 +45,7 @@ hyperfine = "latest"
 # JavaScript and TypeScript quality
 oxfmt = "latest"
 oxlint = "latest"
+jj = "latest"
 
 # Keep the CLI independent of the Pixi base and the shell's Python provider.
 [tools."pypi:pre-commit"]

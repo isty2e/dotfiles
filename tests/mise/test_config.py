@@ -3,11 +3,10 @@ import os
 import shutil
 import subprocess
 import tempfile
+import tomllib
 import unittest
 from pathlib import Path
 from typing import TypedDict, cast
-
-import tomllib
 
 WORKSPACE = Path(__file__).resolve().parents[2] / "workspaces/mise"
 SOURCE = WORKSPACE / "conf.d/tools.toml"
@@ -101,6 +100,53 @@ class MiseConfigTests(unittest.TestCase):
         self.assertEqual(
             (self.target.parent / "conf.d/tools.toml").read_bytes(), SOURCE.read_bytes()
         )
+
+    def test_active_environment_precedes_mise_tools(self) -> None:
+        assert MISE is not None
+        prefixes = {name: self.root / name for name in ("mise", "pixi", "venv")}
+        for name, prefix in prefixes.items():
+            executable = prefix / "bin/python"
+            executable.parent.mkdir(parents=True)
+            executable.write_text(f'#!/bin/sh\nprintf "%s\\n" "{name}"\n')
+            executable.chmod(0o755)
+
+        catalog = self.target.parent / "conf.d/tools.toml"
+        catalog.write_text('[tools]\npython = "3.13.18"\n')
+        subprocess.run(
+            [MISE, "link", "python@3.13.18", str(prefixes["mise"])],
+            cwd=self.home,
+            env=self.environment,
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=30,
+        )
+
+        cases: list[tuple[str, dict[str, str]]] = [
+            ("mise", {}),
+            ("pixi", {"CONDA_PREFIX": str(prefixes["pixi"])}),
+            (
+                "venv",
+                {
+                    "CONDA_PREFIX": str(prefixes["pixi"]),
+                    "VIRTUAL_ENV": str(prefixes["venv"]),
+                },
+            ),
+            ("mise", {"CONDA_PREFIX": str(self.root / "missing")}),
+        ]
+        for expected, overrides in cases:
+            with self.subTest(environment=expected, overrides=overrides):
+                result = subprocess.run(
+                    [MISE, "exec", "--", "python"],
+                    cwd=self.home,
+                    env=self.environment | overrides,
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                    timeout=30,
+                )
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertEqual(result.stdout.strip(), expected)
 
     def test_native_global_edit_writes_through_directory_binding(self) -> None:
         assert MISE is not None

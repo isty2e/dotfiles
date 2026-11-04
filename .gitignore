@@ -6,6 +6,7 @@ __pycache__/
 !/workspaces/daem/daem.toml
 **/lazy-lock.json
 /workspaces/mise/*
+!/workspaces/mise/active-environment.sh
 !/workspaces/mise/config.toml
 !/workspaces/mise/conf.d/
 /workspaces/mise/conf.d/*

@@ -1,5 +1,9 @@
 [settings]
+activate_aggressive = false
 idiomatic_version_file_enable_tools = ["rust"]
 
 [settings.write_targets]
 tools = "~/.config/mise/conf.d/tools.toml"
+
+[env]
+_.source = "~/.config/mise/active-environment.sh"

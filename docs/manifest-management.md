@@ -77,9 +77,13 @@ file cannot prevent it. Already active Zsh sessions also suppress a repeated han
 
 Mise reuses installed tools without startup installation. Pixi activates an
 already installed base environment only when no project/Conda/virtualenv is
-active; it does not search old `~/pixi-env` or `~/pixi_envs` locations. Starship
-supplies the prompt when installed. Open a new shell for changed environment
-settings; existing tmux sessions keep their environments.
+active; it does not search old `~/pixi-env` or `~/pixi_envs` locations. An active
+virtualenv, or otherwise the active Pixi/Conda environment, takes precedence over
+mise through its [environment source](../workspaces/mise/active-environment.sh),
+including in child shells. Keep the Python interpreter used by
+mise's PyPI tools installed: selecting Pixi's Python does not replace that
+dependency. Starship supplies the prompt when installed. Open a new shell for
+changed environment settings; existing tmux sessions keep their environments.
 
 ## Private device files
 

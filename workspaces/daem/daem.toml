@@ -46,9 +46,11 @@ names = [
   "adaptive-delegation",
   "durable-knowledge",
   "github-math-comment",
+  "jujutsu",
   "kata-task-management",
   "public-repo-docs",
   "research-steering",
+  "security-audit",
   "typst-author",
 ]
 source = { git = "https://github.com/isty2e/agent-skills.git", path = ".", ref = "main" }

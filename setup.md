@@ -99,6 +99,13 @@ Zsh. To stay in Bash, pass `DOTFILES_KEEP_BASH=1` when invoking it, for example
 `DOTFILES_KEEP_BASH=1 bash`; setting it in `local.sh` is too late. This does not
 change the account's login shell or noninteractive commands/jobs.
 
+herdr-core's default terminals use `zsh -l` through the managed
+`config/herdr-core/config.toml`. This deploys configuration only: herdr-core must
+be installed and `zsh` must be on PATH. The setting applies to new default
+terminals and replacement shells created by `--keep` recovery. Explicit programs
+such as `hc run --bg bash` and already running terminals are unchanged. It does
+not change the account's login shell or require a herdr-core restart.
+
 ### Claude Code agent-summary preload
 
 The default-on [no-agent-summary hook](https://gist.github.com/flamerix-ai/c3905705cc4205e5de3011fa2e74efce)

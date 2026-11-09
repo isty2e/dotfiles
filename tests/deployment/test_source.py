@@ -134,6 +134,7 @@ class MiseDeploymentTests(unittest.TestCase):
             (".config/helix/config.toml", "config/helix/config.toml"),
             (".config/zed/keymap.json", "config/zed/keymap.json"),
             (".config/ghostty/config", "config/ghostty/config"),
+            (".config/herdr-core/config.toml", "config/herdr-core/config.toml"),
         ):
             deployed = self.home / target
             self.assertTrue(deployed.is_symlink())
@@ -172,6 +173,7 @@ class MiseDeploymentTests(unittest.TestCase):
             config / "helix/runtime/grammars/python.so",
             config / "zed/native-state",
             config / "ghostty/themes/local-preview",
+            config / "herdr-core/templates/private.toml",
             self.home / ".vim/installed-plugin",
             self.source / "workspaces/daem/.daem/state.json",
             self.source / "workspaces/daem/daem.lock.toml",

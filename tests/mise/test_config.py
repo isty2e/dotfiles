@@ -28,7 +28,10 @@ class MiseConfigTests(unittest.TestCase):
     def setUp(self) -> None:
         temporary = tempfile.TemporaryDirectory(prefix="mise config ")
         self.addCleanup(temporary.cleanup)
-        self.root = Path(temporary.name).resolve()
+        self.root = Path(temporary.name).resolve() / "fixture"
+        self.root.mkdir()
+        # Unrelated ancestor configuration must not enter the fixture.
+        (self.root.parent / "mise.toml").write_text("[invalid ancestor configuration\n")
         self.home = self.root / "home"
         self.target = self.home / ".config/mise/config.toml"
         self.target.parent.parent.mkdir(parents=True)
@@ -40,6 +43,7 @@ class MiseConfigTests(unittest.TestCase):
             "XDG_CACHE_HOME": str(self.home / ".cache"),
             "XDG_DATA_HOME": str(self.home / ".local/share"),
             "XDG_STATE_HOME": str(self.home / ".local/state"),
+            "MISE_CEILING_PATHS": str(self.root),
             "MISE_DATA_DIR": str(self.home / ".local/share/mise"),
             "MISE_CACHE_DIR": str(self.home / ".cache/mise"),
             "MISE_STATE_DIR": str(self.home / ".local/state/mise"),

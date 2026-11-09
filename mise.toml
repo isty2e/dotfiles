@@ -50,6 +50,11 @@ root = "config/ghostty"
 target = "~/.config/ghostty"
 manifest = "git"
 
+[dotfile_groups.herdr_core]
+root = "config/herdr-core"
+target = "~/.config/herdr-core"
+manifest = "git"
+
 [dotfile_groups.starship]
 root = "config/starship"
 target = "~/.config"

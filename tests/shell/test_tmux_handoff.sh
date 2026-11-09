@@ -18,6 +18,10 @@ printf '%s\n' Linux
 EOF
 cat > "$tmp/bin/zsh" <<'EOF'
 #!/bin/sh
+# Tmux calls its selected shell again to run the session command.
+if [ "$#" -gt 0 ]; then
+    exec /bin/sh "$@"
+fi
 exec "$TEST_TMUX" -S "$TEST_SOCKET" -f /dev/null new-session -d -s probe 'sleep 30'
 EOF
 chmod +x "$tmp/bin/uname" "$tmp/bin/zsh"

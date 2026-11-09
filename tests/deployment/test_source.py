@@ -41,7 +41,7 @@ class MiseDeploymentTests(unittest.TestCase):
         )
         self.home = self.root / "home '$"
         self.home.mkdir()
-        self.environment = {
+        self.environment: dict[str, str] = {
             "HOME": str(self.home),
             "PATH": os.defpath,
             "SHELL": "/bin/sh",
@@ -51,6 +51,7 @@ class MiseDeploymentTests(unittest.TestCase):
             "XDG_STATE_HOME": str(self.home / ".local/state"),
             "MISE_CONFIG_DIR": str(self.home / ".config/mise"),
             "MISE_GLOBAL_CONFIG_FILE": str(self.home / ".config/mise/config.toml"),
+            "MISE_CEILING_PATHS": str(self.root),
             "MISE_DATA_DIR": str(self.home / ".local/share/mise"),
             "MISE_CACHE_DIR": str(self.home / ".cache/mise"),
             "MISE_STATE_DIR": str(self.home / ".local/state/mise"),

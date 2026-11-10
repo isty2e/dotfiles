@@ -1,6 +1,5 @@
 import json
 import os
-import shlex
 import shutil
 import stat
 import subprocess
@@ -12,8 +11,6 @@ REPO = Path(__file__).resolve().parents[2]
 _selected_mise = shutil.which(os.environ.get("MISE", "mise"))
 MISE = str(Path(_selected_mise).resolve()) if _selected_mise else None
 GIT = shutil.which("git")
-ZSH = shutil.which("zsh")
-BUN = shutil.which(os.environ.get("BUN", "bun"))
 DAEM = shutil.which(os.environ.get("DAEM", "daem"))
 GHOSTTY = shutil.which(os.environ.get("GHOSTTY", "ghostty"))
 
@@ -26,7 +23,7 @@ class MiseDeploymentTests(unittest.TestCase):
         self.root = Path(temporary.name).resolve()
         self.source = self.root / "checkout '$"
         self.source.mkdir()
-        for directory in ("config", "features", "workspaces", "scripts"):
+        for directory in ("config", "workspaces", "scripts"):
             shutil.copytree(
                 REPO / directory,
                 self.source / directory,
@@ -34,11 +31,7 @@ class MiseDeploymentTests(unittest.TestCase):
             )
         for name in ("mise.toml", ".gitignore"):
             shutil.copyfile(REPO / name, self.source / name)
-        self.hook = self.root / "summary-preload.js"
-        self.hook.write_text("// Offline external-file fixture.\n")
-        (self.source / "mise.local.toml").write_text(
-            f"[vars]\nclaude_no_agent_summary_url = {json.dumps(self.hook.as_uri())}\n"
-        )
+        (self.source / "mise.local.toml").touch()
         self.home = self.root / "home '$"
         self.home.mkdir()
         self.environment: dict[str, str] = {
@@ -73,13 +66,6 @@ class MiseDeploymentTests(unittest.TestCase):
                 check=True,
             )
 
-    def _feature(self, enabled: bool, url: str) -> None:
-        (self.source / "mise.local.toml").write_text(
-            "[vars]\n"
-            f"claude_no_agent_summary = {json.dumps('on' if enabled else 'off')}\n"
-            f"claude_no_agent_summary_url = {json.dumps(url)}\n"
-        )
-
     def _run(self, *arguments: str) -> subprocess.CompletedProcess[str]:
         assert MISE is not None
         return subprocess.run(
@@ -97,30 +83,7 @@ class MiseDeploymentTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         return result.stdout
 
-    def _summary_options(self, options: str = "") -> list[str]:
-        assert ZSH is not None
-        result = subprocess.run(
-            [
-                ZSH,
-                "-f",
-                "-c",
-                (
-                    '. "$HOME/.zshenv"; . "$HOME/.zshenv"; '
-                    'for option in "${(@z)${BUN_OPTIONS-}}"; do '
-                    'if [[ -n $option ]]; then print -r -- "${(Q)option}"; fi; done'
-                ),
-            ],
-            env=self.environment | {"BUN_OPTIONS": options},
-            capture_output=True,
-            text=True,
-            timeout=30,
-            check=True,
-        )
-        return result.stdout.splitlines()
-
-    def test_apply_only_links_configuration_and_acquires_the_declared_asset(
-        self,
-    ) -> None:
+    def test_apply_only_links_configuration(self) -> None:
         self._mise("dot", "apply")
         for name in ("mise", "daem"):
             target = self.home / ".config" / name
@@ -139,11 +102,9 @@ class MiseDeploymentTests(unittest.TestCase):
             deployed = self.home / target
             self.assertTrue(deployed.is_symlink())
             self.assertEqual(deployed.read_bytes(), (self.source / source).read_bytes())
-        self.assertEqual(
-            (self.home / ".local/share/no-agent-summary.js").read_bytes(),
-            self.hook.read_bytes(),
-        )
         for path in (
+            self.home / ".zshenv",
+            self.home / ".local/share/no-agent-summary.js",
             self.home / ".local/share/mise/installs",
             self.home / ".local/share/dotfiles/sheldon",
             self.source / "workspaces/pixi-base/.pixi",
@@ -167,6 +128,8 @@ class MiseDeploymentTests(unittest.TestCase):
         shell = config / "shell"
         shell.mkdir(mode=0o701)
         fixtures = (
+            self.home / ".zshenv",
+            self.home / ".local/share/no-agent-summary.js",
             shell / "device/local.sh",
             shell / "device/credentials.sh",
             config / "nvim/lazy-lock.json",
@@ -271,7 +234,7 @@ class MiseDeploymentTests(unittest.TestCase):
         self.assertEqual(source.read_bytes(), original)
         self.assertEqual(private.read_text(), "# private fixture\n")
 
-    def test_dry_run_does_not_link_download_or_prepare_workspace_permissions(
+    def test_dry_run_does_not_link_or_prepare_workspace_permissions(
         self,
     ) -> None:
         workspace = self.source / "workspaces/daem"
@@ -378,111 +341,6 @@ class MiseDeploymentTests(unittest.TestCase):
         self.assertEqual(plugins.read_text(), "# prepared fixture\n")
         self.assertFalse((self.home / ".local/share/mise/installs").exists())
 
-    @unittest.skipUnless(ZSH, "zsh is required")
-    def test_preload_preserves_unrelated_options_and_is_idempotent(self) -> None:
-        self._mise("dot", "apply")
-        hook = self.home / ".local/share/no-agent-summary.js"
-        preload = f"--preload={hook}"
-        quoted = shlex.quote(preload)
-        self.assertEqual(self._summary_options(), [preload])
-        self.assertEqual(
-            self._summary_options(
-                f"--smol --preload='/other path.js' {quoted} {quoted}"
-            ),
-            ["--smol", "--preload=/other path.js", preload],
-        )
-        self.assertEqual(
-            self._summary_options(
-                f"--smol --preload {shlex.quote(str(hook))} {quoted}"
-            ),
-            ["--smol", preload],
-        )
-
-    @unittest.skipUnless(ZSH, "zsh is required")
-    def test_preload_disable_fetches_nothing_cleans_inherited_options_and_reenables(
-        self,
-    ) -> None:
-        self._mise("dot", "apply")
-        hook = self.home / ".local/share/no-agent-summary.js"
-        preload = shlex.quote(f"--preload={hook}")
-        self._feature(False, "file:///nonexistent/disabled.js")
-        for _ in range(2):
-            self._mise("dot", "apply")
-            self.assertFalse(hook.exists())
-            self.assertEqual(
-                self._summary_options(f"--smol {preload} {preload}"), ["--smol"]
-            )
-            self.assertEqual(self._summary_options(preload), [])
-        self._feature(True, self.hook.as_uri())
-        self._mise("dot", "apply")
-        self.assertEqual(hook.read_bytes(), self.hook.read_bytes())
-        self.assertEqual(self._summary_options(), [f"--preload={hook}"])
-
-    def test_failed_download_preserves_working_asset_and_reports_failure(self) -> None:
-        self._mise("dot", "apply")
-        target = self.home / ".local/share/no-agent-summary.js"
-        original = target.read_bytes()
-        utilities = self.root / "utilities"
-        utilities.mkdir()
-        curl = utilities / "curl"
-        curl.write_text(
-            '#!/bin/sh\nwhile [ "$#" -gt 0 ]; do\n'
-            'if [ "$1" = --output ]; then printf partial > "$2"; break; fi\n'
-            "shift\ndone\nexit 22\n"
-        )
-        curl.chmod(0o755)
-        self.environment["PATH"] = str(utilities) + os.pathsep + os.defpath
-        self.assertNotEqual(self._run("dot", "apply").returncode, 0)
-        self.assertEqual(target.read_bytes(), original)
-        self.assertEqual(list(target.parent.glob(".no-agent-summary.*")), [])
-
-    def test_asset_update_preserves_private_parent_permissions_and_unexpected_directories(
-        self,
-    ) -> None:
-        parent = self.home / ".local/share"
-        parent.mkdir(parents=True, mode=0o700)
-        parent.chmod(0o700)
-        self._mise("dot", "apply")
-        target = parent / "no-agent-summary.js"
-        target.unlink()
-        target.mkdir()
-        marker = target / "keep"
-        marker.write_text("unmanaged fixture\n")
-        self.assertNotEqual(self._run("dot", "apply").returncode, 0)
-        self.assertEqual(marker.read_text(), "unmanaged fixture\n")
-        if ZSH is not None:
-            self.assertEqual(self._summary_options("--smol"), ["--smol"])
-        self._feature(False, "file:///nonexistent/disabled.js")
-        self.assertNotEqual(self._run("dot", "apply").returncode, 0)
-        self.assertEqual(marker.read_text(), "unmanaged fixture\n")
-        self.assertEqual(stat.S_IMODE(parent.stat().st_mode), 0o700)
-
-    @unittest.skipUnless(BUN and ZSH, "native Bun and Zsh are optional")
-    def test_preload_quoting_is_accepted_by_native_bun(self) -> None:
-        assert BUN is not None and ZSH is not None
-        bun = Path(BUN).resolve()
-        if bun.name == "mise":
-            self.skipTest("bun resolves to a mise shim")
-        self.hook.write_text("globalThis.summaryFixture = true;\n")
-        self._mise("dot", "apply")
-        result = subprocess.run(
-            [
-                ZSH,
-                "-f",
-                "-c",
-                (
-                    '. "$HOME/.zshenv"; exec "$BUN" --eval '
-                    "'console.log(globalThis.summaryFixture)'"
-                ),
-            ],
-            env=self.environment | {"BUN": str(bun)},
-            capture_output=True,
-            text=True,
-            check=True,
-            timeout=30,
-        )
-        self.assertEqual(result.stdout.strip(), "true")
-
     @unittest.skipUnless(GHOSTTY, "native Ghostty is optional")
     def test_native_ghostty_reads_linked_config_and_themes(self) -> None:
         assert GHOSTTY is not None
@@ -568,50 +426,6 @@ class MiseDeploymentTests(unittest.TestCase):
         self._mise("dot", "apply", "--prune")
         self.assertFalse((self.home / ".config/nvim/init.lua").exists())
         self.assertEqual(lock.read_text(), "local restore state\n")
-
-    @unittest.skipUnless(ZSH, "zsh is required")
-    def test_missing_or_disabled_preload_cleans_both_inherited_argument_forms(
-        self,
-    ) -> None:
-        self._mise("dot", "apply")
-        hook = self.home / ".local/share/no-agent-summary.js"
-        preload = shlex.quote(f"--preload={hook}")
-        hook.unlink()
-        inherited = f"--preload {shlex.quote(str(hook))} --smol {preload}"
-        self.assertEqual(self._summary_options(inherited), ["--smol"])
-        self._feature(False, "file:///nonexistent/disabled.js")
-        self._mise("dot", "apply")
-        self.assertEqual(self._summary_options(inherited), ["--smol"])
-
-    def test_disabled_asset_needs_no_curl_and_invalid_mode_is_rejected(self) -> None:
-        script = self.source / "features/claude-no-agent-summary/apply.sh"
-        target = self.home / ".local/share/no-agent-summary.js"
-        target.parent.mkdir(parents=True)
-        target.write_text("fixture\n")
-        utilities = self.root / "removal-utilities"
-        utilities.mkdir()
-        rm = shutil.which("rm")
-        assert rm is not None
-        (utilities / "rm").symlink_to(rm)
-        environment = self.environment | {"PATH": str(utilities)}
-        result = subprocess.run(
-            ["/bin/sh", str(script), "off", "file:///nonexistent/disabled.js"],
-            env=environment,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertFalse(target.exists())
-        result = subprocess.run(
-            ["/bin/sh", str(script), "invalid", self.hook.as_uri()],
-            env=environment,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        self.assertNotEqual(result.returncode, 0)
-        self.assertFalse(target.exists())
 
     def test_explicit_trust_allows_global_catalog_use_after_binding(self) -> None:
         assert MISE is not None

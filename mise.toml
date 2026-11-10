@@ -1,7 +1,4 @@
-include = [
-    "workspaces/mise/conf.d/tools.toml",
-    "features/claude-no-agent-summary/mise.toml",
-]
+include = ["workspaces/mise/conf.d/tools.toml"]
 
 [settings]
 dotfiles.root = "."
@@ -9,7 +6,6 @@ dotfiles.root = "."
 [dotfiles]
 "~/.config/mise" = { source = "workspaces/mise", mode = "symlink" }
 "~/.config/daem" = { source = "workspaces/daem", mode = "symlink" }
-"~/.zshenv" = { source = "features/claude-no-agent-summary/env.zsh", mode = "symlink" }
 
 [dotfile_groups.shell]
 root = "config/shell"

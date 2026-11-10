@@ -106,36 +106,28 @@ terminals and replacement shells created by `--keep` recovery. Explicit programs
 such as `hc run --bg bash` and already running terminals are unchanged. It does
 not change the account's login shell or require a herdr-core restart.
 
-### Claude Code agent-summary preload
+### Claude Code agent summaries
 
-The default-on [no-agent-summary hook](https://gist.github.com/flamerix-ai/c3905705cc4205e5de3011fa2e74efce)
-suppresses periodic background-agent summaries in the agent panel and SDK
-`task_progress.summary`. It is an unofficial runtime hook; Claude Code updates
-may break it. Its declaration and adapters live in `features/claude-no-agent-summary/`.
+This checkout leaves Claude Code's [native progress summaries](https://github.com/anthropics/claude-code/issues/86879#issuecomment-6747619932)
+unchanged, without runtime patches. To opt out, set
+`CLAUDE_CODE_DISABLE_AGENT_PROGRESS_SUMMARIES=1` in your private environment.
 
-To disable it on one machine:
+#### Retire an existing preload
 
-1. Finish existing Claude/Bun sessions and stop any Claude Code daemon through its
-   normal controls; already running processes retain the loaded hook.
-2. Add this to the checkout's ignored `mise.local.toml`:
+The old preload is no longer managed. Applying this checkout does not delete
+existing startup files or cached JS, or rewrite inherited `BUN_OPTIONS`.
 
-   ```toml
-   [vars]
-   claude_no_agent_summary = "off"
-   ```
-
-3. If this is a new local configuration, run `mise trust mise.local.toml`. Review
-   `mise dot apply --dry-run`, then run `mise dot apply`.
-4. Start a fresh Zsh before using Bun or Claude again.
-
-Apply removes `~/.local/share/no-agent-summary.js` without fetching and clears its
-preload from new Zsh environments, preserving other Bun options. Changing the
-flag alone does not remove it; do not delete the JS while old environments still
-refer to it. Disable and apply before removing the feature's source/declaration.
-
-Set the mode to `"on"` or remove the override, then apply to re-enable it. Apply
-downloads the pinned JS and `.zshenv` adds it to `BUN_OPTIONS`; startup downloads
-nothing. Failed downloads keep the previous file and fail the command.
+1. Unlink `~/.zshenv` only if it points to this checkout's retired
+   `features/claude-no-agent-summary/env.zsh`. Preserve regular files and unrelated
+   links; remove manually copied preload setup without discarding other settings.
+2. Remove only the old `no-agent-summary.js` preload from launch environments'
+   `BUN_OPTIONS`, preserving other options. Remove obsolete `claude_no_agent_summary`
+   and `claude_no_agent_summary_url` overrides from ignored `mise.local.toml` files.
+3. Finish or restart existing Claude/Bun sessions and any parent shell or daemon
+   carrying the old environment through their normal controls. Relaunch from an
+   environment without the old preload; file changes do not update running processes.
+4. Delete `~/.local/share/no-agent-summary.js` only after no remaining launch
+   environment references it. Keep it until then, so inherited preloads still work.
 
 ### Repair or update shell plugins
 

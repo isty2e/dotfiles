@@ -123,6 +123,7 @@ std-chem = { git = "https://github.com/Standigm/std_chem" }
 pre-commit = "*"
 pytest = ">=6.0"
 pyupgrade = "*"
+repren = "*"
 ruff = "*"
 basedpyright = "*"
 zuban = "*"

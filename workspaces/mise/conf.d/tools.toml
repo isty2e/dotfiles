@@ -14,6 +14,10 @@ vim = "latest"
 neovim = "latest"
 helix = "latest"
 typst = "latest"
+tinymist = "latest"
+typstyle = "latest"
+marksman = "latest"
+"npm:bash-language-server" = "latest"
 
 # Agent CLIs and terminal workspaces
 antigravity-cli = "latest"
@@ -35,6 +39,7 @@ codegraph = "latest"
 
 # Repository delivery and task execution
 github-cli = "latest"
+git-lfs = "latest"
 just = "latest"
 
 # Shell and system utilities
@@ -42,6 +47,8 @@ just = "latest"
 sheldon = "latest"
 starship = "latest"
 hyperfine = "latest"
+shellcheck = "latest"
+shfmt = "latest"
 
 # JavaScript and TypeScript quality
 oxfmt = "latest"

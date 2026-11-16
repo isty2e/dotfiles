@@ -1,16 +1,12 @@
 # AGENTS.md
 
-<!-- BASE: Standigm/agent-commons@bfdb774d64f01d4df813806984be08460a3f39c4 -->
+<!-- BASE: Standigm/agent-commons@6bd228822520ea6f36a97feac80b741c2f56f6ef -->
 
 Repository-agnostic working rules for coding agents.
 
 ## General
 
 - Use Conventional Commits for commit subjects and PR titles: `type(scope): summary`, with scope optional.
-- In user-facing conversation, use terminology a domain-knowledgeable reader can understand without the session history.
-  Prefer established terms over project- or session-local shorthand; repeated use alone does not justify abbreviation.
-  When an exact label, code identifier, or mathematical symbol is needed for reference, make its meaning clear in the
-  current explanation; do not use it as a substitute for the concept's name in ordinary discussion.
 - Verify uncertain external facts against web or primary documentation.
 - Avoid recursive search or enumeration from broad roots such as `$HOME` or `/`: cost may be unbounded. Search known
   workspaces, repositories, or paths with `rg`/`rg --files`; if the target is unclear, ask. A necessary broad-root
@@ -26,13 +22,31 @@ Repository-agnostic working rules for coding agents.
 
 ## Conversation
 
-For ordinary conversational replies and work reports:
+For user-facing conversation, work reports, and human-facing explanatory documents:
 
+- Organize explanations around what the reader needs to understand, decide, or do. Make the main point, answer,
+  recommendation, or next action easy to find, with its reasons and supporting evidence; respect document and venue
+  conventions.
 - Make necessary relationships explicit. Keep related facts, conditions, and consequences together, with clear
   transitions and relevant time points. Retain connective words, clear referents, and useful repetition when they reduce
   reading effort, even if this uses more words.
-- State actions, results, and reasons directly. Include limitations and unperformed work when they affect interpretation
-  or a decision; omit unrelated process narration.
+- Use terminology a domain-knowledgeable reader can understand without the session history. Prefer established terms
+  over project- or session-local shorthand; repeated use alone does not justify abbreviation. When an exact label, code
+  identifier, or mathematical symbol is needed for reference, make its meaning clear in the current explanation; do not
+  use it as a substitute for the concept's name in ordinary discussion.
+- State actions, results, and reasons directly. Scope each claim, and its certainty, to the evidence and conditions that
+  support it. Include a qualification when it adds a fact about this case that the claim does not already state and that
+  affects interpretation or decisions: an uncertainty, limitation, warning, or unperformed work. State it with the claim
+  it qualifies. Keep required disclosures.
+- Omit a qualification, disclaimer, or assurance that adds no such fact, for example one that repeats a limit already
+  stated with that claim, would be equally true of any similar claim, or denies something the claim as written does not
+  assert and the request or stated context did not raise (`A. This does not mean B.`, `[A], not [B]`). When such a
+  denial seems needed, narrow the claim or state the fact behind it instead. Apply the same test to denials in code
+  comments and docstrings.
+- Omit unrelated process narration. Judge relevance against the request and stated context, not assumptions about what
+  the reader already knows.
+
+Before delivering a requested human-facing document, load and apply `humanizer` after factual checks.
 
 ## Scope and source discipline
 
@@ -111,24 +125,25 @@ For ordinary conversational replies and work reports:
 Choose work by the material decisions and evidence it needs, not diff size or a preference for more process.
 
 - For a local restoration of an accepted contract that needs no new material design decision, check the symptom, root
-  cause, and affected caller/sibling paths; run a diff-anchored `code-review-vector` starting from those contracts and paths,
-  and relevant regression and repository checks. Do not start a new design ledger or full design cycle solely because
-  this is a bug fix.
+  cause, and affected caller/sibling paths; run a diff-anchored `code-review-vector` starting from those contracts and
+  paths, and relevant regression and repository checks. Do not start a new design ledger or full design cycle solely
+  because this is a bug fix.
 - For an implementation admitted by an accepted design unit, confirm admission and reuse applicable design and
-  plan-attack results under `Execution Unit`. New code still needs a diff-anchored `code-review-vector` and verification.
+  plan-attack results under `Execution Unit`. New code still needs a diff-anchored `code-review-vector` and
+  verification.
 - Use the design cycle below for new or materially revised Guarantees, assumptions, ownership, representation,
   enforcement, lifecycle, dependencies, or verification decisions. An unchanged API or contract does not establish that
   those decisions are unchanged; a one-line retry around a durable write can require fresh design.
 
-For other maintained implementation, identify the design decisions it introduces. If brief discovery establishes none
-is material, state that basis and use the diff review and checks above. Otherwise, use the cycle for the new/revised
+For other maintained implementation, identify the design decisions it introduces. If brief discovery establishes none is
+material, state that basis and use the diff review and checks above. Otherwise, use the cycle for the new/revised
 decisions or to resolve material uncertainty before implementation. Current behavior or resemblance to existing code is
 not an acceptance/admission basis by itself.
 
-State the local, non-material, or reuse basis briefly in the existing task context. Explicitly required
-fresh/deeper review and other applicable gates still apply. Applying a skill means doing its required judgments and
-checks, not merely loading it or writing a receipt; existing notes and evidence suffice without a separate file, table,
-or report per gate.
+State the local, non-material, or reuse basis briefly in the existing task context. Explicitly required fresh/deeper
+review and other applicable gates still apply. Applying a skill means doing its required judgments and checks, not
+merely loading it or writing a receipt; existing notes and evidence suffice without a separate file, table, or report
+per gate.
 
 ### Design Cycle
 
@@ -137,15 +152,19 @@ For work requiring new or materially revised design decisions:
 1. Establish evidence and boundary: collect requirements, current behavior, relevant callers and consumers,
    state/lifecycle, and failure/recovery semantics; include a finding's symptom. Cited lines and failing probes trigger
    discovery but do not bound it.
-2. Design: apply `invariant-driven-design` to disposition candidate properties; derive a plan only from accepted
-   Guarantees, material assumptions, authority, derived constraints, enforcement, and verification.
+2. Design: disposition candidate properties under `Correctness and disposition`, using `invariant-driven-design` when it
+   is active; derive a plan only from accepted Guarantees, material assumptions, authority, derived constraints,
+   enforcement, and verification.
 3. Attack: first run `code-review-vector` directly, without subagents, in plan-attack mode against accepted Guarantees
    and supported paths. This mandatory first pass does not prohibit separate read-only subagent review; the parent
    validates its evidence and dispositions the resulting candidates.
-4. Gate: validate and disposition every finding before it changes scope. Apply `invariant-driven-design`'s plan
-   acceptance and reset conditions. Implement only when authorized and no accepted Guarantee violation, blocking
-   Unknown, or unresolved boundary-changing decision remains. For design-only work, complete the applicable review and
-   report without implementing.
+4. Gate: validate and disposition every finding before it changes scope. Return to design when a finding's disposition
+   warrants a boundary or design change; when `invariant-driven-design` is active, apply its plan acceptance and reset
+   conditions. Implement only when authorized and no accepted Guarantee violation, blocking Unknown (an open question
+   whose plausible answers can change the accepted boundary or design), or unresolved boundary-changing decision
+   remains. A request to implement, fix, or refactor authorizes in-scope design, edits, and verification, subject to
+   `Confirmation Policy`; do not ask again for permission to implement the accepted design. For design-only work,
+   complete the applicable review and report without implementing.
 5. Implement and re-review: implement the accepted plan, then run a diff-anchored `code-review-vector`. Treat review
    output as candidate evidence; repeat the applicable cycle only after its disposition warrants a boundary or design
    change.
@@ -156,6 +175,9 @@ Once required review and verification are satisfied and no repeat or supported-s
 reporting or the next authorized delivery step.
 
 ### Execution Unit
+
+A design unit is an accepted design plus the implementation instances it covers (its members), such as endpoints,
+commands, or migrations. Its admission rule decides whether an instance is covered.
 
 - Apply the design and plan-attack cycle per accepted design unit, not per implementation instance. Survey known members
   and their interactions before defining membership or admission, shared contracts, and supported variants; identify
@@ -186,8 +208,8 @@ reporting or the next authorized delivery step.
 
 ## Python Guidelines
 
-- For Python creation, edit, refactor, or review within `python-style-contract`'s maintained-code scope, apply that skill
-  and complete its mechanical gate, structural dispositions, and repository checks before claiming completion. Its
+- For Python creation, edit, refactor, or review within `python-style-contract`'s maintained-code scope, apply that
+  skill and complete its mechanical gate, structural dispositions, and repository checks before claiming completion. Its
   task-only helper exemption does not waive other applicable verification or approval requirements.
 - Apply `audit-code-doc-style` when its current trigger matches; it owns documentation scope, format, and audit
   procedure.
@@ -264,9 +286,9 @@ reporting or the next authorized delivery step.
   5. Leaning: minimize accidental complexity within the correctness boundary, not diff size or churn. Apply obvious
      local cuts; use `lean-prune-review` for material diff cuts, explicit `lean-prune-scan` for repo-wide audits, and
      `lean-ontology` to decide whether a cut affects an accepted Guarantee or still-valid derived constraint enforced by
-     an established artifact. Unclear semantics -> `invariant-driven-design` or `ontology-hardening`; unclear contract
-     representation -> `contract-representation-audit`; unclear architecture assembly -> `engineering-style-contract`.
-     Implement accepted cuts through the normal workflow.
+     an established artifact. Unclear semantics -> active `invariant-driven-design` or `ontology-hardening`; unclear
+     contract representation -> `contract-representation-audit`; unclear architecture assembly ->
+     `engineering-style-contract`. Implement accepted cuts through the normal workflow.
 - Direct routes:
   - scattered, competing, or bypassable interpretation of one accepted contract -> `contract-representation-audit`
   - unclear helper/service/free-function ownership -> `model-responsibility-audit`, especially for behavior interpreting

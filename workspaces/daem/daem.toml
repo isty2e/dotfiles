@@ -176,9 +176,17 @@ targets = ["pi"]
 scope = "global"
 source = { host_source = "git:github.com/isty2e/pi-codex-ultra@main" }
 
+[[skill]]
+name = "socratic-tutor"
+source = { git = "https://github.com/janestreet/agent_skills.git", path = "socratic-tutor", ref = "master" }
+targets = ["codex", "claude-code", "opencode", "pi", "antigravity-cli"]
+
+[skill.target.pi]
+install_to = "~/.agents/skills"
+
 [[extension]]
 id = "pi-tool-views"
 carrier = "pi-package"
 targets = ["pi"]
 scope = "global"
-source = { host_source = "git:github.com/isty2e/pi-tool-views@main" }
+source = { host_source = "npm:pi-tool-views" }

@@ -33,6 +33,8 @@ tmux = "latest"
 ripgrep = "latest"
 fd = "latest"
 fzf = "latest"
+# Use the musl build on Linux to avoid requiring newer glibc.
+yazi = { version = "latest", libc = "musl" }
 ast-grep = "latest"
 codegraph = "latest"
 "npm:@zvec/zvec-grep" = "latest"

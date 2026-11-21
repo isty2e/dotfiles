@@ -156,11 +156,11 @@ scope = "global"
 source = { host_source = "git:github.com/isty2e/pi-memlet@main" }
 
 [[extension]]
-id = "pi-fast-mode"
+id = "pi-service-tier"
 carrier = "pi-package"
 targets = ["pi"]
 scope = "global"
-source = { host_source = "npm:@pi-plugins/fast-mode" }
+source = { host_source = "npm:pi-service-tier" }
 
 [[extension]]
 id = "pi-goal-next"

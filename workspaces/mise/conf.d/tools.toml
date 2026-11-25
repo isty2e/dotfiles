@@ -43,6 +43,7 @@ codegraph = "latest"
 github-cli = "latest"
 git-lfs = "latest"
 just = "latest"
+"npm:likec4" = "latest"
 
 # Shell and system utilities
 "conda:zstd" = "latest"

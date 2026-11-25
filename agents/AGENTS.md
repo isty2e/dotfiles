@@ -1,6 +1,6 @@
 # AGENTS.md
 
-<!-- BASE: Standigm/agent-commons@6bd228822520ea6f36a97feac80b741c2f56f6ef -->
+<!-- BASE: Standigm/agent-commons@96a4ae40858d9633fe89df3c1b815ca278dc4276 -->
 
 Repository-agnostic working rules for coding agents.
 
@@ -265,6 +265,10 @@ commands, or migrations. Its admission rule decides whether an instance is cover
   - preserve mandatory phases and distinct checks: never skip a required first pass, substitute plan review for diff
     review, or weaken a stronger gate
   - use `verification-before-completion` for command-evidence validity and delegated-work completion.
+- Load and apply `integrate-openspec` for explicit OpenSpec requests or nontrivial maintained development with an
+  initialized repository-local `openspec/` planning root or a store explicitly bound to the project or selected for this
+  work. Otherwise do not introduce OpenSpec. CLI installation, registered stores, read-only references, or a
+  machine-wide default store alone do not establish project adoption. Select `invariant-driven-design` independently.
 - Default to `invariant-driven-design` for non-trivial engineering or product behavior, design or refactoring,
   public/API contracts, domain models or ontologies, lifecycle or persistence, operational risk, cross-component
   ownership, or material compatibility. It does not default on for exploratory research unless the work selects an

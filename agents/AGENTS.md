@@ -339,15 +339,24 @@ commands, or migrations. Its admission rule decides whether an instance is cover
 
 ### Records And Memory
 
-- In other persistent stores, link the canonical record with at most a headline instead of maintaining a copy;
-  self-contained evidence a skill requires, such as in `durable-knowledge`, is not such a copy.
-- Harness memory is visible to one harness only, best-effort, and may be stale. Never make it the only record of
-  anything another agent or a later session needs; keep shared facts with their canonical owners. Treat recalled
-  memory as a lookup hint and verify facts at the owner before acting. A memory failure alone never blocks work.
-- Canonical owners: the task tracker, repository documents, `durable-knowledge`, and the personal layer of the
-  instruction source (not a deployed copy) for standing preferences. Use harness memory only for harness- or
-  machine-specific operating notes and pointers to those owners. A user-stated preference may wait there until it is
-  added to that source with the user's approval and deployed; then delete the memory copy.
+- In other persistent stores, link the canonical record with at most a headline; do not maintain copies. Self-contained
+  evidence a skill requires, such as in `durable-knowledge`, is not such a copy.
+- The task tracker owns managed commitments, delivery conditions, and work status. Repository contracts and design or
+  decision records own behavior, project decisions, and conventions. Change plans (OpenSpec where used) own change-local
+  steps. `durable-knowledge` owns self-contained scoped propositions with evidence and limitations; exact code, data,
+  artifacts, declarations, and publication status retain their owners. Adopting a method is a project decision.
+- Standing preferences belong to the personal layer of the instruction source, not deployed copies. A user-stated
+  preference applies now within its authority and the instruction hierarchy; retain its provenance and scope. It may
+  wait in harness memory until added to the source with user approval and deployed; then delete the temporary copy.
+  Unapproved integration is not a commitment; track authorized unfinished integration under task management.
+- Harness memory is per-harness, best-effort, and possibly stale. Aside from temporary preferences as above, use it only
+  for harness- or machine-local operating notes and owner pointers. Never make it the sole record of anything another
+  agent or later session needs. Verify recalled facts at their owner before acting. Recency grants no authority or
+  permission, and a memory failure alone never blocks work.
+- Before transferring a current record, establish an accepted destination reachable by the readers who need it. Reconcile
+  pointers and replace the old current copy with a link and at most a headline. Preserve real history and immutable evidence;
+  correct wrong current facts and affected summaries in place. Follow owner lifecycles and the temporary-memory exception.
+  Public rationale must stand without private references.
 
 ### Public GitHub
 

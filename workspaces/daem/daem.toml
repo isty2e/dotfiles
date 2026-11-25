@@ -24,6 +24,7 @@ names = [
   "edge-hunt-campaign",
   "engineering-style-contract",
   "humanizer",
+  "integrate-openspec",
   "invariant-driven-design",
   "jaxtyping-guardrails",
   "lean-ontology",
@@ -61,18 +62,6 @@ name = "ast-grep"
 source = { git = "https://github.com/ast-grep/agent-skill.git", path = "ast-grep/skills/ast-grep", ref = "main" }
 
 [[skill]]
-name = "identedit"
-source = { git = "https://github.com/isty2e/identedit.git", path = "skills/identedit", ref = "main" }
-
-[[skill]]
-name = "oracle"
-source = { git = "https://github.com/steipete/oracle.git", path = "skills/oracle", ref = "main" }
-
-[[skill]]
-name = "repren"
-source = { git = "https://github.com/jlevy/repren.git", path = "repren/skills", ref = "master" }
-
-[[skill]]
 name = "daem"
 source = { git = "https://github.com/isty2e/daem.git", path = "skills/daem", ref = "main" }
 targets = ["codex", "claude-code", "pi", "antigravity-cli"]
@@ -81,9 +70,29 @@ targets = ["codex", "claude-code", "pi", "antigravity-cli"]
 install_to = "~/.agents/skills"
 
 [[skill]]
+name = "identedit"
+source = { git = "https://github.com/isty2e/identedit.git", path = "skills/identedit", ref = "main" }
+
+[[skill]]
+name = "oracle"
+source = { git = "https://github.com/steipete/oracle.git", path = "skills/oracle", ref = "main" }
+
+[[skill]]
 name = "pi-subagent-review-process"
 source = { git = "https://github.com/isty2e/agent-skills.git", path = "pi-subagent-review-process", ref = "main" }
 targets = ["pi"]
+
+[[skill]]
+name = "repren"
+source = { git = "https://github.com/jlevy/repren.git", path = "repren/skills", ref = "master" }
+
+[[skill]]
+name = "socratic-tutor"
+source = { git = "https://github.com/janestreet/agent_skills.git", path = "socratic-tutor", ref = "master" }
+targets = ["codex", "claude-code", "opencode", "pi", "antigravity-cli"]
+
+[skill.target.pi]
+install_to = "~/.agents/skills"
 
 # Pi package declaration order defines runtime precedence. Preserve this sequence.
 [[extension]]
@@ -176,14 +185,6 @@ carrier = "pi-package"
 targets = ["pi"]
 scope = "global"
 source = { host_source = "git:github.com/isty2e/pi-codex-ultra@main" }
-
-[[skill]]
-name = "socratic-tutor"
-source = { git = "https://github.com/janestreet/agent_skills.git", path = "socratic-tutor", ref = "master" }
-targets = ["codex", "claude-code", "opencode", "pi", "antigravity-cli"]
-
-[skill.target.pi]
-install_to = "~/.agents/skills"
 
 [[extension]]
 id = "pi-tool-views"

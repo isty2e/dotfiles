@@ -1,6 +1,6 @@
 # AGENTS.md
 
-<!-- BASE: Standigm/agent-commons@6bd228822520ea6f36a97feac80b741c2f56f6ef -->
+<!-- BASE: Standigm/agent-commons@96a4ae40858d9633fe89df3c1b815ca278dc4276 -->
 
 Repository-agnostic working rules for coding agents.
 
@@ -265,6 +265,10 @@ commands, or migrations. Its admission rule decides whether an instance is cover
   - preserve mandatory phases and distinct checks: never skip a required first pass, substitute plan review for diff
     review, or weaken a stronger gate
   - use `verification-before-completion` for command-evidence validity and delegated-work completion.
+- Load and apply `integrate-openspec` for explicit OpenSpec requests or nontrivial maintained development with an
+  initialized repository-local `openspec/` planning root or a store explicitly bound to the project or selected for this
+  work. Otherwise do not introduce OpenSpec. CLI installation, registered stores, read-only references, or a
+  machine-wide default store alone do not establish project adoption. Select `invariant-driven-design` independently.
 - Default to `invariant-driven-design` for non-trivial engineering or product behavior, design or refactoring,
   public/API contracts, domain models or ontologies, lifecycle or persistence, operational risk, cross-component
   ownership, or material compatibility. It does not default on for exploratory research unless the work selects an
@@ -335,15 +339,26 @@ commands, or migrations. Its admission rule decides whether an instance is cover
 
 ### Records And Memory
 
-- In other persistent stores, link the canonical record with at most a headline instead of maintaining a copy;
-  self-contained evidence a skill requires, such as in `durable-knowledge`, is not such a copy.
-- Harness memory is visible to one harness only, best-effort, and may be stale. Never make it the only record of
-  anything another agent or a later session needs; keep shared facts with their canonical owners. Treat recalled
-  memory as a lookup hint and verify facts at the owner before acting. A memory failure alone never blocks work.
-- Canonical owners: the task tracker, repository documents, `durable-knowledge`, and the personal layer of the
-  instruction source (not a deployed copy) for standing preferences. Use harness memory only for harness- or
-  machine-specific operating notes and pointers to those owners. A user-stated preference may wait there until it is
-  added to that source with the user's approval and deployed; then delete the memory copy.
+- In other persistent stores, link the canonical record with at most a headline; do not maintain copies. Self-contained
+  evidence a skill requires, such as in `durable-knowledge`, is not such a copy.
+- The task tracker owns managed commitments, delivery conditions, and work status. Repository contracts and design or
+  decision records own behavior, conventions, and project decisions, including any decision to adopt a method. Change
+  plans (OpenSpec where used) own change-local steps. `durable-knowledge` owns self-contained scoped propositions with
+  evidence and limitations; exact code, data, artifacts, declarations, and publication status retain their owners.
+- Standing preferences belong to the personal layer of the instruction source, not deployed copies. A user-stated
+  preference applies now within its authority and the instruction hierarchy; retain its provenance and scope. Memory
+  may temporarily hold it pending approved source integration and deployment. Apply the underlying user instruction
+  only when its provenance, continuing scope, and precedence are established; storage or recency alone does not confer
+  authority or permission. Delete the copy once the preference is deployed from the source, withdrawn, or expired.
+  Unapproved integration is not a commitment; track authorized unfinished integration under task management.
+- Harness memory is per-harness, best-effort, and possibly stale. Aside from temporary preferences as above, use it only
+  for harness- or machine-local operating notes and owner pointers. Never make it the sole record of anything another
+  agent or later session needs. Verify recalled facts at their owner before acting. A memory failure alone never blocks
+  work.
+- Before transferring a current record, establish an accepted destination reachable by its readers. Reconcile pointers
+  and replace the old current copy with a link and at most a headline. Preserve real history and immutable evidence;
+  correct wrong current facts and affected summaries in place. Follow owner lifecycles and the temporary-memory
+  exception. Public rationale must stand without private references.
 
 ### Public GitHub
 
